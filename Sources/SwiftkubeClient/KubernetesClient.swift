@@ -39,12 +39,6 @@ public enum KubernetesClientAuthentication {
 
 public class KubernetesClient {
 
-	public let nodes: NodesHandler
-	public let namespaces: NamespacesHandler
-	public let configMaps: ConfigMapsHandler
-	public let secrets: SecretsHandler
-	public let pods: PodsHandler
-
 	public let config: KubernetesClientConfig
 	private let httpClient: HTTPClient
 
@@ -81,111 +75,17 @@ public class KubernetesClient {
 				timeout: .init(connect: .seconds(1), read: .seconds(10))
 			)
 		)
-
-		self.nodes = NodesHandler(httpClient: self.httpClient, config: self.config)
-		self.namespaces = NamespacesHandler(httpClient: self.httpClient, config: self.config)
-		self.configMaps = ConfigMapsHandler(httpClient: self.httpClient, config: self.config)
-		self.secrets = SecretsHandler(httpClient: self.httpClient, config: self.config)
-		self.pods = PodsHandler(httpClient: self.httpClient, config: self.config)
 	}
+
+	public lazy var configMaps = ConfigMapsHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var deployments = DeploymentsHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var namespaces = NamespacesHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var nodes = NodesHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var pods = PodsHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var secrets = SecretsHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var services = ServicesHandler(httpClient: self.httpClient, config: self.config)
 
 	deinit {
 		try? httpClient.syncShutdown()
 	}
 }
-
-public final class NodesHandler: ClusterScopedResourceHandler {
-
-	public typealias ResourceList = core.v1.NodeList
-	public typealias Resource = core.v1.Node
-
-	public let httpClient: HTTPClient
-	public let config: KubernetesClientConfig
-	public let context: ResourceHandlerContext
-
-	public init(httpClient: HTTPClient, config: KubernetesClientConfig) {
-		self.httpClient = httpClient
-		self.config = config
-		self.context = ResourceHandlerContext(
-			apiGroupVersion: .coreV1,
-			resoucePluralName: "nodes"
-		)
-	}
-}
-
-public final class NamespacesHandler: ClusterScopedResourceHandler {
-
-	public typealias ResourceList = core.v1.NamespaceList
-	public typealias Resource = core.v1.Namespace
-
-	public let httpClient: HTTPClient
-	public let config: KubernetesClientConfig
-	public let context: ResourceHandlerContext
-
-	public init(httpClient: HTTPClient, config: KubernetesClientConfig) {
-		self.httpClient = httpClient
-		self.config = config
-		self.context = ResourceHandlerContext(
-			apiGroupVersion: .coreV1,
-			resoucePluralName: "namespaces"
-		)
-	}
-}
-
-public final class ConfigMapsHandler: NamespaceScopedResourceHandler {
-
-	public typealias ResourceList = core.v1.ConfigMapList
-	public typealias Resource = core.v1.ConfigMap
-
-	public let httpClient: HTTPClient
-	public let config: KubernetesClientConfig
-	public let context: ResourceHandlerContext
-
-	public init(httpClient: HTTPClient, config: KubernetesClientConfig) {
-		self.httpClient = httpClient
-		self.config = config
-		self.context = ResourceHandlerContext(
-			apiGroupVersion: .coreV1,
-			resoucePluralName: "configmaps"
-		)
-	}
-}
-
-public final class SecretsHandler: NamespaceScopedResourceHandler {
-
-	public typealias ResourceList = core.v1.SecretList
-	public typealias Resource = core.v1.Secret
-
-	public let httpClient: HTTPClient
-	public let config: KubernetesClientConfig
-	public let context: ResourceHandlerContext
-
-	public init(httpClient: HTTPClient, config: KubernetesClientConfig) {
-		self.httpClient = httpClient
-		self.config = config
-		self.context = ResourceHandlerContext(
-			apiGroupVersion: .coreV1,
-			resoucePluralName: "secrets"
-		)
-	}
-}
-
-public final class PodsHandler: NamespaceScopedResourceHandler {
-
-	public typealias ResourceList = core.v1.PodList
-	public typealias Resource = core.v1.Pod
-
-	public let httpClient: HTTPClient
-	public let config: KubernetesClientConfig
-	public let context: ResourceHandlerContext
-
-	public init(httpClient: HTTPClient, config: KubernetesClientConfig) {
-		self.httpClient = httpClient
-		self.config = config
-		self.context = ResourceHandlerContext(
-			apiGroupVersion: .coreV1,
-			resoucePluralName: "pods"
-		)
-	}
-}
-
