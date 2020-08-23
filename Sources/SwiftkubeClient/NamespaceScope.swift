@@ -28,6 +28,8 @@ public protocol NamespaceScopedResourceHandler: BaseHandler {
 
 	func create(inNamespace namespace: String?, _ block: () -> Resource) -> EventLoopFuture<Resource>
 
+	func update<R: ResourceWithMetadata>(inNamespace namespace: String?, _ resource: R) -> EventLoopFuture<R> where R == Resource
+
 	func delete(inNamespace namespace: String?, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>>
 }
 
@@ -54,3 +56,9 @@ public extension NamespaceScopedResourceHandler {
 	}
 }
 
+public extension NamespaceScopedResourceHandler where Resource: ResourceWithMetadata {
+
+	func update(inNamespace namespace: String?, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return _update(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+}

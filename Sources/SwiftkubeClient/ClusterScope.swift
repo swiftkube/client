@@ -26,6 +26,8 @@ public protocol ClusterScopedResourceHandler: BaseHandler {
 
 	func create(_ resource: Resource) -> EventLoopFuture<Resource>
 
+	func update<R: ResourceWithMetadata>(_ resource: R) -> EventLoopFuture<R> where R == Resource
+
 	func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>>
 }
 
@@ -45,5 +47,12 @@ public extension ClusterScopedResourceHandler {
 
 	func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		return _delete(in: .allNamespaces, name: name)
+	}
+}
+
+public extension ClusterScopedResourceHandler where Resource: ResourceWithMetadata {
+
+	func update(_ resource: Resource) -> EventLoopFuture<Resource> {
+		return _update(in: .allNamespaces, resource)
 	}
 }

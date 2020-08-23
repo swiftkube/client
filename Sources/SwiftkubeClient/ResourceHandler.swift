@@ -82,10 +82,11 @@ public enum NamespaceSelector {
 }
 
 public enum SwiftkubeAPIError: Error {
-	case InvalidURL
+	case invalidURL
+	case badRequest(String)
 	case emptyResponse
 	case decodingError(String)
-	case RequestError(meta.v1.Status)
+	case requestError(meta.v1.Status)
 }
 
 public enum ResourceOrStatus<T> {
@@ -126,7 +127,7 @@ extension BaseHandler {
 			guard let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) else {
 				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding meta.v1.Status"))
 			}
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.RequestError(status))
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.requestError(status))
 		}
 
 		if let resource = try? JSONDecoder().decode(T.self, from: data) {
@@ -148,7 +149,7 @@ extension BaseHandler {
 		}
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.InvalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
 		}
 
 		do {
@@ -170,7 +171,7 @@ extension BaseHandler {
 		components?.path = context.urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.InvalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
 		}
 
 		do {
@@ -192,7 +193,7 @@ extension BaseHandler {
 		components?.path = context.urlPath(forNamespace: namespace)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.InvalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
 		}
 
 		do {
@@ -215,7 +216,7 @@ extension BaseHandler {
 		components?.path = context.urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.InvalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
 		}
 
 		do {
@@ -225,6 +226,35 @@ extension BaseHandler {
 
 			return self.httpClient.execute(request: request).flatMap { response in
 				self.handleResourceOrStatus(response, eventLoop: eventLoop)
+			}
+		} catch {
+			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
+extension BaseHandler where Resource: ResourceWithMetadata {
+
+	internal func _update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+		let eventLoop = self.httpClient.eventLoopGroup.next()
+		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
+		guard let name = resource.name else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.badRequest("Resource metadata.name must be set for \(resource)"))
+		}
+		components?.path = context.urlPath(forNamespace: namespace, name: name)
+
+		guard let url = components?.url?.absoluteString else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+		}
+
+		do {
+			let data = try JSONEncoder().encode(resource)
+			let headers = buildHeaders(withAuthentication: config.authentication)
+			let request = try HTTPClient.Request(url: url, method: .PUT, headers: headers, body: .data(data))
+			logger.debug("Sending request: \(request)")
+
+			return self.httpClient.execute(request: request).flatMap { response in
+				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
