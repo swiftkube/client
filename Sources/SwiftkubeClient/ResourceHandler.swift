@@ -88,6 +88,11 @@ public enum SwiftkubeAPIError: Error {
 	case RequestError(meta.v1.Status)
 }
 
+public enum ResourceOrStatus<T> {
+	case resource(T)
+	case status(meta.v1.Status)
+}
+
 extension BaseHandler {
 
 	private func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
@@ -100,7 +105,17 @@ extension BaseHandler {
 	}
 
 	private func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
-		logger.debug("Got response: \response")
+		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
+			guard case let ResourceOrStatus.resource(resource) = result else {
+				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
+			}
+
+			return eventLoop.makeSucceededFuture(resource)
+		}
+	}
+
+	private func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
+		logger.debug("Got response: \(response)")
 		guard let byteBuffer = response.body else {
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeAPIError.emptyResponse)
 		}
@@ -114,11 +129,13 @@ extension BaseHandler {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.RequestError(status))
 		}
 
-		guard let result = try? JSONDecoder().decode(T.self, from: data) else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding \(T.Type.self)"))
+		if let resource = try? JSONDecoder().decode(T.self, from: data) {
+			return eventLoop.makeSucceededFuture(.resource(resource))
+		} else if let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) {
+			return eventLoop.makeSucceededFuture(.status(status))
+		} else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding \(T.self)"))
 		}
-
-		return eventLoop.makeSucceededFuture(result)
 	}
 
 	internal func _list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
@@ -192,7 +209,7 @@ extension BaseHandler {
 		}
 	}
 
-	internal func _delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
+	internal func _delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = context.urlPath(forNamespace: namespace, name: name)
@@ -207,7 +224,7 @@ extension BaseHandler {
 			logger.debug("Sending request: \(request)")
 
 			return self.httpClient.execute(request: request).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
+				self.handleResourceOrStatus(response, eventLoop: eventLoop)
 			}
 		} catch {
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)

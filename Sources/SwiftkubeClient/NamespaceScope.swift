@@ -20,37 +20,37 @@ import SwiftkubeModel
 
 public protocol NamespaceScopedResourceHandler: BaseHandler {
 
-	func list(in namespace: NamespaceSelector, selector: ListSelector?) -> EventLoopFuture<ResourceList>
+	func list(in namespace: NamespaceSelector?, selector: ListSelector?) -> EventLoopFuture<ResourceList>
 
-	func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource>
+	func get(in namespace: NamespaceSelector?, name: String) -> EventLoopFuture<Resource>
 
-	func create(inNamespace namespace: String, _ resource: Resource) -> EventLoopFuture<Resource>
+	func create(inNamespace namespace: String?, _ resource: Resource) -> EventLoopFuture<Resource>
 
-	func create(inNamespace namespace: String, _ block: () -> Resource) -> EventLoopFuture<Resource>
+	func create(inNamespace namespace: String?, _ block: () -> Resource) -> EventLoopFuture<Resource>
 
-	func delete(inNamespace namespace: String, name: String) -> EventLoopFuture<Resource>
+	func delete(inNamespace namespace: String?, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>>
 }
 
 public extension NamespaceScopedResourceHandler {
 
-	func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
-		return _list(in: namespace, selector: selector)
+	func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
+		return _list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
 	}
 
-	func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
-		return _get(in: namespace, name: name)
+	func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
+		return _get(in: namespace ?? .namespace(self.config.namespace), name: name)
 	}
 
-	func create(inNamespace namespace: String, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return _create(in: .namespace(namespace), resource)
+	func create(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return _create(in: .namespace(namespace ?? self.config.namespace), resource)
 	}
 
-	func create(inNamespace namespace: String, _ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return _create(in: .namespace(namespace), block())
+	func create(inNamespace namespace: String? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return _create(in: .namespace(namespace ?? self.config.namespace), block())
 	}
 
-	func delete(inNamespace namespace: String, name: String) -> EventLoopFuture<Resource> {
-		return _delete(in: .namespace(namespace), name: name)
+	func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return _delete(in: .namespace(namespace ?? self.config.namespace), name: name)
 	}
 }
 
