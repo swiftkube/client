@@ -72,7 +72,7 @@ public class KubernetesClient {
 			configuration: HTTPClient.Configuration(
 				tlsConfiguration: tlsConfiguration,
 				redirectConfiguration: .follow(max: 10, allowCycles: false),
-				timeout: .init(connect: .seconds(1), read: .seconds(10))
+				timeout: .init(connect: .seconds(1))
 			)
 		)
 	}

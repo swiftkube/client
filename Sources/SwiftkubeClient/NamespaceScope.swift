@@ -62,3 +62,10 @@ public extension NamespaceScopedResourceHandler where Resource: ResourceWithMeta
 		return _update(in: .namespace(namespace ?? self.config.namespace), resource)
 	}
 }
+
+public extension NamespaceScopedResourceHandler {
+
+	func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
+		return watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+	}
+}

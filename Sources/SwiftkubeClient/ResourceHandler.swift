@@ -155,9 +155,8 @@ extension BaseHandler {
 		do {
 			let headers = buildHeaders(withAuthentication: config.authentication)
 			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
-			logger.debug("Sending request: \(request)")
 
-			return self.httpClient.execute(request: request).flatMap { response in
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
@@ -177,9 +176,8 @@ extension BaseHandler {
 		do {
 			let headers = buildHeaders(withAuthentication: config.authentication)
 			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
-			logger.debug("Sending request: \(request)")
 
-			return self.httpClient.execute(request: request).flatMap { response in
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
@@ -200,9 +198,8 @@ extension BaseHandler {
 			let data = try JSONEncoder().encode(resource)
 			let headers = buildHeaders(withAuthentication: config.authentication)
 			let request = try HTTPClient.Request(url: url, method: .POST, headers: headers, body: .data(data))
-			logger.debug("Sending request: \(request)")
 
-			return self.httpClient.execute(request: request).flatMap { response in
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
@@ -222,9 +219,8 @@ extension BaseHandler {
 		do {
 			let headers = buildHeaders(withAuthentication: config.authentication)
 			let request = try HTTPClient.Request(url: url, method: .DELETE, headers: headers)
-			logger.debug("Sending request: \(request)")
 
-			return self.httpClient.execute(request: request).flatMap { response in
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handleResourceOrStatus(response, eventLoop: eventLoop)
 			}
 		} catch {
@@ -251,13 +247,119 @@ extension BaseHandler where Resource: ResourceWithMetadata {
 			let data = try JSONEncoder().encode(resource)
 			let headers = buildHeaders(withAuthentication: config.authentication)
 			let request = try HTTPClient.Request(url: url, method: .PUT, headers: headers, body: .data(data))
-			logger.debug("Sending request: \(request)")
 
-			return self.httpClient.execute(request: request).flatMap { response in
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
+public enum EventType: String, RawRepresentable {
+	case added = "ADDED"
+	case modified = "MODIFIED"
+	case deleted = "DELETED"
+	case error = "ERROR"
+}
+
+final public class ResourceWatch<Resource: KubernetesResource> {
+
+	public typealias EventHandler = (EventType, Resource) -> Void
+
+	private let decoder = JSONDecoder()
+	private let handler: EventHandler
+
+	init(_ handler: @escaping EventHandler) {
+		self.handler = handler
+	}
+
+	internal func handle(data: Data) {
+		guard let event = try? decoder.decode(meta.v1.WatchEvent.self, from: data) else {
+			print("Error")
+			return
+		}
+
+		guard let eventType = EventType(rawValue: event.type) else {
+			print("Error")
+			return
+		}
+
+		guard
+			let jsonData = try? JSONSerialization.data(withJSONObject: event.object),
+			let resource = try?	decoder.decode(Resource.self, from: jsonData)
+		else {
+			print("Error")
+			return
+		}
+
+		handler(eventType, resource)
+	}
+}
+
+internal class WatchDelegate<Resource: KubernetesResource>: HTTPClientResponseDelegate {
+	typealias Response = Void
+
+	private let watch: ResourceWatch<Resource>
+
+	init(watch: ResourceWatch<Resource>) {
+		self.watch = watch
+	}
+
+	func didSendRequestHead(task: HTTPClient.Task<Response>, _ head: HTTPRequestHead) {
+		print("didSendRequestHead")
+	}
+
+	func didSendRequestPart(task: HTTPClient.Task<Response>, _ part: IOData) {
+		print("didSendRequestPart")
+	}
+
+	func didSendRequest(task: HTTPClient.Task<Response>) {
+		print("didSendRequest")
+	}
+
+	func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
+		print("didReceiveHead")
+		return task.eventLoop.makeSucceededFuture(())
+	}
+
+	func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ buffer: ByteBuffer) -> EventLoopFuture<Void> {
+		let data = Data(buffer: buffer)
+		watch.handle(data: data)
+		return task.eventLoop.makeSucceededFuture(())
+	}
+
+	func didFinishRequest(task: HTTPClient.Task<Response>) throws -> Void {
+		return ()
+	}
+
+	func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
+		print(error)
+	}
+}
+
+extension BaseHandler {
+
+	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) -> EventLoopFuture<Void> {
+		let eventLoop = self.httpClient.eventLoopGroup.next()
+		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
+		components?.path = context.urlPath(forNamespace: namespace)
+		components?.queryItems = [
+			URLQueryItem(name: "watch", value: "true")
+		]
+
+		guard let url = components?.url?.absoluteString else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+		}
+
+		do {
+			let headers = buildHeaders(withAuthentication: config.authentication)
+			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
+
+			return self.httpClient.execute(request: request, delegate: WatchDelegate(watch: watch), logger: logger).futureResult
+		} catch let error {
+			return eventLoop.makeFailedFuture(error)
 		}
 	}
 }

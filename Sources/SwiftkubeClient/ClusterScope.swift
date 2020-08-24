@@ -56,3 +56,10 @@ public extension ClusterScopedResourceHandler where Resource: ResourceWithMetada
 		return _update(in: .allNamespaces, resource)
 	}
 }
+
+public extension ClusterScopedResourceHandler {
+
+	func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
+		return watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+	}
+}
