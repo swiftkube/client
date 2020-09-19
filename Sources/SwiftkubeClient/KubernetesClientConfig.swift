@@ -23,11 +23,11 @@ import Yams
 private let logger = Logger(label: "swiftkube.client.ConfigLoader")
 
 public struct KubernetesClientConfig {
-	let masterURL: URL
-	let namespace: String
-	let authentication: KubernetesClientAuthentication
-	let trustRoots: NIOSSLTrustRoots?
-	let insecureSkipTLSVerify: Bool
+	public let masterURL: URL
+	public let namespace: String
+	public let authentication: KubernetesClientAuthentication
+	public let trustRoots: NIOSSLTrustRoots?
+	public let insecureSkipTLSVerify: Bool
 }
 
 public protocol KubernetesClientConfigLoader {
