@@ -77,11 +77,15 @@ public class KubernetesClient {
 		)
 	}
 
+	public lazy var clusterRole = ClusterRolesHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var clusterRoleBindings = ClusterRoleBindingsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var configMaps = ConfigMapsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var deployments = DeploymentsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var namespaces = NamespacesHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var nodes = NodesHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var pods = PodsHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var roles = RolesHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var roleBindings = RoleBindingsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var secrets = SecretsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var services = ServicesHandler(httpClient: self.httpClient, config: self.config)
 
