@@ -80,6 +80,7 @@ public class KubernetesClient {
 	public lazy var clusterRole = ClusterRolesHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var clusterRoleBindings = ClusterRoleBindingsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var configMaps = ConfigMapsHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var daemonSets = DaemonSetsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var deployments = DeploymentsHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var namespaces = NamespacesHandler(httpClient: self.httpClient, config: self.config)
 	public lazy var nodes = NodesHandler(httpClient: self.httpClient, config: self.config)

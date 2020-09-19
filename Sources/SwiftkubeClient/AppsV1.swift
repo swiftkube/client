@@ -18,6 +18,25 @@ import Foundation
 import AsyncHTTPClient
 import SwiftkubeModel
 
+public final class DaemonSetsHandler: NamespaceScopedResourceHandler {
+
+	public typealias ResourceList = apps.v1.DaemonSetList
+	public typealias Resource = apps.v1.DaemonSet
+
+	public let httpClient: HTTPClient
+	public let config: KubernetesClientConfig
+	public let context: ResourceHandlerContext
+
+	public init(httpClient: HTTPClient, config: KubernetesClientConfig) {
+		self.httpClient = httpClient
+		self.config = config
+		self.context = ResourceHandlerContext(
+			apiGroupVersion: .appsV1,
+			resoucePluralName: "daemonsets"
+		)
+	}
+}
+
 public final class DeploymentsHandler: NamespaceScopedResourceHandler {
 
 	public typealias ResourceList = apps.v1.DeploymentList
