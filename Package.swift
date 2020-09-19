@@ -14,7 +14,7 @@ let package = Package(
 		.package(name: "SwiftkubeModel", path: "../model"),
 		.package(url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.0.0")),
 		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.0.0")),
-		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "2.0.0")),
+		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "2.0.0"))
 	],
 	targets: [
 		.target(
