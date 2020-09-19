@@ -42,7 +42,7 @@ public class KubernetesClient {
 	public let config: KubernetesClientConfig
 	private let httpClient: HTTPClient
 
-	convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew) {
+	public convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew) {
 		guard
 			let config = (try? LocalFileConfigLoader().load()) ?? (try? ServiceAccountConfigLoader().load())
 		else {
@@ -52,7 +52,7 @@ public class KubernetesClient {
 		self.init(config: config, provider: provider)
 	}
 
-	init(config: KubernetesClientConfig, provider: HTTPClient.EventLoopGroupProvider = .createNew) {
+	public init(config: KubernetesClientConfig, provider: HTTPClient.EventLoopGroupProvider = .createNew) {
 		self.config = config
 
 		var tlsConfiguration = TLSConfiguration.forClient(
