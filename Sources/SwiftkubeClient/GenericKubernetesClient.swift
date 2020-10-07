@@ -52,7 +52,7 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 		self.config = config
 		self.gvk = GroupVersionKind(of: ResourceList.Item.self)!
 		self.apiVersion = ResourceList.Item.apiVersion
-		self.logger = KubernetesClient.loggingDisabled
+		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
 
 	private func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {

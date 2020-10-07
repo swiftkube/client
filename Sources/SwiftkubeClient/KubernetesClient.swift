@@ -22,23 +22,6 @@ import NIOHTTP1
 import NIOSSL
 import SwiftkubeModel
 
-public enum KubernetesClientAuthentication {
-	case basicAuth(username: String, password: String)
-	case bearer(token: String)
-	case x509(clientCertificate: NIOSSLCertificate, clientKey: NIOSSLPrivateKey)
-
-	internal func authorizationHeader() -> String? {
-		switch self {
-		case let .basicAuth(username: username, password: password):
-			return HTTPClient.Authorization.basic(username: username, password: password).headerValue
-		case let .bearer(token: token):
-			return HTTPClient.Authorization.bearer(tokens: token).headerValue
-		default:
-			return nil
-		}
-	}
-}
-
 public enum SwiftkubeAPIError: Error {
 	case invalidURL
 	case badRequest(String)
@@ -53,19 +36,25 @@ public class KubernetesClient {
 
 	public let config: KubernetesClientConfig
 	private let httpClient: HTTPClient
-	
-	public convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew) {
+	private let logger: Logger
+
+	public convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew, logger: Logger? = nil) {
+		let logger = logger ?? KubernetesClient.loggingDisabled
+
 		guard
-			let config = (try? LocalFileConfigLoader().load()) ?? (try? ServiceAccountConfigLoader().load())
+			let config =
+				(try? LocalFileConfigLoader().load(logger: logger)) ??
+				(try? ServiceAccountConfigLoader().load(logger: logger))
 		else {
 			return nil
 		}
 
-		self.init(config: config, provider: provider)
+		self.init(config: config, provider: provider, logger: logger)
 	}
 
-	public init(config: KubernetesClientConfig, provider: HTTPClient.EventLoopGroupProvider = .createNew) {
+	public init(config: KubernetesClientConfig, provider: HTTPClient.EventLoopGroupProvider = .createNew, logger: Logger? = nil) {
 		self.config = config
+		self.logger = logger ?? KubernetesClient.loggingDisabled
 
 		var tlsConfiguration = TLSConfiguration.forClient(
 			minimumTLSVersion: .tlsv12,
@@ -89,22 +78,34 @@ public class KubernetesClient {
 		)
 	}
 
-	public lazy var clusterRole = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleList>(httpClient: self.httpClient, config: self.config)
-	public lazy var clusterRoleBindings = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBindingList>(httpClient: self.httpClient, config: self.config)
-	public lazy var configMaps = NamespacedGenericKubernetesClient<core.v1.ConfigMapList>(httpClient: self.httpClient, config: self.config)
-	public lazy var daemonSets = ClusterScopedGenericKubernetesClient<apps.v1.DaemonSetList>(httpClient: self.httpClient, config: self.config)
-	public lazy var deployments = NamespacedGenericKubernetesClient<apps.v1.DeploymentList>(httpClient: self.httpClient, config: self.config)
-	public lazy var ingresses = NamespacedGenericKubernetesClient<networking.v1beta1.IngressList>(httpClient: self.httpClient, config: self.config)
-	public lazy var namespaces = ClusterScopedGenericKubernetesClient<core.v1.NamespaceList>(httpClient: self.httpClient, config: self.config)
-	public lazy var nodes = ClusterScopedGenericKubernetesClient<core.v1.NodeList>(httpClient: self.httpClient, config: self.config)
-	public lazy var pods = NamespacedGenericKubernetesClient<core.v1.PodList>(httpClient: self.httpClient, config: self.config)
-	public lazy var roles = NamespacedGenericKubernetesClient<rbac.v1.RoleList>(httpClient: self.httpClient, config: self.config)
-	public lazy var roleBindings = NamespacedGenericKubernetesClient<rbac.v1.RoleBindingList>(httpClient: self.httpClient, config: self.config)
-	public lazy var secrets = NamespacedGenericKubernetesClient<core.v1.SecretList>(httpClient: self.httpClient, config: self.config)
-	public lazy var services = NamespacedGenericKubernetesClient<core.v1.ServiceList>(httpClient: self.httpClient, config: self.config)
+	public lazy var clusterRole = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var clusterRoleBindings = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBindingList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var configMaps = NamespacedGenericKubernetesClient<core.v1.ConfigMapList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var daemonSets = ClusterScopedGenericKubernetesClient<apps.v1.DaemonSetList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var deployments = NamespacedGenericKubernetesClient<apps.v1.DeploymentList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var ingresses = NamespacedGenericKubernetesClient<networking.v1beta1.IngressList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var namespaces = ClusterScopedGenericKubernetesClient<core.v1.NamespaceList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var nodes = ClusterScopedGenericKubernetesClient<core.v1.NodeList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var pods = NamespacedGenericKubernetesClient<core.v1.PodList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var roles = NamespacedGenericKubernetesClient<rbac.v1.RoleList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var roleBindings = NamespacedGenericKubernetesClient<rbac.v1.RoleBindingList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var secrets = NamespacedGenericKubernetesClient<core.v1.SecretList>(httpClient: self.httpClient, config: self.config, logger: logger)
+
+	public lazy var services = NamespacedGenericKubernetesClient<core.v1.ServiceList>(httpClient: self.httpClient, config: self.config, logger: logger)
 
 	public func `for`<R: KubernetesResourceList>(_ type: R.Type) -> GenericKubernetesClient<R> where R.Item: KubernetesAPIResource {
-		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config)
+		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 
 	deinit {

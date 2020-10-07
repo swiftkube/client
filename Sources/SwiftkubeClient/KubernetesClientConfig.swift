@@ -20,8 +20,6 @@ import Logging
 import NIOSSL
 import Yams
 
-private let logger = Logger(label: "swiftkube.client.ConfigLoader")
-
 public struct KubernetesClientConfig {
 	public let masterURL: URL
 	public let namespace: String
@@ -30,13 +28,13 @@ public struct KubernetesClientConfig {
 	public let insecureSkipTLSVerify: Bool
 }
 
-public protocol KubernetesClientConfigLoader {
-	func load() throws -> KubernetesClientConfig?
+internal protocol KubernetesClientConfigLoader {
+	func load(logger: Logger) throws -> KubernetesClientConfig?
 }
 
-struct LocalFileConfigLoader: KubernetesClientConfigLoader {
+internal struct LocalFileConfigLoader: KubernetesClientConfigLoader {
 
-	public func load() throws -> KubernetesClientConfig? {
+	internal func load(logger: Logger) throws -> KubernetesClientConfig? {
 		let decoder = YAMLDecoder()
 		guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
 			logger.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
@@ -73,7 +71,7 @@ struct LocalFileConfigLoader: KubernetesClientConfigLoader {
 			return nil
 		}
 
-		guard let authentication = authInfo.authentication() else {
+		guard let authentication = authInfo.authentication(logger: logger) else {
 			return nil
 		}
 
@@ -81,15 +79,15 @@ struct LocalFileConfigLoader: KubernetesClientConfigLoader {
 			masterURL: masterURL,
 			namespace: context.namespace ?? "default",
 			authentication: authentication,
-			trustRoots: cluster.trustRoots(),
+			trustRoots: cluster.trustRoots(logger: logger),
 			insecureSkipTLSVerify: cluster.insecureSkipTLSVerify ?? true
 		)
 	}
 }
 
-struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
+internal struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 
-	func load() throws -> KubernetesClientConfig? {
+	internal func load(logger: Logger) throws -> KubernetesClientConfig? {
 		guard
 			let masterHost = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_HOST"],
 			let masterPort = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_PORT"]
@@ -117,7 +115,7 @@ struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 		}
 
 		let caFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-		let trustRoots = loadTrustRoots(caFile: caFile)
+		let trustRoots = loadTrustRoots(caFile: caFile, logger: logger)
 
 		return KubernetesClientConfig(
 			masterURL: masterURL,
@@ -136,7 +134,7 @@ struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 		}
 	}
 
-	private func loadTrustRoots(caFile: URL) -> NIOSSLTrustRoots? {
+	private func loadTrustRoots(caFile: URL, logger: Logger) -> NIOSSLTrustRoots? {
 		guard
 			let caData = try? Data(contentsOf: caFile),
 			let certificates = try? NIOSSLCertificate.fromPEMBytes([UInt8](caData))
@@ -151,7 +149,7 @@ struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 
 extension Cluster {
 
-	func trustRoots() -> NIOSSLTrustRoots? {
+	fileprivate func trustRoots(logger: Logger) -> NIOSSLTrustRoots? {
 		do {
 			if let caFile = self.certificateAuthority {
 				let certificates = try NIOSSLCertificate.fromPEMFile(caFile)
@@ -171,7 +169,7 @@ extension Cluster {
 
 extension AuthInfo {
 
-	func authentication() -> KubernetesClientAuthentication? {
+	fileprivate func authentication(logger: Logger) -> KubernetesClientAuthentication? {
 
 		if let username = self.username, let password = self.password {
 			return .basicAuth(username: username, password: password)
