@@ -19,82 +19,41 @@ import Foundation
 import Logging
 import NIO
 import NIOHTTP1
+import NIOSSL
 import SwiftkubeModel
-
-private let logger = Logger(label: "swiftkube.client.ResourceHandler")
-
-public struct ResourceHandlerContext {
-	let apiGroupVersion: APIGroupVersion
-	let resoucePluralName: String
-
-	internal func urlPath(forNamespace namespace: NamespaceSelector) -> String {
-		switch namespace {
-		case .allNamespaces:
-			return "\(apiGroupVersion.urlPath)/\(resoucePluralName)"
-		case let .namespace(namespace):
-			return "\(apiGroupVersion.urlPath)/namespaces/\(namespace)/\(resoucePluralName)"
-		}
-	}
-
-	internal func urlPath(forNamespace namespace: NamespaceSelector, name: String) -> String {
-		return "\(urlPath(forNamespace: namespace))/\(name)"
-	}
-}
-
-public protocol BaseHandler {
-
-	associatedtype ResourceList: KubernetesResourceList
-	associatedtype Resource = KubernetesResource where Resource == ResourceList.Item
-
-	var httpClient: HTTPClient { get }
-	var config: KubernetesClientConfig { get }
-	var context: ResourceHandlerContext { get }
-
-	init(httpClient: HTTPClient, config: KubernetesClientConfig)
-}
-
-public enum ListSelector {
-	case labelSelector([String: String])
-	case fieldSelector([String: String])
-
-	var name: String {
-		switch self {
-		case .labelSelector:
-			return "labelSelector"
-		case .fieldSelector:
-			return "fieldSelector"
-		}
-	}
-
-	var value: String {
-		switch self {
-		case let .labelSelector(labels):
-			return labels.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
-		case let .fieldSelector(fields):
-			return fields.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
-		}
-	}
-}
-
-public enum NamespaceSelector {
-	case namespace(String)
-	case allNamespaces
-}
-
-public enum SwiftkubeAPIError: Error {
-	case invalidURL
-	case badRequest(String)
-	case emptyResponse
-	case decodingError(String)
-	case requestError(meta.v1.Status)
-}
 
 public enum ResourceOrStatus<T> {
 	case resource(T)
 	case status(meta.v1.Status)
 }
 
-extension BaseHandler {
+public protocol KubernetesAPIResourceClient {
+
+	associatedtype ResourceList: KubernetesResourceList where ResourceList.Item: KubernetesAPIResource
+
+	var httpClient: HTTPClient { get }
+	var config: KubernetesClientConfig { get }
+
+	init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger?)
+}
+
+public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: KubernetesAPIResourceClient
+	where ResourceList.Item: KubernetesAPIResource {
+
+	public let httpClient: HTTPClient
+	public let config: KubernetesClientConfig
+	public let gvk: GroupVersionKind
+	public let apiVersion: APIVersion
+
+	private let logger: Logger
+
+	public required init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
+		self.httpClient = httpClient
+		self.config = config
+		self.gvk = GroupVersionKind(of: ResourceList.Item.self)!
+		self.apiVersion = ResourceList.Item.apiVersion
+		self.logger = KubernetesClient.loggingDisabled
+	}
 
 	private func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
 		var headers: [(String, String)] = []
@@ -105,7 +64,7 @@ extension BaseHandler {
 		return HTTPHeaders(headers)
 	}
 
-	private func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
+	internal func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
 			guard case let ResourceOrStatus.resource(resource) = result else {
 				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
@@ -115,8 +74,7 @@ extension BaseHandler {
 		}
 	}
 
-	private func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
-		logger.debug("Got response: \(response)")
+	internal func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
 		guard let byteBuffer = response.body else {
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeAPIError.emptyResponse)
 		}
@@ -139,10 +97,23 @@ extension BaseHandler {
 		}
 	}
 
-	internal func _list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
+	internal func urlPath(forNamespace namespace: NamespaceSelector) -> String {
+		switch namespace {
+		case .allNamespaces:
+			return "\(apiVersion.urlPath)/\(gvk.pluralName)"
+		default:
+			return "\(apiVersion.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
+		}
+	}
+
+	internal func urlPath(forNamespace namespace: NamespaceSelector, name: String) -> String {
+		return "\(urlPath(forNamespace: namespace))/\(name)"
+	}
+
+	public func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = context.urlPath(forNamespace: namespace)
+		components?.path = urlPath(forNamespace: namespace)
 
 		if let selector = selector {
 			components?.queryItems = [URLQueryItem(name: selector.name, value: selector.value)]
@@ -164,10 +135,10 @@ extension BaseHandler {
 		}
 	}
 
-	internal func _get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
+	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceList.Item> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = context.urlPath(forNamespace: namespace, name: name)
+		components?.path = urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
@@ -185,10 +156,10 @@ extension BaseHandler {
 		}
 	}
 
-	internal func _create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+	public func create(in namespace: NamespaceSelector, _ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = context.urlPath(forNamespace: namespace)
+		components?.path = urlPath(forNamespace: namespace)
 
 		guard let url = components?.url?.absoluteString else {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
@@ -207,10 +178,10 @@ extension BaseHandler {
 		}
 	}
 
-	internal func _delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+	public func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<ResourceList.Item>> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = context.urlPath(forNamespace: namespace, name: name)
+		components?.path = urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
@@ -229,15 +200,15 @@ extension BaseHandler {
 	}
 }
 
-extension BaseHandler where Resource: ResourceWithMetadata {
+extension GenericKubernetesClient where ResourceList.Item: ResourceWithMetadata {
 
-	internal func _update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+	public func update(in namespace: NamespaceSelector, _ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		guard let name = resource.name else {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.badRequest("Resource metadata.name must be set for \(resource)"))
 		}
-		components?.path = context.urlPath(forNamespace: namespace, name: name)
+		components?.path = urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
@@ -257,12 +228,70 @@ extension BaseHandler where Resource: ResourceWithMetadata {
 	}
 }
 
-extension BaseHandler {
+public class NamespacedGenericKubernetesClient<ResourceList: KubernetesResourceList>: GenericKubernetesClient<ResourceList> where ResourceList.Item: KubernetesAPIResource {
 
-	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) -> EventLoopFuture<Void> {
+	public override func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
+		return super.list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
+	}
+
+	public override func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<ResourceList.Item> {
+		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
+	}
+
+	public func create(inNamespace namespace: String? = nil, _ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+		return super.create(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+
+	public func create(inNamespace namespace: String? = nil, _ block: () -> ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+		return super.create(in: .namespace(namespace ?? self.config.namespace), block())
+	}
+
+	public func update<R: ResourceWithMetadata>(inNamespace namespace: String? = nil, _ resource: R) -> EventLoopFuture<R> where R == ResourceList.Item {
+		return super.update(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+
+	public func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<ResourceList.Item>> {
+		return super.delete(in: .namespace(namespace ?? self.config.namespace), name: name)
+	}
+
+	public func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<ResourceList.Item>.EventHandler) -> EventLoopFuture<Void> {
+		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<ResourceList.Item>(eventHandler))
+	}
+}
+
+public class ClusterScopedGenericKubernetesClient<ResourceList: KubernetesResourceList>: GenericKubernetesClient<ResourceList> where ResourceList.Item: KubernetesAPIResource {
+
+	public func list(selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
+		return super.list(in: .allNamespaces, selector: selector)
+	}
+
+	public func get(name: String) -> EventLoopFuture<ResourceList.Item> {
+		return super.get(in: .allNamespaces, name: name)
+	}
+
+	public func create(_ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+		return super.create(in: .allNamespaces, resource)
+	}
+
+	public func create(_ block: () -> ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+		return super.create(in: .allNamespaces, block())
+	}
+
+	public func delete(name: String) -> EventLoopFuture<ResourceOrStatus<ResourceList.Item>> {
+		return super.delete(in: .allNamespaces, name: name)
+	}
+
+	public func watch(eventHandler: @escaping ResourceWatch<ResourceList.Item>.EventHandler) -> EventLoopFuture<Void> {
+		return super.watch(in: .allNamespaces, watch: ResourceWatch<ResourceList.Item>(eventHandler))
+	}
+}
+
+extension GenericKubernetesClient {
+
+	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<ResourceList.Item>) -> EventLoopFuture<Void> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = context.urlPath(forNamespace: namespace)
+		components?.path = urlPath(forNamespace: namespace)
 		components?.queryItems = [
 			URLQueryItem(name: "watch", value: "true")
 		]

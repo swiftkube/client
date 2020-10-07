@@ -16,7 +16,9 @@
 
 import AsyncHTTPClient
 import Foundation
+import Logging
 import NIO
+import NIOHTTP1
 import NIOSSL
 import SwiftkubeModel
 
@@ -37,11 +39,21 @@ public enum KubernetesClientAuthentication {
 	}
 }
 
+public enum SwiftkubeAPIError: Error {
+	case invalidURL
+	case badRequest(String)
+	case emptyResponse
+	case decodingError(String)
+	case requestError(meta.v1.Status)
+}
+
 public class KubernetesClient {
+
+	internal static let loggingDisabled = Logger(label: "SKC-do-not-log", factory: { _ in SwiftLogNoOpLogHandler() })
 
 	public let config: KubernetesClientConfig
 	private let httpClient: HTTPClient
-
+	
 	public convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew) {
 		guard
 			let config = (try? LocalFileConfigLoader().load()) ?? (try? ServiceAccountConfigLoader().load())
@@ -77,18 +89,23 @@ public class KubernetesClient {
 		)
 	}
 
-	public lazy var clusterRole = ClusterRolesHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var clusterRoleBindings = ClusterRoleBindingsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var configMaps = ConfigMapsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var daemonSets = DaemonSetsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var deployments = DeploymentsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var namespaces = NamespacesHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var nodes = NodesHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var pods = PodsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var roles = RolesHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var roleBindings = RoleBindingsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var secrets = SecretsHandler(httpClient: self.httpClient, config: self.config)
-	public lazy var services = ServicesHandler(httpClient: self.httpClient, config: self.config)
+	public lazy var clusterRole = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleList>(httpClient: self.httpClient, config: self.config)
+	public lazy var clusterRoleBindings = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBindingList>(httpClient: self.httpClient, config: self.config)
+	public lazy var configMaps = NamespacedGenericKubernetesClient<core.v1.ConfigMapList>(httpClient: self.httpClient, config: self.config)
+	public lazy var daemonSets = ClusterScopedGenericKubernetesClient<apps.v1.DaemonSetList>(httpClient: self.httpClient, config: self.config)
+	public lazy var deployments = NamespacedGenericKubernetesClient<apps.v1.DeploymentList>(httpClient: self.httpClient, config: self.config)
+	public lazy var ingresses = NamespacedGenericKubernetesClient<networking.v1beta1.IngressList>(httpClient: self.httpClient, config: self.config)
+	public lazy var namespaces = ClusterScopedGenericKubernetesClient<core.v1.NamespaceList>(httpClient: self.httpClient, config: self.config)
+	public lazy var nodes = ClusterScopedGenericKubernetesClient<core.v1.NodeList>(httpClient: self.httpClient, config: self.config)
+	public lazy var pods = NamespacedGenericKubernetesClient<core.v1.PodList>(httpClient: self.httpClient, config: self.config)
+	public lazy var roles = NamespacedGenericKubernetesClient<rbac.v1.RoleList>(httpClient: self.httpClient, config: self.config)
+	public lazy var roleBindings = NamespacedGenericKubernetesClient<rbac.v1.RoleBindingList>(httpClient: self.httpClient, config: self.config)
+	public lazy var secrets = NamespacedGenericKubernetesClient<core.v1.SecretList>(httpClient: self.httpClient, config: self.config)
+	public lazy var services = NamespacedGenericKubernetesClient<core.v1.ServiceList>(httpClient: self.httpClient, config: self.config)
+
+	public func `for`<R: KubernetesResourceList>(_ type: R.Type) -> GenericKubernetesClient<R> where R.Item: KubernetesAPIResource {
+		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config)
+	}
 
 	deinit {
 		try? httpClient.syncShutdown()
