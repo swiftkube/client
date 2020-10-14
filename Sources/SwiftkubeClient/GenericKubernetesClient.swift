@@ -29,7 +29,7 @@ public enum ResourceOrStatus<T> {
 
 public protocol KubernetesAPIResourceClient {
 
-	associatedtype ResourceList: KubernetesResourceList where ResourceList.Item: KubernetesAPIResource
+	associatedtype Resource: KubernetesAPIResource
 
 	var httpClient: HTTPClient { get }
 	var config: KubernetesClientConfig { get }
@@ -37,8 +37,7 @@ public protocol KubernetesAPIResourceClient {
 	init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger?)
 }
 
-public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: KubernetesAPIResourceClient
-	where ResourceList.Item: KubernetesAPIResource {
+public class GenericKubernetesClient<Resource: KubernetesAPIResource>: KubernetesAPIResourceClient {
 
 	public let httpClient: HTTPClient
 	public let config: KubernetesClientConfig
@@ -50,12 +49,12 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 	public required init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
-		self.gvk = GroupVersionKind(of: ResourceList.Item.self)!
-		self.apiVersion = ResourceList.Item.apiVersion
+		self.gvk = GroupVersionKind(of: Resource.self)!
+		self.apiVersion = Resource.apiVersion
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
 
-	private func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
+	internal func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
 		var headers: [(String, String)] = []
 		if let authorizationHeader = authentication?.authorizationHeader() {
 			headers.append(("Authorization", authorizationHeader))
@@ -110,7 +109,11 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 		return "\(urlPath(forNamespace: namespace))/\(name)"
 	}
 
-	public func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
+}
+
+public extension GenericKubernetesClient where Resource: ListableResource {
+
+	func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace)
@@ -134,8 +137,11 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
+}
 
-	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceList.Item> {
+public extension GenericKubernetesClient where Resource: MetadataHavingResource {
+
+	func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace, name: name)
@@ -156,7 +162,7 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 		}
 	}
 
-	public func create(in namespace: NamespaceSelector, _ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+	func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace)
@@ -178,7 +184,7 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 		}
 	}
 
-	public func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<ResourceList.Item>> {
+	func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace, name: name)
@@ -198,11 +204,8 @@ public class GenericKubernetesClient<ResourceList: KubernetesResourceList>: Kube
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-}
 
-extension GenericKubernetesClient where ResourceList.Item: ResourceWithMetadata {
-
-	public func update(in namespace: NamespaceSelector, _ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+	func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		guard let name = resource.name else {
@@ -228,67 +231,78 @@ extension GenericKubernetesClient where ResourceList.Item: ResourceWithMetadata 
 	}
 }
 
-public class NamespacedGenericKubernetesClient<ResourceList: KubernetesResourceList>: GenericKubernetesClient<ResourceList> where ResourceList.Item: KubernetesAPIResource {
+public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource> {
+}
 
-	public override func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
-		return super.list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
-	}
+public extension ClusterScopedGenericKubernetesClient where Resource: ListableResource {
 
-	public override func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<ResourceList.Item> {
-		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
-	}
-
-	public func create(inNamespace namespace: String? = nil, _ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
-		return super.create(in: .namespace(namespace ?? self.config.namespace), resource)
-	}
-
-	public func create(inNamespace namespace: String? = nil, _ block: () -> ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
-		return super.create(in: .namespace(namespace ?? self.config.namespace), block())
-	}
-
-	public func update<R: ResourceWithMetadata>(inNamespace namespace: String? = nil, _ resource: R) -> EventLoopFuture<R> where R == ResourceList.Item {
-		return super.update(in: .namespace(namespace ?? self.config.namespace), resource)
-	}
-
-	public func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<ResourceList.Item>> {
-		return super.delete(in: .namespace(namespace ?? self.config.namespace), name: name)
-	}
-
-	public func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<ResourceList.Item>.EventHandler) -> EventLoopFuture<Void> {
-		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<ResourceList.Item>(eventHandler))
+	func list(selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
+		return super.list(in: .allNamespaces, selector: selector)
 	}
 }
 
-public class ClusterScopedGenericKubernetesClient<ResourceList: KubernetesResourceList>: GenericKubernetesClient<ResourceList> where ResourceList.Item: KubernetesAPIResource {
+public extension ClusterScopedGenericKubernetesClient where Resource: MetadataHavingResource {
 
-	public func list(selector: ListSelector? = nil) -> EventLoopFuture<ResourceList> {
-		return super.list(in: .allNamespaces, selector: selector)
-	}
-
-	public func get(name: String) -> EventLoopFuture<ResourceList.Item> {
+	func get(name: String) -> EventLoopFuture<Resource> {
 		return super.get(in: .allNamespaces, name: name)
 	}
 
-	public func create(_ resource: ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+	func create(_ resource: Resource) -> EventLoopFuture<Resource> {
 		return super.create(in: .allNamespaces, resource)
 	}
 
-	public func create(_ block: () -> ResourceList.Item) -> EventLoopFuture<ResourceList.Item> {
+	func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
 		return super.create(in: .allNamespaces, block())
 	}
 
-	public func delete(name: String) -> EventLoopFuture<ResourceOrStatus<ResourceList.Item>> {
+	func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		return super.delete(in: .allNamespaces, name: name)
 	}
 
-	public func watch(eventHandler: @escaping ResourceWatch<ResourceList.Item>.EventHandler) -> EventLoopFuture<Void> {
-		return super.watch(in: .allNamespaces, watch: ResourceWatch<ResourceList.Item>(eventHandler))
+	func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
+		return super.watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+	}
+}
+
+public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource> {}
+
+public extension NamespacedGenericKubernetesClient where Resource: ListableResource {
+
+	func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
+		return super.list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
+	}
+}
+
+public extension NamespacedGenericKubernetesClient where Resource: MetadataHavingResource {
+
+	func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
+		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
+	}
+
+	func create(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+
+	func create(inNamespace namespace: String? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .namespace(namespace ?? self.config.namespace), block())
+	}
+
+	func update(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.update(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+
+	func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: .namespace(namespace ?? self.config.namespace), name: name)
+	}
+
+	func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
+		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
 	}
 }
 
 extension GenericKubernetesClient {
 
-	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<ResourceList.Item>) -> EventLoopFuture<Void> {
+	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) -> EventLoopFuture<Void> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace)
@@ -303,8 +317,9 @@ extension GenericKubernetesClient {
 		do {
 			let headers = buildHeaders(withAuthentication: config.authentication)
 			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
+			let delegate = WatchDelegate(watch: watch, logger: logger)
 
-			return self.httpClient.execute(request: request, delegate: WatchDelegate(watch: watch), logger: logger).futureResult
+			return self.httpClient.execute(request: request, delegate: delegate, logger: logger).futureResult
 		} catch let error {
 			return eventLoop.makeFailedFuture(error)
 		}

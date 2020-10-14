@@ -78,37 +78,85 @@ public class KubernetesClient {
 		)
 	}
 
-	public lazy var clusterRole = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	deinit {
+		try? httpClient.syncShutdown()
+	}
+}
 
-	public lazy var clusterRoleBindings = ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBindingList>(httpClient: self.httpClient, config: self.config, logger: logger)
+public extension KubernetesClient {
 
-	public lazy var configMaps = NamespacedGenericKubernetesClient<core.v1.ConfigMapList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRole> {
+		clusterScoped(for: rbac.v1.ClusterRole.self)
+	}
 
-	public lazy var daemonSets = ClusterScopedGenericKubernetesClient<apps.v1.DaemonSetList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBinding> {
+		clusterScoped(for: rbac.v1.ClusterRoleBinding.self)
+	}
 
-	public lazy var deployments = NamespacedGenericKubernetesClient<apps.v1.DeploymentList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var configMaps: NamespacedGenericKubernetesClient<core.v1.ConfigMap> {
+		namespaced(for: core.v1.ConfigMap.self)
+	}
 
-	public lazy var ingresses = NamespacedGenericKubernetesClient<networking.v1beta1.IngressList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var daemonSets: ClusterScopedGenericKubernetesClient<apps.v1.DaemonSet> {
+		clusterScoped(for: apps.v1.DaemonSet.self)
+	}
 
-	public lazy var namespaces = ClusterScopedGenericKubernetesClient<core.v1.NamespaceList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var deployments: NamespacedGenericKubernetesClient<apps.v1.Deployment> {
+		namespaced(for: apps.v1.Deployment.self)
+	}
 
-	public lazy var nodes = ClusterScopedGenericKubernetesClient<core.v1.NodeList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var events: NamespacedGenericKubernetesClient<core.v1.Event> {
+		namespaced(for: core.v1.Event.self)
+	}
 
-	public lazy var pods = NamespacedGenericKubernetesClient<core.v1.PodList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var ingresses: NamespacedGenericKubernetesClient<networking.v1beta1.Ingress> {
+		namespaced(for: networking.v1beta1.Ingress.self)
+	}
 
-	public lazy var roles = NamespacedGenericKubernetesClient<rbac.v1.RoleList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var namespaces: ClusterScopedGenericKubernetesClient<core.v1.Namespace> {
+		clusterScoped(for: core.v1.Namespace.self)
+	}
 
-	public lazy var roleBindings = NamespacedGenericKubernetesClient<rbac.v1.RoleBindingList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var nodes: ClusterScopedGenericKubernetesClient<core.v1.Node> {
+		clusterScoped(for: core.v1.Node.self)
+	}
 
-	public lazy var secrets = NamespacedGenericKubernetesClient<core.v1.SecretList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var pods: NamespacedGenericKubernetesClient<core.v1.Pod> {
+		namespaced(for: core.v1.Pod.self)
+	}
 
-	public lazy var services = NamespacedGenericKubernetesClient<core.v1.ServiceList>(httpClient: self.httpClient, config: self.config, logger: logger)
+	var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> {
+		namespaced(for: rbac.v1.Role.self)
+	}
 
-	public func `for`<R: KubernetesResourceList>(_ type: R.Type) -> GenericKubernetesClient<R> where R.Item: KubernetesAPIResource {
+	var roleBindings: NamespacedGenericKubernetesClient<rbac.v1.RoleBinding> {
+		namespaced(for: rbac.v1.RoleBinding.self)
+	}
+
+	var secrets: NamespacedGenericKubernetesClient<core.v1.Secret> {
+		namespaced(for: core.v1.Secret.self)
+	}
+
+	var services: NamespacedGenericKubernetesClient<core.v1.Service> {
+		namespaced(for: core.v1.Service.self)
+	}
+
+	var statefulSets: NamespacedGenericKubernetesClient<apps.v1.StatefulSet> {
+		namespaced(for: apps.v1.StatefulSet.self)
+	}
+}
+
+public extension KubernetesClient {
+
+	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
 		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 
-	deinit {
-		try? httpClient.syncShutdown()
+	func clusterScoped<R: KubernetesAPIResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
+		return ClusterScopedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
+	}
+
+	func namespaced<R: KubernetesAPIResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
+		return NamespacedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 }
