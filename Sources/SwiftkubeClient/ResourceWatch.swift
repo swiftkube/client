@@ -16,6 +16,7 @@
 
 import AsyncHTTPClient
 import Foundation
+import Logging
 import NIO
 import NIOHTTP1
 import SwiftkubeModel
@@ -33,14 +34,16 @@ final public class ResourceWatch<Resource: KubernetesResource> {
 
 	private let decoder = JSONDecoder()
 	private let handler: EventHandler
+	private let logger: Logger
 
-	init(_ handler: @escaping EventHandler) {
+	init(_ handler: @escaping EventHandler, logger: Logger? = nil) {
 		self.handler = handler
+		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
 
 	internal func handle(payload: Data) {
 		guard let string = String(data: payload, encoding: .utf8) else {
-			print("Error")
+			logger.warning("Could not deserialize payload")
 			return
 		}
 
@@ -49,12 +52,12 @@ final public class ResourceWatch<Resource: KubernetesResource> {
 				let data = line.data(using: .utf8),
 				let event = try? self.decoder.decode(meta.v1.WatchEvent.self, from: data)
 			else {
-				print("Error")
+				self.logger.warning("Error decoding meta.v1.WatchEvent payload")
 				return
 			}
 
 			guard let eventType = EventType(rawValue: event.type) else {
-				print("Error")
+				self.logger.warning("Error parsing EventType")
 				return
 			}
 
@@ -62,8 +65,8 @@ final public class ResourceWatch<Resource: KubernetesResource> {
 				let jsonData = try? JSONSerialization.data(withJSONObject: event.object),
 				let resource = try?	self.decoder.decode(Resource.self, from: jsonData)
 			else {
-					print("Error")
-					return
+				self.logger.warning("Error deserializing \(String(describing: Resource.self))")
+				return
 			}
 
 			self.handler(eventType, resource)
@@ -75,39 +78,43 @@ internal class WatchDelegate<Resource: KubernetesResource>: HTTPClientResponseDe
 	typealias Response = Void
 
 	private let watch: ResourceWatch<Resource>
+	private let logger: Logger
 
-	init(watch: ResourceWatch<Resource>) {
+	init(watch: ResourceWatch<Resource>, logger: Logger) {
 		self.watch = watch
+		self.logger = logger
 	}
 
 	func didSendRequestHead(task: HTTPClient.Task<Response>, _ head: HTTPRequestHead) {
-		print("didSendRequestHead: \(head.headers)")
+		logger.debug("Did send request head: \(head.headers)")
 	}
 
 	func didSendRequestPart(task: HTTPClient.Task<Response>, _ part: IOData) {
-		print("didSendRequestPart")
+		logger.debug("Did send request part: \(part)")
 	}
 
 	func didSendRequest(task: HTTPClient.Task<Response>) {
-		print("didSendRequest")
+		logger.debug("Did send request: \(task)")
 	}
 
 	func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
-		print("didReceiveHead: \(head)")
+		logger.debug("Did receive response head: \(head.headers)")
 		return task.eventLoop.makeSucceededFuture(())
 	}
 
 	func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ buffer: ByteBuffer) -> EventLoopFuture<Void> {
+		logger.debug("Did receive body part: \(task)")
 		let payload = Data(buffer: buffer)
 		watch.handle(payload: payload)
 		return task.eventLoop.makeSucceededFuture(())
 	}
 
 	func didFinishRequest(task: HTTPClient.Task<Response>) throws -> Void {
+		logger.debug("Did finish request: \(task)")
 		return ()
 	}
 
 	func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
-		print("Error: \(error.localizedDescription)")
+		logger.warning("Did receive error: \(error.localizedDescription)")
 	}
 }
