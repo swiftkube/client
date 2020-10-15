@@ -29,15 +29,14 @@ public enum ResourceOrStatus<T> {
 
 public protocol KubernetesAPIResourceClient {
 
-	associatedtype Resource: KubernetesAPIResource
+	associatedtype Resource: KubernetesAPIResource where Resource: MetadataHavingResource
 
 	var httpClient: HTTPClient { get }
 	var config: KubernetesClientConfig { get }
-
-	init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger?)
 }
 
-public class GenericKubernetesClient<Resource: KubernetesAPIResource>: KubernetesAPIResourceClient {
+public class GenericKubernetesClient<Resource: KubernetesAPIResource>: KubernetesAPIResourceClient
+	where Resource: MetadataHavingResource {
 
 	public let httpClient: HTTPClient
 	public let config: KubernetesClientConfig
@@ -53,93 +52,6 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource>: Kubernete
 		self.apiVersion = Resource.apiVersion
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
-
-	internal func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
-		var headers: [(String, String)] = []
-		if let authorizationHeader = authentication?.authorizationHeader() {
-			headers.append(("Authorization", authorizationHeader))
-		}
-
-		return HTTPHeaders(headers)
-	}
-
-	internal func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
-		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
-			guard case let ResourceOrStatus.resource(resource) = result else {
-				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
-			}
-
-			return eventLoop.makeSucceededFuture(resource)
-		}
-	}
-
-	internal func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
-		guard let byteBuffer = response.body else {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeAPIError.emptyResponse)
-		}
-
-		let data = Data(buffer: byteBuffer)
-
-		if response.status.code >= 400 {
-			guard let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) else {
-				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding meta.v1.Status"))
-			}
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.requestError(status))
-		}
-
-		if let resource = try? JSONDecoder().decode(T.self, from: data) {
-			return eventLoop.makeSucceededFuture(.resource(resource))
-		} else if let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) {
-			return eventLoop.makeSucceededFuture(.status(status))
-		} else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding \(T.self)"))
-		}
-	}
-
-	internal func urlPath(forNamespace namespace: NamespaceSelector) -> String {
-		switch namespace {
-		case .allNamespaces:
-			return "\(apiVersion.urlPath)/\(gvk.pluralName)"
-		default:
-			return "\(apiVersion.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
-		}
-	}
-
-	internal func urlPath(forNamespace namespace: NamespaceSelector, name: String) -> String {
-		return "\(urlPath(forNamespace: namespace))/\(name)"
-	}
-
-}
-
-public extension GenericKubernetesClient where Resource: ListableResource {
-
-	func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace)
-
-		if let selector = selector {
-			components?.queryItems = [URLQueryItem(name: selector.name, value: selector.value)]
-		}
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
-		}
-
-		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
-
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
-		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-}
-
-public extension GenericKubernetesClient where Resource: MetadataHavingResource {
 
 	func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
@@ -231,76 +143,93 @@ public extension GenericKubernetesClient where Resource: MetadataHavingResource 
 	}
 }
 
-public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource> {
-}
+internal extension GenericKubernetesClient {
 
-public extension ClusterScopedGenericKubernetesClient where Resource: ListableResource {
+	func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
+		var headers: [(String, String)] = []
+		if let authorizationHeader = authentication?.authorizationHeader() {
+			headers.append(("Authorization", authorizationHeader))
+		}
 
-	func list(selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
-		return super.list(in: .allNamespaces, selector: selector)
+		return HTTPHeaders(headers)
+	}
+
+	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
+		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
+			guard case let ResourceOrStatus.resource(resource) = result else {
+				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
+			}
+
+			return eventLoop.makeSucceededFuture(resource)
+		}
+	}
+
+	func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
+		guard let byteBuffer = response.body else {
+			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeAPIError.emptyResponse)
+		}
+
+		let data = Data(buffer: byteBuffer)
+
+		if response.status.code >= 400 {
+			guard let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) else {
+				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding meta.v1.Status"))
+			}
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.requestError(status))
+		}
+
+		if let resource = try? JSONDecoder().decode(T.self, from: data) {
+			return eventLoop.makeSucceededFuture(.resource(resource))
+		} else if let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) {
+			return eventLoop.makeSucceededFuture(.status(status))
+		} else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding \(T.self)"))
+		}
+	}
+
+	func urlPath(forNamespace namespace: NamespaceSelector) -> String {
+		switch namespace {
+		case .allNamespaces:
+			return "\(apiVersion.urlPath)/\(gvk.pluralName)"
+		default:
+			return "\(apiVersion.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
+		}
+	}
+
+	func urlPath(forNamespace namespace: NamespaceSelector, name: String) -> String {
+		return "\(urlPath(forNamespace: namespace))/\(name)"
 	}
 }
 
-public extension ClusterScopedGenericKubernetesClient where Resource: MetadataHavingResource {
+public extension GenericKubernetesClient where Resource: ListableResource {
 
-	func get(name: String) -> EventLoopFuture<Resource> {
-		return super.get(in: .allNamespaces, name: name)
-	}
+	func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
+		let eventLoop = self.httpClient.eventLoopGroup.next()
+		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
+		components?.path = urlPath(forNamespace: namespace)
 
-	func create(_ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .allNamespaces, resource)
-	}
+		if let selector = selector {
+			components?.queryItems = [URLQueryItem(name: selector.name, value: selector.value)]
+		}
 
-	func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .allNamespaces, block())
-	}
+		guard let url = components?.url?.absoluteString else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+		}
 
-	func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: .allNamespaces, name: name)
-	}
+		do {
+			let headers = buildHeaders(withAuthentication: config.authentication)
+			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
 
-	func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
-		return super.watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
-	}
-}
-
-public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource> {}
-
-public extension NamespacedGenericKubernetesClient where Resource: ListableResource {
-
-	func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
-		return super.list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+				self.handle(response, eventLoop: eventLoop)
+			}
+		} catch {
+			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
 	}
 }
 
-public extension NamespacedGenericKubernetesClient where Resource: MetadataHavingResource {
-
-	func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
-		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
-	}
-
-	func create(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .namespace(namespace ?? self.config.namespace), resource)
-	}
-
-	func create(inNamespace namespace: String? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .namespace(namespace ?? self.config.namespace), block())
-	}
-
-	func update(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.update(in: .namespace(namespace ?? self.config.namespace), resource)
-	}
-
-	func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: .namespace(namespace ?? self.config.namespace), name: name)
-	}
-
-	func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
-		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
-	}
-}
-
-extension GenericKubernetesClient {
+public extension GenericKubernetesClient {
 
 	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) -> EventLoopFuture<Void> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
@@ -323,5 +252,71 @@ extension GenericKubernetesClient {
 		} catch let error {
 			return eventLoop.makeFailedFuture(error)
 		}
+	}
+}
+
+public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource>
+	where Resource: MetadataHavingResource {
+
+	public func get(name: String) -> EventLoopFuture<Resource> {
+		return super.get(in: .allNamespaces, name: name)
+	}
+
+	public func create(_ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .allNamespaces, resource)
+	}
+
+	public func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .allNamespaces, block())
+	}
+
+	public func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: .allNamespaces, name: name)
+	}
+
+	public func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
+		return super.watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+	}
+}
+
+public extension ClusterScopedGenericKubernetesClient where Resource: ListableResource {
+
+	func list(selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
+		return super.list(in: .allNamespaces, selector: selector)
+	}
+}
+
+public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource>
+	where Resource: MetadataHavingResource {
+
+	public override func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
+		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
+	}
+
+	public func create(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+
+	public func create(inNamespace namespace: String? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .namespace(namespace ?? self.config.namespace), block())
+	}
+
+	public func update(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.update(in: .namespace(namespace ?? self.config.namespace), resource)
+	}
+
+	public func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: .namespace(namespace ?? self.config.namespace), name: name)
+	}
+
+	public func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
+		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+	}
+}
+
+public extension NamespacedGenericKubernetesClient where Resource: ListableResource {
+
+	func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
+		return super.list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
 	}
 }
