@@ -85,32 +85,27 @@ public class KubernetesClient {
 
 public extension KubernetesClient {
 
-	var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRole> {
-		clusterScoped(for: rbac.v1.ClusterRole.self)
+	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
+		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 
-	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBinding> {
-		clusterScoped(for: rbac.v1.ClusterRoleBinding.self)
+	func clusterScoped<R: KubernetesAPIResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
+		return ClusterScopedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
+
+	func namespaceScoped<R: KubernetesAPIResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
+		return NamespacedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
+	}
+}
+
+public extension KubernetesClient {
 
 	var configMaps: NamespacedGenericKubernetesClient<core.v1.ConfigMap> {
-		namespaced(for: core.v1.ConfigMap.self)
-	}
-
-	var daemonSets: ClusterScopedGenericKubernetesClient<apps.v1.DaemonSet> {
-		clusterScoped(for: apps.v1.DaemonSet.self)
-	}
-
-	var deployments: NamespacedGenericKubernetesClient<apps.v1.Deployment> {
-		namespaced(for: apps.v1.Deployment.self)
+		namespaceScoped(for: core.v1.ConfigMap.self)
 	}
 
 	var events: NamespacedGenericKubernetesClient<core.v1.Event> {
-		namespaced(for: core.v1.Event.self)
-	}
-
-	var ingresses: NamespacedGenericKubernetesClient<networking.v1beta1.Ingress> {
-		namespaced(for: networking.v1beta1.Ingress.self)
+		namespaceScoped(for: core.v1.Event.self)
 	}
 
 	var namespaces: ClusterScopedGenericKubernetesClient<core.v1.Namespace> {
@@ -122,41 +117,14 @@ public extension KubernetesClient {
 	}
 
 	var pods: NamespacedGenericKubernetesClient<core.v1.Pod> {
-		namespaced(for: core.v1.Pod.self)
-	}
-
-	var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> {
-		namespaced(for: rbac.v1.Role.self)
-	}
-
-	var roleBindings: NamespacedGenericKubernetesClient<rbac.v1.RoleBinding> {
-		namespaced(for: rbac.v1.RoleBinding.self)
+		namespaceScoped(for: core.v1.Pod.self)
 	}
 
 	var secrets: NamespacedGenericKubernetesClient<core.v1.Secret> {
-		namespaced(for: core.v1.Secret.self)
+		namespaceScoped(for: core.v1.Secret.self)
 	}
 
 	var services: NamespacedGenericKubernetesClient<core.v1.Service> {
-		namespaced(for: core.v1.Service.self)
-	}
-
-	var statefulSets: NamespacedGenericKubernetesClient<apps.v1.StatefulSet> {
-		namespaced(for: apps.v1.StatefulSet.self)
-	}
-}
-
-public extension KubernetesClient {
-
-	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
-		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
-	}
-
-	func clusterScoped<R: KubernetesAPIResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
-		return ClusterScopedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
-	}
-
-	func namespaced<R: KubernetesAPIResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
-		return NamespacedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
+		namespaceScoped(for: core.v1.Service.self)
 	}
 }

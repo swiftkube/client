@@ -27,16 +27,7 @@ public enum ResourceOrStatus<T> {
 	case status(meta.v1.Status)
 }
 
-public protocol KubernetesAPIResourceClient {
-
-	associatedtype Resource: KubernetesAPIResource where Resource: MetadataHavingResource
-
-	var httpClient: HTTPClient { get }
-	var config: KubernetesClientConfig { get }
-}
-
-public class GenericKubernetesClient<Resource: KubernetesAPIResource>: KubernetesAPIResourceClient
-	where Resource: MetadataHavingResource {
+public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 	public let httpClient: HTTPClient
 	public let config: KubernetesClientConfig
@@ -96,27 +87,6 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource>: Kubernete
 		}
 	}
 
-	func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace, name: name)
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
-		}
-
-		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .DELETE, headers: headers)
-
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handleResourceOrStatus(response, eventLoop: eventLoop)
-			}
-		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-
 	func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
@@ -136,6 +106,27 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource>: Kubernete
 
 			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
+			}
+		} catch {
+			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+
+	func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		let eventLoop = self.httpClient.eventLoopGroup.next()
+		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
+		components?.path = urlPath(forNamespace: namespace, name: name)
+
+		guard let url = components?.url?.absoluteString else {
+			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+		}
+
+		do {
+			let headers = buildHeaders(withAuthentication: config.authentication)
+			let request = try HTTPClient.Request(url: url, method: .DELETE, headers: headers)
+
+			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+				self.handleResourceOrStatus(response, eventLoop: eventLoop)
 			}
 		} catch {
 			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
@@ -255,8 +246,7 @@ public extension GenericKubernetesClient {
 	}
 }
 
-public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource>
-	where Resource: MetadataHavingResource {
+public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource> {
 
 	public func get(name: String) -> EventLoopFuture<Resource> {
 		return super.get(in: .allNamespaces, name: name)
@@ -286,8 +276,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ListableRe
 	}
 }
 
-public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource>
-	where Resource: MetadataHavingResource {
+public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>: GenericKubernetesClient<Resource> {
 
 	public override func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
 		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
