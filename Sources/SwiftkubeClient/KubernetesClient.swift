@@ -28,6 +28,17 @@ public enum SwiftkubeAPIError: Error {
 	case emptyResponse
 	case decodingError(String)
 	case requestError(meta.v1.Status)
+
+	internal static func methodNotAllowed(_ method: HTTPMethod) -> SwiftkubeAPIError {
+		let status = sk.status {
+			$0.code = 405
+			$0.status = "Failure"
+			$0.reason = "MethodNotAllowed"
+			$0.message = "\(method) is not supported for this resource"
+		}
+
+		return SwiftkubeAPIError.requestError(status)
+	}
 }
 
 public class KubernetesClient {
