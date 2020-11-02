@@ -100,6 +100,10 @@ public extension KubernetesClient {
 		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 
+	func `for`(gvk: GroupVersionKind) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
+		return GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: self.httpClient, config: self.config, gvk: gvk, logger: logger)
+	}
+
 	func clusterScoped<R: KubernetesAPIResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
 		return ClusterScopedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}

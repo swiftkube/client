@@ -34,15 +34,15 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	internal let logger: Logger
 
 	public let gvk: GroupVersionKind
-	public let apiVersion: APIVersion
 
-	private let logger: Logger
+	public convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
+		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, logger: logger)
+	}
 
-	public required init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
+	public required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvk: GroupVersionKind, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
-		self.gvk = GroupVersionKind(of: Resource.self)!
-		self.apiVersion = Resource.apiVersion
+		self.gvk = gvk
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
 
@@ -184,9 +184,9 @@ internal extension GenericKubernetesClient {
 	func urlPath(forNamespace namespace: NamespaceSelector) -> String {
 		switch namespace {
 		case .allNamespaces:
-			return "\(apiVersion.urlPath)/\(gvk.pluralName)"
+			return "\(gvk.urlPath)/\(gvk.pluralName)"
 		default:
-			return "\(apiVersion.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
+			return "\(gvk.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
 		}
 	}
 
