@@ -11,10 +11,10 @@ let package = Package(
 			targets: ["SwiftkubeClient"]),
 	],
 	dependencies: [
-		.package(name: "SwiftkubeModel", path: "../model"),
-		.package(url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.0.0")),
-		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.0.0")),
-		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "2.0.0"))
+		.package(name: "SwiftkubeModel", url: "https://github.com/swiftkube/model.git", from: "0.1.0"),
+		.package(name: "async-http-client", url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.0.0")),
+		.package(name: "swift-log", url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.0.0")),
+		.package(name: "Yams", url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "4.0.0"))
 	],
 	targets: [
 		.target(
