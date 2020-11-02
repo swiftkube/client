@@ -29,8 +29,10 @@ public enum ResourceOrStatus<T> {
 
 public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
-	public let httpClient: HTTPClient
-	public let config: KubernetesClientConfig
+	internal let httpClient: HTTPClient
+	internal let config: KubernetesClientConfig
+	internal let logger: Logger
+
 	public let gvk: GroupVersionKind
 	public let apiVersion: APIVersion
 
@@ -44,7 +46,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
 
-	func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
+	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace, name: name)
@@ -65,7 +67,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		}
 	}
 
-	func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+	public func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace)
@@ -87,7 +89,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		}
 	}
 
-	func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+	public func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		guard let name = resource.name else {
@@ -112,7 +114,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		}
 	}
 
-	func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+	public func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace, name: name)
@@ -161,6 +163,7 @@ internal extension GenericKubernetesClient {
 		}
 
 		let data = Data(buffer: byteBuffer)
+
 
 		if response.status.code >= 400 {
 			guard let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) else {

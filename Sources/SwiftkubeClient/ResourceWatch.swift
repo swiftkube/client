@@ -28,7 +28,7 @@ public enum EventType: String, RawRepresentable {
 	case error = "ERROR"
 }
 
-final public class ResourceWatch<Resource: KubernetesResource> {
+final public class ResourceWatch<Resource: KubernetesAPIResource> {
 
 	public typealias EventHandler = (EventType, Resource) -> Void
 
@@ -74,7 +74,7 @@ final public class ResourceWatch<Resource: KubernetesResource> {
 	}
 }
 
-internal class WatchDelegate<Resource: KubernetesResource>: HTTPClientResponseDelegate {
+internal class WatchDelegate<Resource: KubernetesAPIResource>: HTTPClientResponseDelegate {
 	typealias Response = Void
 
 	private let watch: ResourceWatch<Resource>
