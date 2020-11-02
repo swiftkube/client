@@ -1,0 +1,24 @@
+name: "Swiftkube:Client CI"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  macOS:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: swift build -v
+
+  linux:
+    runs-on: ubuntu-18.04
+    container: swift:5.2
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: swift build -v --enable-test-discovery
+
