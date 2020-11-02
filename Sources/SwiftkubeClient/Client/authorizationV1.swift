@@ -20,23 +20,24 @@ import NIO
 import NIOHTTP1
 import SwiftkubeModel
 
+/// Extension to short-circuit `GET`, `UPDATE` and `DELETE` API calls for the `authorization.v1.LocalSubjectAccessReview` API resource.
 extension GenericKubernetesClient where Resource == authorization.v1.LocalSubjectAccessReview {
 
 	func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
 		return self.httpClient.eventLoopGroup.next().makeFailedFuture(
-			SwiftkubeAPIError.methodNotAllowed(HTTPMethod.GET)
+			SwiftkubeClientError.methodNotAllowed(HTTPMethod.GET)
 		)
 	}
 
 	func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		return self.httpClient.eventLoopGroup.next().makeFailedFuture(
-			SwiftkubeAPIError.methodNotAllowed(HTTPMethod.PUT)
+			SwiftkubeClientError.methodNotAllowed(HTTPMethod.PUT)
 		)
 	}
 
 	func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		return self.httpClient.eventLoopGroup.next().makeFailedFuture(
-			SwiftkubeAPIError.methodNotAllowed(HTTPMethod.DELETE)
+			SwiftkubeClientError.methodNotAllowed(HTTPMethod.DELETE)
 		)
 	}
 }

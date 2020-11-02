@@ -22,33 +22,37 @@ import NIOHTTP1
 import NIOSSL
 import SwiftkubeModel
 
-public enum SwiftkubeAPIError: Error {
-	case invalidURL
-	case badRequest(String)
-	case emptyResponse
-	case decodingError(String)
-	case requestError(meta.v1.Status)
-
-	internal static func methodNotAllowed(_ method: HTTPMethod) -> SwiftkubeAPIError {
-		let status = sk.status {
-			$0.code = 405
-			$0.status = "Failure"
-			$0.reason = "MethodNotAllowed"
-			$0.message = "\(method) is not supported for this resource"
-		}
-
-		return SwiftkubeAPIError.requestError(status)
-	}
-}
-
+/// Kubernetes client class. Provies API for interaction with the Kubernetes master server.
+///
+/// This implementation is based on SwiftNIO and the AysncHTTPClient, i.e. API calls return `EventLoopFuture`s.
+///
+/// Example:
+///
+/// ```swift
+/// let client = try KubernetesClient()
+/// let deployments = try client.appsV1.deployments.list(in:.allNamespaces).wait()
+/// deployments.forEach { print($0) }
+/// ```
 public class KubernetesClient {
 
 	internal static let loggingDisabled = Logger(label: "SKC-do-not-log", factory: { _ in SwiftLogNoOpLogHandler() })
 
+	/// The client's configuration object.
 	public let config: KubernetesClientConfig
 	private let httpClient: HTTPClient
 	private let logger: Logger
 
+	/// Create a new instance of the Kubernetes client.
+	///
+	/// This initializer tries to resolve the `Kubeconfig` automatically from the user's `$HOME/.kube/config` directory and falls back
+	/// to reading the `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` if it's running
+	/// in Kubernetes.
+	///
+	/// Returns `nil` if a configuration can't be found.
+	///
+	/// - Parameters:
+	///    - provider: Specify how `EventLoopGroup` will be created.
+	///    - logger: The logger to use for this client.
 	public convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew, logger: Logger? = nil) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
 
@@ -63,6 +67,12 @@ public class KubernetesClient {
 		self.init(config: config, provider: provider, logger: logger)
 	}
 
+	/// Create a new instance of the Kubernetes client.
+	///
+	/// - Parameters:
+	///    - config; The configuration for this client instance.
+	///    - provider: Specify how `EventLoopGroup` will be created.
+	///    - logger: The logger to use for this client.
 	public init(config: KubernetesClientConfig, provider: HTTPClient.EventLoopGroupProvider = .createNew, logger: Logger? = nil) {
 		self.config = config
 		self.logger = logger ?? KubernetesClient.loggingDisabled
@@ -94,25 +104,45 @@ public class KubernetesClient {
 	}
 }
 
+/// Convenience functions to construct a client instance scoped at cluster or namespace level.
 public extension KubernetesClient {
 
+	/// Create a new generic client for the given `KubernetesAPIResource`.
+	///
+	/// - Parameter gvk: The `KubernetesAPIResource` type.
+	/// - Returns A new `GenericKubernetesClient` for the given resource's `KubernetesAPIResource`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
 		return GenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 
+	/// Create a new generic client for the given `GroupVersionKind`.
+	///
+	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
+	///
+	/// - Parameter gvk: The `GroupVersionKind` of the desired resource.
+	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
 	func `for`(gvk: GroupVersionKind) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
 		return GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: self.httpClient, config: self.config, gvk: gvk, logger: logger)
 	}
 
+	/// Create a new `cluster-scoped` client for the given resoruce type.
+	///
+	/// - Parameter type: The `KubernetesAPIResource` type.
+	/// - Returns A new `ClusterScopedGenericKubernetesClient` for the given resource type.
 	func clusterScoped<R: KubernetesAPIResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
 		return ClusterScopedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 
+	/// Create a new `namespace-scoped` client for the given resoruce type.
+	///
+	/// - Parameter type: The `KubernetesAPIResource` type.
+	/// - Returns A new `NamespacedGenericKubernetesClient` for the given resource type.
 	func namespaceScoped<R: KubernetesAPIResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
 		return NamespacedGenericKubernetesClient<R>(httpClient: self.httpClient, config: self.config, logger: logger)
 	}
 }
 
+/// Scoped client DSL for the `core` API Group
 public extension KubernetesClient {
 
 	var configMaps: NamespacedGenericKubernetesClient<core.v1.ConfigMap> {

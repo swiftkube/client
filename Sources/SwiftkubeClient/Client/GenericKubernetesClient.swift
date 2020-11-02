@@ -22,11 +22,13 @@ import NIOHTTP1
 import NIOSSL
 import SwiftkubeModel
 
+/// Represens a response with a concrete `KubernetesAPIResource` or a `meta.v1.Status` object.
 public enum ResourceOrStatus<T> {
 	case resource(T)
 	case status(meta.v1.Status)
 }
 
+/// A generic client implementation following the Kubernetes API style.
 public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 	internal let httpClient: HTTPClient
@@ -52,7 +54,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		components?.path = urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
 		}
 
 		do {
@@ -73,7 +75,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		components?.path = urlPath(forNamespace: namespace)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
 		}
 
 		do {
@@ -93,12 +95,12 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		let eventLoop = self.httpClient.eventLoopGroup.next()
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		guard let name = resource.name else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.badRequest("Resource metadata.name must be set for \(resource)"))
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.badRequest("Resource metadata.name must be set for \(resource)"))
 		}
 		components?.path = urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
 		}
 
 		do {
@@ -120,7 +122,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		components?.path = urlPath(forNamespace: namespace, name: name)
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
 		}
 
 		do {
@@ -150,7 +152,7 @@ internal extension GenericKubernetesClient {
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
 			guard case let ResourceOrStatus.resource(resource) = result else {
-				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
+				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
 			}
 
 			return eventLoop.makeSucceededFuture(resource)
@@ -159,7 +161,7 @@ internal extension GenericKubernetesClient {
 
 	func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
 		guard let byteBuffer = response.body else {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeAPIError.emptyResponse)
+			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
 		}
 
 		let data = Data(buffer: byteBuffer)
@@ -170,9 +172,9 @@ internal extension GenericKubernetesClient {
 
 		if response.status.code >= 400 {
 			guard let status = try? decoder.decode(meta.v1.Status.self, from: data) else {
-				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding meta.v1.Status"))
+				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding meta.v1.Status"))
 			}
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.requestError(status))
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.requestError(status))
 		}
 
 		if let resource = try? decoder.decode(T.self, from: data) {
@@ -180,7 +182,7 @@ internal extension GenericKubernetesClient {
 		} else if let status = try? decoder.decode(meta.v1.Status.self, from: data) {
 			return eventLoop.makeSucceededFuture(.status(status))
 		} else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding \(T.self)"))
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding \(T.self)"))
 		}
 	}
 
@@ -210,7 +212,7 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 		}
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
 		}
 
 		do {
@@ -237,7 +239,7 @@ public extension GenericKubernetesClient {
 		]
 
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeAPIError.invalidURL)
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
 		}
 
 		do {

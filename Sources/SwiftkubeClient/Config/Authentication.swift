@@ -18,6 +18,7 @@ import AsyncHTTPClient
 import Foundation
 import NIOSSL
 
+/// Supported client authentication schemes.
 public enum KubernetesClientAuthentication {
 	case basicAuth(username: String, password: String)
 	case bearer(token: String)

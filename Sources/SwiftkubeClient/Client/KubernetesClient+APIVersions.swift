@@ -23,6 +23,7 @@ public protocol AppsV1API {
 	var statefulSets: NamespacedGenericKubernetesClient<apps.v1.StatefulSet> { get }
 }
 
+/// DSL for `apps.v1` API Group
 public extension KubernetesClient {
 
 	class AppsV1: AppsV1API {
@@ -53,6 +54,7 @@ public protocol NetworkingV1Beta1API {
 	var ingresses: NamespacedGenericKubernetesClient<networking.v1beta1.Ingress> { get }
 }
 
+/// DSL for `networking.v1beta1` API Group
 public extension KubernetesClient {
 
 	class NetworkingV1Beta1: NetworkingV1Beta1API {
@@ -78,6 +80,7 @@ public protocol RBACV1API {
 	var roleBindings: NamespacedGenericKubernetesClient<rbac.v1.RoleBinding> { get }
 }
 
+/// DSL for `rbac.v1` API Group
 public extension KubernetesClient {
 
 	class RBACV1: RBACV1API {
