@@ -164,17 +164,20 @@ internal extension GenericKubernetesClient {
 
 		let data = Data(buffer: byteBuffer)
 
+		let decoder = JSONDecoder()
+		decoder.userInfo[CodingUserInfoKey.apiVersion] = gvk.apiVersion
+		decoder.userInfo[CodingUserInfoKey.kind] = gvk.kind
 
 		if response.status.code >= 400 {
-			guard let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) else {
+			guard let status = try? decoder.decode(meta.v1.Status.self, from: data) else {
 				return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding meta.v1.Status"))
 			}
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.requestError(status))
 		}
 
-		if let resource = try? JSONDecoder().decode(T.self, from: data) {
+		if let resource = try? decoder.decode(T.self, from: data) {
 			return eventLoop.makeSucceededFuture(.resource(resource))
-		} else if let status = try? JSONDecoder().decode(meta.v1.Status.self, from: data) {
+		} else if let status = try? decoder.decode(meta.v1.Status.self, from: data) {
 			return eventLoop.makeSucceededFuture(.status(status))
 		} else {
 			return eventLoop.makeFailedFuture(SwiftkubeAPIError.decodingError("Error decoding \(T.self)"))
