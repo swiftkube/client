@@ -44,9 +44,10 @@ public class KubernetesClient {
 
 	/// Create a new instance of the Kubernetes client.
 	///
-	/// This initializer tries to resolve the `Kubeconfig` automatically from the user's `$HOME/.kube/config` directory and falls back
-	/// to reading the `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` if it's running
-	/// in Kubernetes.
+	///The client tries to resolve a `kube config` automatically from different sources in the following order:
+	///
+	///- A Kube config file in the user's `$HOME/.kube/config` directory
+	///- `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
 	///
 	/// Returns `nil` if a configuration can't be found.
 	///
