@@ -14,20 +14,39 @@
 ## Table of contents
 
 * [Overview](#overview)
+* [Examples](#examples)
 * [Usage](#usage)
   * [Creating a client](#creating-a-client)
-  * [Configuring a client](#configuring-a-client)
+  * [Configuring a client](#configuring-the-client)
   * [Client authentication](#client-authentication)
+  * [Client DSL](#client-dsl)
+* [Advance usage](#advanced-usage)
 * [Installation](#installation)
 * [License](#license)
 
 ## Overview
 
-Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL.
+Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
+- [x] Covers all Kubernetes API Groups in v1.18.9
+- [x] Automatic configuration discovery
+- [x] DSL style API
+  - [x] Highest API version for the most common API Groups
+  - [ ] Cover all API Groups/Versions
+- [x] Generic client support
+- [x] Swift-Logging support
+- [ ] Loading resources from external sources
+  - [ ] from files
+  - [ ] from URLs
+- [ ] Better CRD support
+- [ ] Controller/Informer support
+- [ ] Swift Metrics
+- [ ] Complete documentation
+- [ ] End-to-end tests
 
-This implementation is based on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client), i.e. API calls return `EventLoopFuture`s.
+## Examples
 
+Concrete examples for using the `Swiftkube` tooling reside in the [Swiftkube:Examples](https://github.com/swiftkube/examples) repository.
 
 ## Usage
 
@@ -81,7 +100,9 @@ The following authentication schemes are supported:
 `SwiftkubeClient` defines convenience API to work with Kubernetes resources. Using this DSL is the same for all resources.
 
 > The examples use the blocking `wait()` for brevity. API calls return `EventLoopFutures` that can be composed and acted upon in an asynchronous way.
- 
+
+> Currently only a subset of all API groups are accessible via the DSL. See [Advanced usage](#advanced-usage) for mor details.
+  
 #### List resources 
 
 ```swift
@@ -132,10 +153,58 @@ let pod = try client.pods.create(inNamespace: .default) {
             }
         }
     }
-	.wait()
-
+    .wait()
 ```
 
+## Advanced usage
+
+### API groups
+
+To access API groups not defined as a DSL, e.g. `rbac.v1beta1` a dedicated client can still be intantiated. A client can be either `namespace scoped` or `cluster scoped`:
+
+```swift
+try client.namespaceScoped(for: rbac.v1beta1.RoleBinding.self).list(in: .allNamespaces).wait()
+try client.clusterScoped(for: rbac.v1beta1.ClusterRole.self).list().wait()
+```
+
+### Type-erased usage
+
+Often when working with Kubernetes the concrete type of the resource is not known or not relevant, e.g. when creating resources from a YAML manifest file. Other times the type or kind of the resource must be derived at runtime given its string representation.
+
+Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized with a `GroupVersionKind` type:
+
+```swift
+guard let gvk = try? GroupVersionKind(string: "deployment") else {
+   // handle this
+}
+
+// Get by name
+let resource: AnyKubernetesAPIResource = try client.for(gvk: gvk)
+    .get(in: .default , name: "nginx")
+    .wait()
+
+// List all
+let resources: AnyKubernetesAPIResourceList = try client.for(gvk: gvk)
+    .list(in: .allNamespaces)
+    .wait()
+```
+
+#### GroupVersionKind
+
+A `GroupVersionKind` can be initialized from:
+
+- `KubernetesAPIResource` instance
+- `KubernetesAPIResource` type
+- Full API Group string
+- Lowecassed singular resource kind  
+
+```swift
+let deployment = ..
+let gvk = GroupVersionKind(of: deployment)
+let gvk = GroupVersionKind(of: apps.v1.Deployment.self)
+let gvk = GroupVersionKind(rawValue: "apps/v1/Deployment")
+let gvk = GroupVersionKind(string: "deployment")
+```
 
 ## Installation
 
