@@ -54,7 +54,10 @@ public class KubernetesClient {
 	/// - Parameters:
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
-	public convenience init?(provider: HTTPClient.EventLoopGroupProvider = .createNew, logger: Logger? = nil) {
+	public convenience init?(
+		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+		logger: Logger? = nil
+	) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
 
 		guard
@@ -74,7 +77,11 @@ public class KubernetesClient {
 	///    - config; The configuration for this client instance.
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
-	public init(config: KubernetesClientConfig, provider: HTTPClient.EventLoopGroupProvider = .createNew, logger: Logger? = nil) {
+	public init(
+		config: KubernetesClientConfig,
+		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+		logger: Logger? = nil
+	) {
 		self.config = config
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 
