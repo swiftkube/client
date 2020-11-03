@@ -38,6 +38,7 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [ ] Loading resources from external sources
   - [ ] from files
   - [ ] from URLs
+- [ ] Better resource watch support
 - [ ] Better CRD support
 - [ ] Controller/Informer support
 - [ ] Swift Metrics
@@ -154,6 +155,17 @@ let pod = try client.pods.create(inNamespace: .default) {
         }
     }
     .wait()
+```
+
+#### Watching a resource
+
+> Watching a resource opens a persistence connection until the client is closed.
+
+```swift
+try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deployment) in
+    print("\(event): \(deployment)")
+}
+.wait()
 ```
 
 ## Advanced usage
