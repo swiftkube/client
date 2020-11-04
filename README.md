@@ -35,9 +35,9 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
   - [ ] Cover all API Groups/Versions
 - [x] Generic client support
 - [x] Swift-Logging support
-- [ ] Loading resources from external sources
-  - [ ] from files
-  - [ ] from URLs
+- [x] Loading resources from external sources
+  - [x] from files
+  - [x] from URLs
 - [ ] Better resource watch support
 - [ ] Better CRD support
 - [ ] Controller/Informer support
@@ -169,6 +169,18 @@ try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deploy
 ```
 
 ## Advanced usage
+
+### Loading from external sources
+
+A resource can be loaded from a file or a URL:
+
+```swift
+// Load from URL, e.g. a file
+let url = URL(fileURLWithPath: "/path/to/manifest.yaml")
+let deployment = try apps.v1.Deployment.load(contentsOf: url)
+```
+
+
 
 ### API groups
 
