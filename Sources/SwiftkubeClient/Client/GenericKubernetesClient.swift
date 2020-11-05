@@ -290,20 +290,20 @@ public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>:
 		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
 	}
 
-	public func create(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .namespace(namespace ?? self.config.namespace), resource)
+	public func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: namespace ?? .namespace(config.namespace), resource)
 	}
 
-	public func create(inNamespace namespace: String? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .namespace(namespace ?? self.config.namespace), block())
+	public func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: namespace ?? .namespace(config.namespace), block())
 	}
 
-	public func update(inNamespace namespace: String? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.update(in: .namespace(namespace ?? self.config.namespace), resource)
+	public func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.update(in: namespace ?? .namespace(config.namespace), resource)
 	}
 
-	public func delete(inNamespace namespace: String? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: .namespace(namespace ?? self.config.namespace), name: name)
+	public func delete(inNamespace namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	public func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
