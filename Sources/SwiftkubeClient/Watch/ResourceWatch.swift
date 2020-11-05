@@ -28,7 +28,11 @@ public enum EventType: String, RawRepresentable {
 	case error = "ERROR"
 }
 
-final public class ResourceWatch<Resource: KubernetesAPIResource> {
+protocol Watcher {
+	func handle(payload: Data)
+}
+
+final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 
 	public typealias EventHandler = (EventType, Resource) -> Void
 
@@ -36,7 +40,7 @@ final public class ResourceWatch<Resource: KubernetesAPIResource> {
 	private let handler: EventHandler
 	private let logger: Logger
 
-	init(_ handler: @escaping EventHandler, logger: Logger? = nil) {
+	init(logger: Logger? = nil, _ handler: @escaping EventHandler) {
 		self.handler = handler
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
@@ -74,13 +78,33 @@ final public class ResourceWatch<Resource: KubernetesAPIResource> {
 	}
 }
 
-internal class WatchDelegate<Resource: KubernetesAPIResource>: HTTPClientResponseDelegate {
-	typealias Response = Void
+final public class LogWatch: Watcher {
 
-	private let watch: ResourceWatch<Resource>
 	private let logger: Logger
 
-	init(watch: ResourceWatch<Resource>, logger: Logger) {
+	init(logger: Logger? = nil) {
+		self.logger = logger ?? KubernetesClient.loggingDisabled
+	}
+
+	internal func handle(payload: Data) {
+		guard let string = String(data: payload, encoding: .utf8) else {
+			logger.warning("Could not deserialize payload")
+			return
+		}
+
+		string.enumerateLines { (line, _) in
+			print(line)
+		}
+	}
+}
+
+internal class WatchDelegate: HTTPClientResponseDelegate {
+	typealias Response = Void
+
+	private let watch: Watcher
+	private let logger: Logger
+
+	init(watch: Watcher, logger: Logger) {
 		self.watch = watch
 		self.logger = logger
 	}
