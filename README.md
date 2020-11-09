@@ -220,7 +220,9 @@ A `GroupVersionKind` can be initialized from:
 - `KubernetesAPIResource` instance
 - `KubernetesAPIResource` type
 - Full API Group string
-- Lowecassed singular resource kind  
+- Lowecassed singular resource kind
+- Lowercased plural resource name
+- lowecased short resource name
 
 ```swift
 let deployment = ..
@@ -228,6 +230,8 @@ let gvk = GroupVersionKind(of: deployment)
 let gvk = GroupVersionKind(of: apps.v1.Deployment.self)
 let gvk = GroupVersionKind(rawValue: "apps/v1/Deployment")
 let gvk = GroupVersionKind(string: "deployment")
+let gvk = GroupVersionKind(string: "deployments")
+let gvk = GroupVersionKind(string: "deploy")
 ```
 
 ## Installation
