@@ -1,4 +1,6 @@
-# Swiftkube:Client
+<p align="center">
+	<img src="./SwiftkubeClient.png">
+</p>
 
 <p align="center">
 	<img src="https://img.shields.io/badge/Swift-5.2-orange.svg" />
@@ -179,8 +181,6 @@ A resource can be loaded from a file or a URL:
 let url = URL(fileURLWithPath: "/path/to/manifest.yaml")
 let deployment = try apps.v1.Deployment.load(contentsOf: url)
 ```
-
-
 
 ### API groups
 
