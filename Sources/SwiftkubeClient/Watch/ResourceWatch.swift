@@ -80,10 +80,14 @@ final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 
 final public class LogWatch: Watcher {
 
-	private let logger: Logger
+	public typealias LineHandler = (String) -> Void
 
-	init(logger: Logger? = nil) {
+	private let logger: Logger
+	private let lineHandler: LineHandler
+
+	public init(logger: Logger? = nil, lineHandler: @escaping LineHandler = { line in print(line) }) {
 		self.logger = logger ?? KubernetesClient.loggingDisabled
+		self.lineHandler = lineHandler
 	}
 
 	internal func handle(payload: Data) {
@@ -93,7 +97,7 @@ final public class LogWatch: Watcher {
 		}
 
 		string.enumerateLines { (line, _) in
-			print(line)
+			self.lineHandler(line)
 		}
 	}
 }
