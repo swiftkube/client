@@ -253,8 +253,7 @@ public extension GenericKubernetesClient {
 		}
 	}
 
-	internal func follow(in namespace: NamespaceSelector, name: String, watch: LogWatch) -> EventLoopFuture<Void> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
+	internal func follow(in namespace: NamespaceSelector, name: String, container: String?, watch: LogWatch) throws -> HTTPClient.Task<Void> {
 		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace, name: name) + "/log"
 		components?.queryItems = [
@@ -262,19 +261,19 @@ public extension GenericKubernetesClient {
 			URLQueryItem(name: "follow", value: "true")
 		]
 
+		if let container = container {
+			components?.queryItems?.append(URLQueryItem(name: "container", value: container))
+		}
+
 		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
+			throw SwiftkubeClientError.invalidURL
 		}
 
-		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
-			let delegate = WatchDelegate(watch: watch, logger: logger)
+		let headers = buildHeaders(withAuthentication: config.authentication)
+		let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
+		let delegate = WatchDelegate(watch: watch, logger: logger)
 
-			return self.httpClient.execute(request: request, delegate: delegate, logger: logger).futureResult
-		} catch let error {
-			return eventLoop.makeFailedFuture(error)
-		}
+		return self.httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
 }
 
@@ -334,8 +333,8 @@ public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>:
 		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
 	}
 
-	public func follow(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Void> {
-		return super.follow(in: namespace ?? NamespaceSelector.allNamespaces, name: name, watch: LogWatch())
+	public func follow(in namespace: NamespaceSelector? = nil, name: String, container: String?, logWatch: LogWatch = LogWatch()) throws -> HTTPClient.Task<Void> {
+		return try super.follow(in: namespace ?? NamespaceSelector.allNamespaces, name: name, container: container, watch: logWatch)
 	}
 }
 
