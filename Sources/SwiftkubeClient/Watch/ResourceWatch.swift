@@ -85,7 +85,7 @@ final public class LogWatch: Watcher {
 	private let logger: Logger
 	private let lineHandler: LineHandler
 
-	public init(logger: Logger? = nil, lineHandler: @escaping LineHandler = { line in print(line) }) {
+	public init(logger: Logger? = nil, _ lineHandler: @escaping LineHandler = { line in print(line) }) {
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 		self.lineHandler = lineHandler
 	}

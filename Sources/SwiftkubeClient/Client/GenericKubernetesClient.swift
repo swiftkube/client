@@ -330,11 +330,11 @@ public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource>:
 	}
 
 	public func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
-		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+		return super.watch(in: namespace ?? NamespaceSelector.allNamespaces, watch: ResourceWatch<Resource>(logger: logger, eventHandler))
 	}
 
-	public func follow(in namespace: NamespaceSelector? = nil, name: String, container: String?, logWatch: LogWatch = LogWatch()) throws -> HTTPClient.Task<Void> {
-		return try super.follow(in: namespace ?? NamespaceSelector.allNamespaces, name: name, container: container, watch: logWatch)
+	public func follow(in namespace: NamespaceSelector? = nil, name: String, container: String?, lineHandler: @escaping LogWatch.LineHandler) throws -> HTTPClient.Task<Void> {
+		return try super.follow(in: namespace ?? NamespaceSelector.allNamespaces, name: name, container: container, watch: LogWatch(logger: logger, lineHandler))
 	}
 }
 

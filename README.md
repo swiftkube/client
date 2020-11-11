@@ -170,6 +170,17 @@ try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deploy
 .wait()
 ```
 
+#### Following logs
+
+> Following a pod container's logs opens a persistence connection until the client is closed.
+
+```swift
+try? client.pods.follow(in: .namespace("default"), name: "nginx") { (line) in
+    print(line)
+}
+.wait()
+```
+
 ## Advanced usage
 
 ### Loading from external sources
