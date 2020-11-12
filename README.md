@@ -16,6 +16,7 @@
 ## Table of contents
 
 * [Overview](#overview)
+* [Compatibility Matrix](#compatibility-matrix)
 * [Examples](#examples)
 * [Usage](#usage)
   * [Creating a client](#creating-a-client)
@@ -46,6 +47,15 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [ ] Swift Metrics
 - [ ] Complete documentation
 - [ ] End-to-end tests
+
+## Compatibility Matrix
+
+|                           | K8s <1.18.9| K8s 1.18.9 |
+|---------------------------|------------|------------|
+| SwiftkubeClient 0.1.0     | -          | ✓          |
+
+- `✓` Exact match of API objects in both client and the Kubernetes version.
+- `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
 
 ## Examples
 
@@ -130,7 +140,7 @@ try client.appsV1.deployments.delete(in: .namespace("ns"), name: "nginx").wait()
 try client.rbacV1.roles.delete(in: .namespace("ns"), name: "role").wait()
 ```
 
-#### Create and updating a resource
+#### Create and update a resource
 
 Resources can be created/updated directly or via the convenience builders defined in [SwiftkubeModel](https://github.com/swiftkube/model)
 
@@ -159,9 +169,9 @@ let pod = try client.pods.create(inNamespace: .default) {
     .wait()
 ```
 
-#### Watching a resource
+#### Watch a resource
 
-> Watching a resource opens a persistence connection until the client is closed.
+> :warning: Watching a resource opens a persistent connection until the client is closed.
 
 ```swift
 try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deployment) in
@@ -170,9 +180,9 @@ try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deploy
 .wait()
 ```
 
-#### Following logs
+#### Follow logs
 
-> Following a pod container's logs opens a persistence connection until the client is closed.
+> :warning: Following a pod logs opens a persistent connection until the client is closed.
 
 ```swift
 try? client.pods.follow(in: .namespace("default"), name: "nginx") { (line) in
