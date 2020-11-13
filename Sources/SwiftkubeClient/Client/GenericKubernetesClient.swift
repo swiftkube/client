@@ -31,11 +31,24 @@ public enum ResourceOrStatus<T> {
 /// A generic client implementation following the Kubernetes API style.
 public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
+	public let gvk: GroupVersionKind
+
 	internal let httpClient: HTTPClient
 	internal let config: KubernetesClientConfig
 	internal let logger: Logger
+	internal let jsonDecoder: JSONDecoder
 
-	public let gvk: GroupVersionKind
+	internal var timeFormatter: ISO8601DateFormatter = {
+		let formatter = ISO8601DateFormatter()
+		formatter.formatOptions = .withInternetDateTime
+		return formatter
+	}()
+
+	internal var microTimeFormatter: ISO8601DateFormatter = {
+		let formatter = ISO8601DateFormatter()
+		formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+		return formatter
+	}()
 
 	public convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
 		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, logger: logger)
@@ -46,6 +59,24 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		self.config = config
 		self.gvk = gvk
 		self.logger = logger ?? KubernetesClient.loggingDisabled
+		self.jsonDecoder = JSONDecoder()
+		jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
+			let string = try decoder.singleValueContainer().decode(String.self)
+
+			if let date = self.timeFormatter.date(from: string) {
+				return date
+			}
+
+			if let date = self.microTimeFormatter.date(from: string) {
+				return date
+			}
+
+			let context = DecodingError.Context(
+				codingPath: decoder.codingPath,
+				debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
+			)
+			throw DecodingError.dataCorrupted(context)
+		}
 	}
 
 	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
@@ -165,21 +196,19 @@ internal extension GenericKubernetesClient {
 		}
 
 		let data = Data(buffer: byteBuffer)
-
-		let decoder = JSONDecoder()
-		decoder.userInfo[CodingUserInfoKey.apiVersion] = gvk.apiVersion
-		decoder.userInfo[CodingUserInfoKey.kind] = gvk.kind
+		jsonDecoder.userInfo[CodingUserInfoKey.apiVersion] = gvk.apiVersion
+		jsonDecoder.userInfo[CodingUserInfoKey.kind] = gvk.kind
 
 		if response.status.code >= 400 {
-			guard let status = try? decoder.decode(meta.v1.Status.self, from: data) else {
+			guard let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) else {
 				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding meta.v1.Status"))
 			}
 			return eventLoop.makeFailedFuture(SwiftkubeClientError.requestError(status))
 		}
 
-		if let resource = try? decoder.decode(T.self, from: data) {
+		if let resource = try? jsonDecoder.decode(T.self, from: data) {
 			return eventLoop.makeSucceededFuture(.resource(resource))
-		} else if let status = try? decoder.decode(meta.v1.Status.self, from: data) {
+		} else if let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) {
 			return eventLoop.makeSucceededFuture(.status(status))
 		} else {
 			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding \(T.self)"))
