@@ -41,6 +41,11 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [x] Loading resources from external sources
   - [x] from files
   - [x] from URLs
+- [ ] Read & List Options
+- [ ] Delete Options
+- [ ] PATCH API
+- [ ] `/scale` API
+- [ ] `/status` API
 - [ ] Better resource watch support
 - [ ] Better CRD support
 - [ ] Controller/Informer support
