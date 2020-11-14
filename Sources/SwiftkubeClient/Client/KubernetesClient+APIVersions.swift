@@ -18,7 +18,7 @@ import Foundation
 import SwiftkubeModel
 
 public protocol AppsV1API {
-	var daemonSets: ClusterScopedGenericKubernetesClient<apps.v1.DaemonSet> { get }
+	var daemonSets: NamespacedGenericKubernetesClient<apps.v1.DaemonSet> { get }
 	var deployments: NamespacedGenericKubernetesClient<apps.v1.Deployment> { get }
 	var statefulSets: NamespacedGenericKubernetesClient<apps.v1.StatefulSet> { get }
 }
@@ -33,8 +33,8 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var daemonSets: ClusterScopedGenericKubernetesClient<apps.v1.DaemonSet> {
-			client.clusterScoped(for: apps.v1.DaemonSet.self)
+		public var daemonSets: NamespacedGenericKubernetesClient<apps.v1.DaemonSet> {
+			client.namespaceScoped(for: apps.v1.DaemonSet.self)
 		}
 
 		public var deployments: NamespacedGenericKubernetesClient<apps.v1.Deployment> {
