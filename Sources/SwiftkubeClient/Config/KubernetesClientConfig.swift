@@ -128,9 +128,9 @@ internal struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 
 	private func buildMasterURL(host: String, port: String) -> URL? {
 		if host.contains(":") {
-			return URL(string: "[\(host)]:\(port)")
+			return URL(string: "https://[\(host)]:\(port)")
 		} else {
-			return URL(string: "\(host):\(port)")
+			return URL(string: "https://\(host):\(port)")
 		}
 	}
 
