@@ -29,8 +29,7 @@ public extension KubernetesAPIResource {
 
 public extension AnyKubernetesAPIResource {
 
-	static func load(contentsOf url: URL) throws -> [AnyKubernetesAPIResource] {
-		let yaml = try String(contentsOf: url)
+	static func load(yaml: String) throws -> [AnyKubernetesAPIResource] {
 		let decoder = YAMLDecoder()
 
 		// YAMS's `load_all` return a sequnence of `Any` and `compose_all` returns a sequence of `Node`
@@ -41,5 +40,10 @@ public extension AnyKubernetesAPIResource {
 				let resourceYAML = try Yams.serialize(node: node)
 				return try decoder.decode(AnyKubernetesAPIResource.self, from: resourceYAML)
 			}
+	}
+
+	static func load(contentsOf url: URL) throws -> [AnyKubernetesAPIResource] {
+		let yaml = try String(contentsOf: url)
+		return try load(yaml: yaml)
 	}
 }
