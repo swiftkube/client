@@ -1,4 +1,4 @@
-name: "Swiftkube:Client CI"
+name: "swiftkube-client-ci"
 
 on:
   push:
