@@ -105,7 +105,7 @@ internal struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 		let namespace = try? String(contentsOf: namespaceFile, encoding: .utf8)
 
 		if namespace == nil {
-			logger.debug("Did not find service account namespace at /var/run/secrets/kubernetes.io/serviceaccount/token")
+			logger.debug("Did not find service account namespace at /var/run/secrets/kubernetes.io/serviceaccount/namespace")
 		}
 
 		let tokenFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/token")
