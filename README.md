@@ -258,9 +258,9 @@ let deployment = ..
 let gvk = GroupVersionKind(of: deployment)
 let gvk = GroupVersionKind(of: apps.v1.Deployment.self)
 let gvk = GroupVersionKind(rawValue: "apps/v1/Deployment")
-let gvk = GroupVersionKind(string: "deployment")
-let gvk = GroupVersionKind(string: "deployments")
-let gvk = GroupVersionKind(string: "deploy")
+let gvk = GroupVersionKind(for: "deployment")
+let gvk = GroupVersionKind(for: "deployments")
+let gvk = GroupVersionKind(for: "deploy")
 ```
 
 ## Installation
