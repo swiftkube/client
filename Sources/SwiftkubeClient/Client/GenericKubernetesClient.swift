@@ -192,14 +192,14 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 
 public extension GenericKubernetesClient {
 
-	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
+	internal func watch(in namespace: NamespaceSelector, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toWatch().in(namespace).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
 
-	internal func follow(in namespace: NamespaceSelector, name: String, container: String?, watch: LogWatch) throws -> HTTPClient.Task<Void> {
+	internal func follow(in namespace: NamespaceSelector, name: String, container: String?, using watch: LogWatch) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 

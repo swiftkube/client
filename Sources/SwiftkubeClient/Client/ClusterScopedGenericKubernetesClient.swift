@@ -37,7 +37,7 @@ public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResourc
 	}
 
 	public func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
-		return try super.watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+		return try super.watch(in: .allNamespaces, using: ResourceWatch<Resource>(eventHandler))
 	}
 }
 
