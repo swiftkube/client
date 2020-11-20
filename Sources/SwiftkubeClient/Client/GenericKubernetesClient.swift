@@ -80,41 +80,24 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	}
 
 	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace, name: name)
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
-		}
-
 		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
+			let eventLoop = self.httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.GET).resource(withName: name).in(namespace).build()
 
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
 
 	public func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace)
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
-		}
-
 		do {
-			let data = try JSONEncoder().encode(resource)
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .POST, headers: headers, body: .data(data))
+			let eventLoop = self.httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.POST).resource(resource).in(namespace).build()
 
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
@@ -123,62 +106,37 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	}
 
 	public func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		guard let name = resource.name else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.badRequest("Resource metadata.name must be set for \(resource)"))
-		}
-		components?.path = urlPath(forNamespace: namespace, name: name)
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
-		}
-
 		do {
-			let data = try JSONEncoder().encode(resource)
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .PUT, headers: headers, body: .data(data))
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.PUT).resource(resource).in(namespace).build()
 
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
 
 	public func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace, name: name)
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
-		}
-
 		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .DELETE, headers: headers)
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.DELETE).resource(withName: name).in(namespace).build()
 
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handleResourceOrStatus(response, eventLoop: eventLoop)
 			}
 		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
+	}
+
+	private func makeRequest() -> RequestBuilder<Resource> {
+		return RequestBuilder(config: config, gvk: gvk)
 	}
 }
 
 internal extension GenericKubernetesClient {
-
-	func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
-		var headers: [(String, String)] = []
-		if let authorizationHeader = authentication?.authorizationHeader() {
-			headers.append(("Authorization", authorizationHeader))
-		}
-
-		return HTTPHeaders(headers)
-	}
 
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
@@ -192,7 +150,7 @@ internal extension GenericKubernetesClient {
 
 	func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
 		guard let byteBuffer = response.body else {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
+			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
 		}
 
 		let data = Data(buffer: byteBuffer)
@@ -214,92 +172,35 @@ internal extension GenericKubernetesClient {
 			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding \(T.self)"))
 		}
 	}
-
-	func urlPath(forNamespace namespace: NamespaceSelector) -> String {
-		switch namespace {
-		case .allNamespaces:
-			return "\(gvk.urlPath)/\(gvk.pluralName)"
-		default:
-			return "\(gvk.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
-		}
-	}
-
-	func urlPath(forNamespace namespace: NamespaceSelector, name: String) -> String {
-		return "\(urlPath(forNamespace: namespace))/\(name)"
-	}
 }
 
 public extension GenericKubernetesClient where Resource: ListableResource {
 
 	func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace)
-
-		if let selector = selector {
-			components?.queryItems = [URLQueryItem(name: selector.name, value: selector.value)]
-		}
-
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
-		}
-
 		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.GET).in(namespace).filter(by: selector).build()
 
-			return self.httpClient.execute(request: request, logger: logger).flatMap { response in
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
 }
 
 public extension GenericKubernetesClient {
 
-	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) -> EventLoopFuture<Void> {
-		let eventLoop = self.httpClient.eventLoopGroup.next()
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace)
-		components?.queryItems = [
-			URLQueryItem(name: "watch", value: "true")
-		]
+	internal func watch(in namespace: NamespaceSelector, watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
+		let request = try makeRequest().toWatch().in(namespace).build()
+		let delegate = WatchDelegate(watch: watch, logger: logger)
 
-		guard let url = components?.url?.absoluteString else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.invalidURL)
-		}
-
-		do {
-			let headers = buildHeaders(withAuthentication: config.authentication)
-			let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
-			let delegate = WatchDelegate(watch: watch, logger: logger)
-
-			return self.httpClient.execute(request: request, delegate: delegate, logger: logger).futureResult
-		} catch let error {
-			return eventLoop.makeFailedFuture(error)
-		}
+		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
 
 	internal func follow(in namespace: NamespaceSelector, name: String, container: String?, watch: LogWatch) throws -> HTTPClient.Task<Void> {
-		var components = URLComponents(url: self.config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace, name: name) + "/log"
-		components?.queryItems = [
-			URLQueryItem(name: "pretty", value: "true"),
-			URLQueryItem(name: "follow", value: "true")
-		]
-
-		if let container = container {
-			components?.queryItems?.append(URLQueryItem(name: "container", value: container))
-		}
-
-		guard let url = components?.url?.absoluteString else {
-			throw SwiftkubeClientError.invalidURL
-		}
-
-		let headers = buildHeaders(withAuthentication: config.authentication)
-		let request = try HTTPClient.Request(url: url, method: .GET, headers: headers)
+		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 
 		return self.httpClient.execute(request: request, delegate: delegate, logger: logger)

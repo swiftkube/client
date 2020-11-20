@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import AsyncHTTPClient
 import NIO
 import SwiftkubeModel
 
@@ -35,8 +36,8 @@ public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResourc
 		return super.delete(in: .allNamespaces, name: name)
 	}
 
-	public func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) -> EventLoopFuture<Void> {
-		return super.watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
+	public func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
+		return try super.watch(in: .allNamespaces, watch: ResourceWatch<Resource>(eventHandler))
 	}
 }
 
