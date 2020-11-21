@@ -43,7 +43,7 @@ public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResourc
 
 public extension ClusterScopedGenericKubernetesClient where Resource: ListableResource {
 
-	func list(selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
-		return super.list(in: .allNamespaces, selector: selector)
+	func list(options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
+		return super.list(in: .allNamespaces, options: options)
 	}
 }

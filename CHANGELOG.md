@@ -2,6 +2,12 @@
 
 ## 0.X.X
 
+### New Features
+
+- Add support for `ListOptions`
+
+### API Changes
+
 - Function signature change:
   - from `watch(in:watch:) throws -> EventLoopFuture<Void>`
   - to `watch(in:using:) throws -> HTTPClient.Task<Void>`

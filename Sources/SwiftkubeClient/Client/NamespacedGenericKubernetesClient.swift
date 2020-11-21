@@ -51,7 +51,7 @@ public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource &
 
 public extension NamespacedGenericKubernetesClient where Resource: ListableResource {
 
-	func list(in namespace: NamespaceSelector? = nil, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
-		return super.list(in: namespace ?? .namespace(self.config.namespace) , selector: selector)
+	func list(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
+		return super.list(in: namespace ?? .namespace(self.config.namespace) , options: options)
 	}
 }

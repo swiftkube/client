@@ -21,29 +21,6 @@ import NIO
 import NIOHTTP1
 import SwiftkubeModel
 
-public enum ListSelector {
-	case labelSelector([String: String])
-	case fieldSelector([String: String])
-
-	var name: String {
-		switch self {
-		case .labelSelector:
-			return "labelSelector"
-		case .fieldSelector:
-			return "fieldSelector"
-		}
-	}
-
-	var value: String {
-		switch self {
-		case let .labelSelector(labels):
-			return labels.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
-		case let .fieldSelector(fields):
-			return fields.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
-		}
-	}
-}
-
 public enum NamespaceSelector {
 	case namespace(String)
 	case `default`
@@ -66,6 +43,49 @@ public enum NamespaceSelector {
 			return "kube-node-lease"
 		case .allNamespaces:
 			return ""
+		}
+	}
+}
+
+public enum ListOption {
+	case limit(Int)
+	case labelSelector([String: String])
+	case fieldSelector([String: String])
+	case resourceVersion(String)
+	case timeoutSeconds(Int)
+	case pretty(Bool)
+
+	public var name: String {
+		switch self {
+		case .limit(_):
+			return "limit"
+		case .labelSelector:
+			return "labelSelector"
+		case .fieldSelector:
+			return "fieldSelector"
+		case .resourceVersion(_):
+			return "resourceVersion"
+		case .timeoutSeconds(_):
+			return "timeoutSeconds"
+		case .pretty(_):
+			return "pretty"
+		}
+	}
+
+	public var value: String {
+		switch self {
+		case .limit(let limit):
+			return limit.description
+		case .labelSelector(let labels):
+			return labels.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
+		case .fieldSelector(let fields):
+			return fields.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
+		case .resourceVersion(let version):
+			return version
+		case .timeoutSeconds(let timeout):
+			return timeout.description
+		case .pretty(let pretty):
+			return pretty.description
 		}
 	}
 }

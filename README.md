@@ -132,6 +132,18 @@ let deployments = try client.appsV1.deployments.list(in: .allNamespaces).wait()
 let roles = try client.rbacV1.roles.list(in: .namespace("ns")).wait()
 ```
 
+You can filter the listed resources or limit the returned list size via the `ListOptions`:
+
+```swift
+let deployments = try client.appsV1.deployments.list(in: .allNamespaces, options: [
+	.labelSelector(["app": "nginx"]),
+	.fieldSelector(["status.phase": "Running"]),
+	.resourceVersion("9001"),
+	.limit(20),
+	.timeoutSeconds(10)
+]).wait()
+```
+
 #### Get a resource 
 
 ```swift
@@ -227,7 +239,7 @@ Often when working with Kubernetes the concrete type of the resource is not know
 Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized with a `GroupVersionKind` type:
 
 ```swift
-guard let gvk = try? GroupVersionKind(string: "deployment") else {
+guard let gvk = try? GroupVersionKind(for: "deployment") else {
    // handle this
 }
 

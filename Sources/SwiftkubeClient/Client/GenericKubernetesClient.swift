@@ -176,10 +176,10 @@ internal extension GenericKubernetesClient {
 
 public extension GenericKubernetesClient where Resource: ListableResource {
 
-	func list(in namespace: NamespaceSelector, selector: ListSelector? = nil) -> EventLoopFuture<Resource.List> {
+	func list(in namespace: NamespaceSelector, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.GET).in(namespace).filter(by: selector).build()
+			let request = try makeRequest().to(.GET).in(namespace).with(options: options).build()
 
 			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)

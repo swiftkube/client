@@ -38,7 +38,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	var resource: Resource?
 	var resourceName: String?
-	var listSelector: ListSelector?
+	var listOptions: [ListOption]?
 	var method: HTTPMethod!
 	var namespace: NamespaceSelector!
 	var watch: Bool = false
@@ -84,8 +84,8 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return self
 	}
 
-	func filter(by listSelector: ListSelector?) -> RequestBuilder {
-		self.listSelector = listSelector
+	func with(options: [ListOption]?) -> RequestBuilder {
+		self.listOptions = options
 		return self
 	}
 
@@ -97,8 +97,10 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 			throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
 		}
 
-		if let listSelector = listSelector {
-			components?.queryItems = [URLQueryItem(name: listSelector.name, value: listSelector.value)]
+		components?.queryItems = []
+
+		if let listOptions = listOptions {
+			components?.queryItems?.append(contentsOf: listOptions.map { URLQueryItem(name: $0.name, value: $0.value) })
 		}
 
 		if watch {
@@ -107,8 +109,6 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 		if follow {
 			components?.queryItems?.append(URLQueryItem(name: "follow", value: "true"))
-			// TODO Make configurable
-			components?.queryItems?.append(URLQueryItem(name: "pretty", value: "true"))
 		}
 
 		if let container = container {
@@ -131,19 +131,23 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	}
 
 	func urlPath(forNamespace namespace: NamespaceSelector, name: String?, follow: Bool) -> String {
-		let listURL: String
-		switch namespace {
-		case .allNamespaces:
-			listURL = "\(gvk.urlPath)/\(gvk.pluralName)"
-		default:
-			listURL = "\(gvk.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
+		var url: String
+
+		if case NamespaceSelector.allNamespaces = namespace {
+			url = "\(gvk.urlPath)/\(gvk.pluralName)"
+		} else {
+			url = "\(gvk.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
 		}
 
 		if let name = name {
-			return "\(listURL)/\(name)"
-		} else {
-			return listURL
+			url += "/\(name)"
 		}
+
+		if follow {
+			url += "/log"
+		}
+
+		return url
 	}
 
 	func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
