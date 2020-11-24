@@ -19,24 +19,15 @@ import NIO
 import SwiftkubeModel
 
 public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource & ClusterScopedResource>: GenericKubernetesClient<Resource> {
+}
 
-	public func get(name: String) -> EventLoopFuture<Resource> {
+public extension ClusterScopedGenericKubernetesClient where Resource: ReadableResource {
+
+	func get(name: String) -> EventLoopFuture<Resource> {
 		return super.get(in: .allNamespaces, name: name)
 	}
 
-	public func create(_ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .allNamespaces, resource)
-	}
-
-	public func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .allNamespaces, block())
-	}
-
-	public func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: .allNamespaces, name: name)
-	}
-
-	public func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
+	func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
 		return try super.watch(in: .allNamespaces, using: ResourceWatch<Resource>(eventHandler))
 	}
 }
@@ -47,3 +38,36 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ListableRe
 		return super.list(in: .allNamespaces, options: options)
 	}
 }
+
+public extension ClusterScopedGenericKubernetesClient where Resource: CreatableResource {
+
+	func create(_ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .allNamespaces, resource)
+	}
+
+	func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: .allNamespaces, block())
+	}
+}
+
+public extension ClusterScopedGenericKubernetesClient where Resource: ReplaceableResource {
+
+	func update(_ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.update(in: .allNamespaces, resource)
+	}
+}
+
+public extension ClusterScopedGenericKubernetesClient where Resource: DeletableResource {
+
+	func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: .allNamespaces, name: name)
+	}
+}
+
+public extension ClusterScopedGenericKubernetesClient where Resource: CollectionDeletableResource {
+
+	func deleteAll() -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.deleteAll(in: .allNamespaces)
+	}
+}
+

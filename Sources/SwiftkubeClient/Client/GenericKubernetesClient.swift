@@ -131,6 +131,19 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		}
 	}
 
+	public func deleteAll(in namespace: NamespaceSelector) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.DELETE).in(namespace).build()
+
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
+				self.handleResourceOrStatus(response, eventLoop: eventLoop)
+			}
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+
 	private func makeRequest() -> RequestBuilder<Resource> {
 		return RequestBuilder(config: config, gvk: gvk)
 	}

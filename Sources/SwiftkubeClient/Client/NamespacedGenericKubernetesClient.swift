@@ -19,32 +19,19 @@ import NIO
 import SwiftkubeModel
 
 public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource & NamespacedResource>: GenericKubernetesClient<Resource> {
+}
 
-	public override func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
+public extension NamespacedGenericKubernetesClient where Resource: ReadableResource {
+
+	func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
 		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
 	}
 
-	public func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: namespace ?? .namespace(config.namespace), resource)
-	}
-
-	public func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: namespace ?? .namespace(config.namespace), block())
-	}
-
-	public func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.update(in: namespace ?? .namespace(config.namespace), resource)
-	}
-
-	public func delete(inNamespace namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: namespace ?? .namespace(config.namespace), name: name)
-	}
-
-	public func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
+	func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
 		return try super.watch(in: namespace ?? NamespaceSelector.allNamespaces, using: ResourceWatch<Resource>(logger: logger, eventHandler))
 	}
 
-	public func follow(in namespace: NamespaceSelector? = nil, name: String, container: String?, lineHandler: @escaping LogWatch.LineHandler) throws -> HTTPClient.Task<Void> {
+	func follow(in namespace: NamespaceSelector? = nil, name: String, container: String?, lineHandler: @escaping LogWatch.LineHandler) throws -> HTTPClient.Task<Void> {
 		return try super.follow(in: namespace ?? NamespaceSelector.allNamespaces, name: name, container: container, using: LogWatch(logger: logger, lineHandler))
 	}
 }
@@ -53,5 +40,37 @@ public extension NamespacedGenericKubernetesClient where Resource: ListableResou
 
 	func list(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
 		return super.list(in: namespace ?? .namespace(self.config.namespace) , options: options)
+	}
+}
+
+public extension NamespacedGenericKubernetesClient where Resource: CreatableResource {
+
+	func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: namespace ?? .namespace(config.namespace), resource)
+	}
+
+	func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
+		return super.create(in: namespace ?? .namespace(config.namespace), block())
+	}
+}
+
+public extension NamespacedGenericKubernetesClient where Resource: ReplaceableResource {
+
+	func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
+		return super.update(in: namespace ?? .namespace(config.namespace), resource)
+	}
+}
+
+public extension NamespacedGenericKubernetesClient where Resource: DeletableResource {
+
+	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: namespace ?? .namespace(config.namespace), name: name)
+	}
+}
+
+public extension NamespacedGenericKubernetesClient where Resource: CollectionDeletableResource {
+
+	func deleteAll(inNamespace namespace: NamespaceSelector? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.deleteAll(in: namespace ?? .namespace(config.namespace))
 	}
 }
