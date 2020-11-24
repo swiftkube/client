@@ -29,7 +29,7 @@ public enum NamespaceSelector {
 	case nodeLease
 	case allNamespaces
 
-	public func namespaceName() -> String {
+	internal func namespaceName() -> String {
 		switch self {
 		case let .namespace(name):
 			return name
