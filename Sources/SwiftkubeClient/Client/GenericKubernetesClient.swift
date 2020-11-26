@@ -50,11 +50,11 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		return formatter
 	}()
 
-	public convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
+	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
 		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, logger: logger)
 	}
 
-	public required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvk: GroupVersionKind, logger: Logger? = nil) {
+	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvk: GroupVersionKind, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
 		self.gvk = gvk
