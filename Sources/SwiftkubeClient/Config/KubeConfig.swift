@@ -68,7 +68,7 @@ public struct AuthInfo: Codable {
 		case clientCertificate = "client-certificate"
 		case clientCertificateData = "client-certificate-data"
 		case clientKey = "client-key"
-		case clientKeyData = "certificate-key-data"
+		case clientKeyData = "client-key-data"
 		case token
 		case tokenFile = "token-file"
 		case impersonate
