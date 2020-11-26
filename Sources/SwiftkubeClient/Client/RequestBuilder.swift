@@ -41,8 +41,9 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	var listOptions: [ListOption]?
 	var method: HTTPMethod!
 	var namespace: NamespaceSelector!
-	var watch: Bool = false
-	var follow: Bool = false
+	var statusRequest: Bool = false
+	var watchRequest: Bool = false
+	var followRequest: Bool = false
 	var container: String?
 
 	init(config: KubernetesClientConfig, gvk: GroupVersionKind) {
@@ -55,9 +56,14 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return self
 	}
 
+	func status() -> RequestBuilder {
+		self.statusRequest = true
+		return self
+	}
+
 	func toWatch() -> RequestBuilder {
 		self.method = .GET
-		self.watch = true
+		self.watchRequest = true
 		return self
 	}
 
@@ -65,7 +71,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		self.method = .GET
 		self.resourceName = pod
 		self.container = container
-		self.follow = true
+		self.followRequest = true
 		return self
 	}
 
@@ -91,7 +97,15 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	func build() throws -> HTTPClient.Request {
 		var components = URLComponents(url: config.masterURL, resolvingAgainstBaseURL: false)
-		components?.path = urlPath(forNamespace: namespace, name: resourceName, follow: follow)
+		components?.path = urlPath(forNamespace: namespace, name: resourceName)
+
+		if statusRequest {
+			components?.path += "/status"
+		}
+
+		if followRequest {
+			components?.path += "/log"
+		}
 
 		guard !(method.hasRequestBody && resourceName == nil) else {
 			throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
@@ -103,11 +117,11 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 			components?.queryItems?.append(contentsOf: listOptions.map { URLQueryItem(name: $0.name, value: $0.value) })
 		}
 
-		if watch {
+		if watchRequest {
 			components?.queryItems?.append(URLQueryItem(name: "watch", value: "true"))
 		}
 
-		if follow {
+		if followRequest {
 			components?.queryItems?.append(URLQueryItem(name: "follow", value: "true"))
 		}
 
@@ -130,7 +144,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return try HTTPClient.Request(url: url, method: method, headers: headers, body: body)
 	}
 
-	func urlPath(forNamespace namespace: NamespaceSelector, name: String?, follow: Bool) -> String {
+	func urlPath(forNamespace namespace: NamespaceSelector, name: String?) -> String {
 		var url: String
 
 		if case NamespaceSelector.allNamespaces = namespace {
@@ -141,10 +155,6 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 		if let name = name {
 			url += "/\(name)"
-		}
-
-		if follow {
-			url += "/log"
 		}
 
 		return url

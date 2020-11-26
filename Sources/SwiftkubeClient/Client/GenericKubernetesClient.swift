@@ -144,12 +144,13 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		}
 	}
 
-	private func makeRequest() -> RequestBuilder<Resource> {
-		return RequestBuilder(config: config, gvk: gvk)
-	}
 }
 
 internal extension GenericKubernetesClient {
+
+	func makeRequest() -> RequestBuilder<Resource> {
+		return RequestBuilder(config: config, gvk: gvk)
+	}
 
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
@@ -203,16 +204,45 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 	}
 }
 
-public extension GenericKubernetesClient {
+internal extension GenericKubernetesClient {
 
-	internal func watch(in namespace: NamespaceSelector, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
+	func status(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<Resource> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.GET).resource(withName: name).status().in(namespace).build()
+
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
+				self.handle(response, eventLoop: eventLoop)
+			}
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+
+	func updateStatus(in namespace: NamespaceSelector, _ resource: Resource) throws -> EventLoopFuture<Resource> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.PUT).resource(resource).status().in(namespace).build()
+
+			return httpClient.execute(request: request, logger: logger).flatMap { response in
+				self.handle(response, eventLoop: eventLoop)
+			}
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
+internal extension GenericKubernetesClient {
+
+	func watch(in namespace: NamespaceSelector, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toWatch().in(namespace).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
 
-	internal func follow(in namespace: NamespaceSelector, name: String, container: String?, using watch: LogWatch) throws -> HTTPClient.Task<Void> {
+	func follow(in namespace: NamespaceSelector, name: String, container: String?, using watch: LogWatch) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 
