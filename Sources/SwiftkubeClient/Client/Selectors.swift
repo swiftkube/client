@@ -47,10 +47,66 @@ public enum NamespaceSelector {
 	}
 }
 
+internal extension Dictionary where Key == String, Value == String {
+
+	func asQueryParam(joiner op: String) -> String {
+		self.map { key, value in "\(key)\(op)\(value)"}
+			.joined(separator: ",")
+	}
+}
+
+internal extension Dictionary where Key == String, Value == [String] {
+
+	func asQueryParam(joiner op: String) -> String {
+		self.map { key, value in
+			let joinedValue = value.joined(separator: ",")
+			return "\(key) \(op) (\(joinedValue))"
+		}
+		.joined(separator: ",")
+	}
+}
+
+public enum LabelSelectorRequirement {
+	case eq([String: String])
+	case neq([String: String])
+	case `in`([String: [String]])
+	case notIn([String: [String]])
+	case exists([String])
+
+	internal var value: String {
+		switch self {
+		case .eq(let labels):
+			return labels.asQueryParam(joiner: "=")
+		case .neq(let labels):
+			return labels.asQueryParam(joiner: "!=")
+		case .in(let labels):
+			return labels.asQueryParam(joiner: "in")
+		case .notIn(let labels):
+			return labels.asQueryParam(joiner: "notin")
+		case .exists(let labels):
+			return labels.joined(separator: ",")
+		}
+	}
+}
+
+public enum FieldSelectorRequirement {
+	case eq([String: String])
+	case neq([String: String])
+
+	internal var value: String {
+		switch self {
+		case .eq(let labels):
+			return labels.asQueryParam(joiner: "=")
+		case .neq(let labels):
+			return labels.asQueryParam(joiner: "!=")
+		}
+	}
+}
+
 public enum ListOption {
 	case limit(Int)
-	case labelSelector([String: String])
-	case fieldSelector([String: String])
+	case labelSelector(LabelSelectorRequirement)
+	case fieldSelector(FieldSelectorRequirement)
 	case resourceVersion(String)
 	case timeoutSeconds(Int)
 	case pretty(Bool)
@@ -76,10 +132,10 @@ public enum ListOption {
 		switch self {
 		case .limit(let limit):
 			return limit.description
-		case .labelSelector(let labels):
-			return labels.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
-		case .fieldSelector(let fields):
-			return fields.map { key, value in "\(key)=\(value)" }.joined(separator: ",")
+		case .labelSelector(let requirement):
+			return requirement.value
+		case .fieldSelector(let requirement):
+			return requirement.value
 		case .resourceVersion(let version):
 			return version
 		case .timeoutSeconds(let timeout):

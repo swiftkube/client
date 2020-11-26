@@ -136,8 +136,10 @@ You can filter the listed resources or limit the returned list size via the `Lis
 
 ```swift
 let deployments = try client.appsV1.deployments.list(in: .allNamespaces, options: [
-	.labelSelector(["app": "nginx"]),
-	.fieldSelector(["status.phase": "Running"]),
+	.labelSelector(.eq(["app": "nginx"])),
+	.labelSelector(.notIn(["env": ["dev", "staging"]])),
+	.labelSelector(.exists(["app", "env"])),
+	.fieldSelector(.eq(["status.phase": "Running"])),
 	.resourceVersion("9001"),
 	.limit(20),
 	.timeoutSeconds(10)
