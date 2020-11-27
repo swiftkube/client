@@ -2,9 +2,13 @@
 
 ## 0.3.0 (pending)
 
+### New
+
+- Add support for `DeleteOptions`
+
 ### Bug Fixes
 
-- Can not create resources because of "Resource `metadata.name` must be set" error #2
+- Can not create resources because of "Resource `metadata.name` must be set" error #2 
 
 ## 0.2.0
 

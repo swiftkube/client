@@ -162,6 +162,16 @@ try client.appsV1.deployments.delete(in: .namespace("ns"), name: "nginx").wait()
 try client.rbacV1.roles.delete(in: .namespace("ns"), name: "role").wait()
 ```
 
+You can pass an instance of `meta.v1.DeleteOptions` to control the behaviour of the delete operation:
+
+```swift
+let deletOptions = meta.v1.DeleteOptions(
+	gracePeriodSeconds: 10,
+	propagationPolicy: "Foreground"
+)
+try client.pods.delete(in: .namespace("ns"), name: "nginx", options: deleteOptions).wait()
+```
+
 #### Create and update a resource
 
 Resources can be created/updated directly or via the convenience builders defined in [SwiftkubeModel](https://github.com/swiftkube/model)
