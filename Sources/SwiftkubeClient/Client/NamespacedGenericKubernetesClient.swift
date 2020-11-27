@@ -59,8 +59,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReplaceableRe
 
 public extension NamespacedGenericKubernetesClient where Resource: DeletableResource {
 
-	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: namespace ?? .namespace(config.namespace), name: name)
+	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String, options: meta.v1.DeleteOptions? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 }
 

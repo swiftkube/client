@@ -59,8 +59,8 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Replaceabl
 
 public extension ClusterScopedGenericKubernetesClient where Resource: DeletableResource {
 
-	func delete(name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: .allNamespaces, name: name)
+	func delete(name: String, options: meta.v1.DeleteOptions? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+		return super.delete(in: .allNamespaces, name: name, options: options)
 	}
 }
 

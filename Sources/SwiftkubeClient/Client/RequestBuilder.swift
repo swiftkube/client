@@ -31,17 +31,23 @@ extension HTTPMethod {
 	}
 }
 
+///
+/// An internal builder class for building API request objects.
+///
+/// It assumes a correct usage and does only minimal sanity checks.
+///
 internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	let config: KubernetesClientConfig
 	let gvk: GroupVersionKind
 	var components: URLComponents?
 
+	var method: HTTPMethod!
+	var namespace: NamespaceSelector!
 	var resource: Resource?
 	var resourceName: String?
 	var listOptions: [ListOption]?
-	var method: HTTPMethod!
-	var namespace: NamespaceSelector!
+	var deleteOptions: meta.v1.DeleteOptions?
 	var statusRequest: Bool = false
 	var watchRequest: Bool = false
 	var followRequest: Bool = false
@@ -97,6 +103,11 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return self
 	}
 
+	func with(options: meta.v1.DeleteOptions?) -> RequestBuilder {
+		self.deleteOptions = options
+		return self
+	}
+
 	func build() throws -> HTTPClient.Request {
 		components?.path = urlPath(forNamespace: namespace, name: resourceName)
 
@@ -110,6 +121,10 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 		guard !(method.hasRequestBody && resource?.name == nil) else {
 			throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
+		}
+
+		guard !(method == .DELETE && resource != nil) else {
+			throw SwiftkubeClientError.badRequest("Resource can't be set for DELETE call.")
 		}
 
 		if let listOptions = listOptions {
@@ -142,6 +157,11 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 		if let resource = resource {
 			let data = try JSONEncoder().encode(resource)
+			body = .data(data)
+		}
+
+		if let options = deleteOptions {
+			let data =  try JSONEncoder().encode(options)
 			body = .data(data)
 		}
 

@@ -118,7 +118,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		}
 	}
 
-	public func delete(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+	public func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.DELETE).resource(withName: name).in(namespace).build()
