@@ -108,7 +108,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	public func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.PUT).resource(resource).in(namespace).build()
+			let request = try makeRequest().to(.PUT).resource(withName: resource.name).resource(resource).in(namespace).build()
 
 			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)

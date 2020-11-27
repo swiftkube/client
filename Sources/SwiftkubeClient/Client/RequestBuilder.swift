@@ -80,7 +80,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return self
 	}
 
-	func resource(withName name: String) -> RequestBuilder {
+	func resource(withName name: String?) -> RequestBuilder {
 		self.resourceName = name
 		return self
 	}
