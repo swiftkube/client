@@ -206,10 +206,12 @@ let pod = try client.pods.create(inNamespace: .default) {
 > :warning: Watching a resource opens a persistent connection until the client is closed.
 
 ```swift
-try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deployment) in
-    print("\(event): \(deployment)")
+let task: HTTPClient.Task<Void> = client.pods.watch(in: .namespace("default")) { (event, pod) in
+    print("\(event): \(pod)")
 }
-.wait()
+
+// The task can be cancelled later to stop watching
+task.cancel()
 ```
 
 #### Follow logs
@@ -217,10 +219,12 @@ try? client.appsV1.deployments.watch(in: .namespace("default")) { (event, deploy
 > :warning: Following a pod logs opens a persistent connection until the client is closed.
 
 ```swift
-try? client.pods.follow(in: .namespace("default"), name: "nginx") { (line) in
+let task: HTTPClient.Task<Void> = client.pods.follow(in: .namespace("default"), name: "nginx") { (line) in
     print(line)
 }
-.wait()
+
+// The task can be cancelled later o stop following
+task.cancel()
 ```
 
 ## Advanced usage
@@ -292,7 +296,7 @@ let gvk = GroupVersionKind(for: "deploy")
 To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.1.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.3.0"),
 ```
 
 then include it as a dependency in your target:
@@ -303,7 +307,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.1.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.3.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
