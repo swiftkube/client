@@ -155,13 +155,17 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		let headers = buildHeaders(withAuthentication: config.authentication)
 		var body: HTTPClient.Body? = nil
 
+
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+
 		if let resource = resource {
-			let data = try JSONEncoder().encode(resource)
+			let data = try encoder.encode(resource)
 			body = .data(data)
 		}
 
 		if let options = deleteOptions {
-			let data =  try JSONEncoder().encode(options)
+			let data =  try encoder.encode(options)
 			body = .data(data)
 		}
 
