@@ -35,6 +35,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	let config: KubernetesClientConfig
 	let gvk: GroupVersionKind
+	var components: URLComponents?
 
 	var resource: Resource?
 	var resourceName: String?
@@ -49,6 +50,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	init(config: KubernetesClientConfig, gvk: GroupVersionKind) {
 		self.config = config
 		self.gvk = gvk
+		self.components = URLComponents(url: config.masterURL, resolvingAgainstBaseURL: false)
 	}
 
 	func to(_ method: HTTPMethod) -> RequestBuilder {
@@ -96,7 +98,6 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	}
 
 	func build() throws -> HTTPClient.Request {
-		var components = URLComponents(url: config.masterURL, resolvingAgainstBaseURL: false)
 		components?.path = urlPath(forNamespace: namespace, name: resourceName)
 
 		if statusRequest {
@@ -111,22 +112,25 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 			throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
 		}
 
-		components?.queryItems = []
-
 		if let listOptions = listOptions {
-			components?.queryItems?.append(contentsOf: listOptions.map { URLQueryItem(name: $0.name, value: $0.value) })
+			Dictionary(grouping: listOptions, by: { $0.name })
+				.map {
+					let value = $0.value.map(\.value).joined(separator: ",")
+					return URLQueryItem(name: $0.key, value: value)
+				}
+				.forEach(add(queryItem:))
 		}
 
 		if watchRequest {
-			components?.queryItems?.append(URLQueryItem(name: "watch", value: "true"))
+			add(queryItem: URLQueryItem(name: "watch", value: "true"))
 		}
 
 		if followRequest {
-			components?.queryItems?.append(URLQueryItem(name: "follow", value: "true"))
+			add(queryItem: URLQueryItem(name: "follow", value: "true"))
 		}
 
 		if let container = container {
-			components?.queryItems?.append(URLQueryItem(name: "container", value: container))
+			add(queryItem: URLQueryItem(name: "container", value: container))
 		}
 
 		guard let url = components?.url?.absoluteString else {
@@ -158,6 +162,13 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		}
 
 		return url
+	}
+
+	func add(queryItem: URLQueryItem) {
+		if (components?.queryItems == nil) {
+			components?.queryItems = []
+		}
+		components?.queryItems?.append(queryItem)
 	}
 
 	func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
