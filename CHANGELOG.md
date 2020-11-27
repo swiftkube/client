@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (pending)
+
+### Bug Fixes
+
+- Can not create resources because of "Resource `metadata.name` must be set" error #2
+
 ## 0.2.0
 
 ### New

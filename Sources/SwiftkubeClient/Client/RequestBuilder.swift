@@ -77,7 +77,6 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	func resource(_ resource: Resource) -> RequestBuilder {
 		self.resource = resource
-		self.resourceName = resource.name
 		return self
 	}
 
@@ -108,7 +107,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 			components?.path += "/log"
 		}
 
-		guard !(method.hasRequestBody && resourceName == nil) else {
+		guard !(method.hasRequestBody && resource?.name == nil) else {
 			throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
 		}
 
