@@ -77,6 +77,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	func resource(_ resource: Resource) -> RequestBuilder {
 		self.resource = resource
+		self.resourceName = resource.name
 		return self
 	}
 
