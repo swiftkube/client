@@ -1,13 +1,19 @@
 # Changelog
 
-## 0.X.X
+## 0.2.0
 
-### New Features
+### New
 
 - Add support for `ListOptions`
+- Add `core.v1.Pod` status read and update API
+
+### Bug Fixes
+
+- KubernetesClient can't create x509 authentication from local kubeconfig's certificate data and key #1
 
 ### API Changes
 
+- Initializers of `GenericKubernetesClients` are no longer public
 - Function signature change:
   - from `watch(in:watch:) throws -> EventLoopFuture<Void>`
   - to `watch(in:using:) throws -> HTTPClient.Task<Void>`
