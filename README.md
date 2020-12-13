@@ -5,7 +5,7 @@
 <p align="center">
 	<img src="https://img.shields.io/badge/Swift-5.2-orange.svg" />
 	<a href="https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.18.9-blue.svg" alt="Kubernetes 1.18.9"/>
+		<img src="https://img.shields.io/badge/Kubernetes-1.18.13-blue.svg" alt="Kubernetes 1.18.13"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -44,8 +44,9 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [x] Loading resources from external sources
   - [x] from files
   - [x] from URLs
-- [ ] Read & List Options
-- [ ] Delete Options
+- [ ] Read Options
+- [x] List Options
+- [x] Delete Options
 - [ ] PATCH API
 - [ ] `/scale` API
 - [ ] `/status` API
@@ -58,9 +59,9 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 
 ## Compatibility Matrix
 
-|                           | K8s <1.18.9| K8s 1.18.9 |
-|---------------------------|------------|------------|
-| SwiftkubeClient 0.1.0     | -          | ✓          |
+|                                        | K8s <1.18.9 | K8s 1.18.9 - 1.18.13 |
+|---------------------------------|------------------|-----------------------------|
+| SwiftkubeClient 0.3.x     | -                   | ✓                               |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.

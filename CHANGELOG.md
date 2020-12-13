@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.3.0 (pending)
+## 0.3.1
+
+- Update to Kubernetes model v1.18.13
+  - No model changes between 1.18.9 and 1.18.13. This release is to track the update explicitly via a version bump.
+
+## 0.3.0
 
 ### New
 
