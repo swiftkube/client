@@ -26,6 +26,20 @@ public struct KubernetesClientConfig {
 	public let authentication: KubernetesClientAuthentication
 	public let trustRoots: NIOSSLTrustRoots?
 	public let insecureSkipTLSVerify: Bool
+
+	public init(
+		masterURL: URL,
+		namespace: String,
+		authentication: KubernetesClientAuthentication,
+		trustRoots: NIOSSLTrustRoots?,
+		insecureSkipTLSVerify: Bool
+	) {
+		self.masterURL = masterURL
+		self.namespace = namespace
+		self.authentication = authentication
+		self.trustRoots = trustRoots
+		self.insecureSkipTLSVerify = insecureSkipTLSVerify
+	}
 }
 
 internal protocol KubernetesClientConfigLoader {
