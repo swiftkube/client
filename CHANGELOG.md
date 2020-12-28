@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2
+
+- Change personal copyright to Swiftkube Project
+- Make `KubernetesClientConfig` initializer public #3
+
 ## 0.3.1
 
 - Update to Kubernetes model v1.18.13

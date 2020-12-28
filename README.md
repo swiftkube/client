@@ -297,7 +297,7 @@ let gvk = GroupVersionKind(for: "deploy")
 To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.3.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.3.2"),
 ```
 
 then include it as a dependency in your target:
@@ -308,7 +308,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.3.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.3.2")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
