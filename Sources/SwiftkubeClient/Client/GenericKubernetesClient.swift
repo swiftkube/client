@@ -28,6 +28,7 @@ public enum ResourceOrStatus<T> {
 	case status(meta.v1.Status)
 }
 
+
 /// A generic client implementation following the Kubernetes API style.
 public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
@@ -36,19 +37,42 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	internal let httpClient: HTTPClient
 	internal let config: KubernetesClientConfig
 	internal let logger: Logger
-	internal let jsonDecoder: JSONDecoder
+	
+    internal let jsonDecoder: JSONDecoder = {
+        let timeFormatter: ISO8601DateFormatter = {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = .withInternetDateTime
+            return formatter
+        }()
 
-	internal var timeFormatter: ISO8601DateFormatter = {
-		let formatter = ISO8601DateFormatter()
-		formatter.formatOptions = .withInternetDateTime
-		return formatter
-	}()
+        let microTimeFormatter: ISO8601DateFormatter = {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return formatter
+        }()
+        
+        let jsonDecoder = JSONDecoder()
+        jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
+            let string = try decoder.singleValueContainer().decode(String.self)
 
-	internal var microTimeFormatter: ISO8601DateFormatter = {
-		let formatter = ISO8601DateFormatter()
-		formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-		return formatter
-	}()
+            if let date = timeFormatter.date(from: string) {
+                return date
+            }
+
+            if let date = microTimeFormatter.date(from: string) {
+                return date
+            }
+
+            let context = DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
+            )
+            throw DecodingError.dataCorrupted(context)
+        }
+        
+        return jsonDecoder
+    }()
+
 
 	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
 		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, logger: logger)
@@ -59,24 +83,6 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		self.config = config
 		self.gvk = gvk
 		self.logger = logger ?? KubernetesClient.loggingDisabled
-		self.jsonDecoder = JSONDecoder()
-		jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
-			let string = try decoder.singleValueContainer().decode(String.self)
-
-			if let date = self.timeFormatter.date(from: string) {
-				return date
-			}
-
-			if let date = self.microTimeFormatter.date(from: string) {
-				return date
-			}
-
-			let context = DecodingError.Context(
-				codingPath: decoder.codingPath,
-				debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
-			)
-			throw DecodingError.dataCorrupted(context)
-		}
 	}
 
 	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
