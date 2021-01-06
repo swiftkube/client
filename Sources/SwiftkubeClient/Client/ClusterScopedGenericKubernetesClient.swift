@@ -18,7 +18,7 @@ import AsyncHTTPClient
 import NIO
 import SwiftkubeModel
 
-// MARK: - Cluster Scoped Client
+// MARK: - ClusterScopedGenericKubernetesClient
 
 /// A generic Kubernetes client class for cluster-scoped API resource objects.
 public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource & ClusterScopedResource>: GenericKubernetesClient<Resource> {
@@ -35,7 +35,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name.
 	func get(name: String) -> EventLoopFuture<Resource> {
-		return super.get(in: .allNamespaces, name: name)
+		super.get(in: .allNamespaces, name: name)
 	}
 
 	/// Watches the API resource collection.
@@ -56,7 +56,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
 	func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
-		return try super.watch(in: .allNamespaces, using: ResourceWatch<Resource>(eventHandler))
+		try super.watch(in: .allNamespaces, using: ResourceWatch<Resource>(eventHandler))
 	}
 }
 
@@ -71,7 +71,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ListableRe
 	///
 	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
 	func list(options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
-		return super.list(in: .allNamespaces, options: options)
+		super.list(in: .allNamespaces, options: options)
 	}
 }
 
@@ -86,7 +86,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: CreatableR
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
 	func create(_ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .allNamespaces, resource)
+		super.create(in: .allNamespaces, resource)
 	}
 
 	/// Creates an API resource.
@@ -95,7 +95,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: CreatableR
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
 	func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: .allNamespaces, block())
+		super.create(in: .allNamespaces, block())
 	}
 }
 
@@ -110,7 +110,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Replaceabl
 	///
 	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
 	func update(_ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.update(in: .allNamespaces, resource)
+		super.update(in: .allNamespaces, resource)
 	}
 }
 
@@ -127,7 +127,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: DeletableR
 	///
 	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
 	func delete(name: String, options: meta.v1.DeleteOptions? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: .allNamespaces, name: name, options: options)
+		super.delete(in: .allNamespaces, name: name, options: options)
 	}
 }
 
@@ -140,6 +140,6 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Collection
 	///
 	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
 	func deleteAll() -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.deleteAll(in: .allNamespaces)
+		super.deleteAll(in: .allNamespaces)
 	}
 }

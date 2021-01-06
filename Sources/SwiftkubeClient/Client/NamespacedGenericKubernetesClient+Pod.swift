@@ -21,14 +21,14 @@ import SwiftkubeModel
 public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod {
 
 	func follow(in namespace: NamespaceSelector? = nil, name: String, container: String?, lineHandler: @escaping LogWatch.LineHandler) throws -> HTTPClient.Task<Void> {
-		return try super.follow(in: namespace ?? .namespace(self.config.namespace), name: name, container: container, using: LogWatch(logger: logger, lineHandler))
+		try super.follow(in: namespace ?? .namespace(config.namespace), name: name, container: container, using: LogWatch(logger: logger, lineHandler))
 	}
 
 	func status(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<core.v1.Pod> {
-		return try super.status(in: namespace ?? .namespace(self.config.namespace), name: name)
+		try super.status(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	func updateStatus(in namespace: NamespaceSelector? = nil, _ pod: core.v1.Pod) throws -> EventLoopFuture<core.v1.Pod> {
-		return try super.updateStatus(in: namespace ?? .namespace(self.config.namespace), pod)
+		try super.updateStatus(in: namespace ?? .namespace(config.namespace), pod)
 	}
 }

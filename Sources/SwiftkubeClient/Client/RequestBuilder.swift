@@ -21,6 +21,7 @@ import NIOHTTP1
 import SwiftkubeModel
 
 extension HTTPMethod {
+
 	var hasRequestBody: Bool {
 		switch self {
 		case .POST, .PUT, .PATCH:
@@ -30,6 +31,8 @@ extension HTTPMethod {
 		}
 	}
 }
+
+// MARK: - RequestBuilder
 
 ///
 /// An internal builder class for building API request objects.
@@ -65,21 +68,21 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	}
 
 	func status() -> RequestBuilder {
-		self.statusRequest = true
+		statusRequest = true
 		return self
 	}
 
 	func toWatch() -> RequestBuilder {
-		self.method = .GET
-		self.watchRequest = true
+		method = .GET
+		watchRequest = true
 		return self
 	}
 
 	func toFollow(pod: String, container: String?) -> RequestBuilder {
-		self.method = .GET
-		self.resourceName = pod
+		method = .GET
+		resourceName = pod
 		self.container = container
-		self.followRequest = true
+		followRequest = true
 		return self
 	}
 
@@ -89,7 +92,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	}
 
 	func resource(withName name: String?) -> RequestBuilder {
-		self.resourceName = name
+		resourceName = name
 		return self
 	}
 
@@ -99,12 +102,12 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	}
 
 	func with(options: [ListOption]?) -> RequestBuilder {
-		self.listOptions = options
+		listOptions = options
 		return self
 	}
 
 	func with(options: meta.v1.DeleteOptions?) -> RequestBuilder {
-		self.deleteOptions = options
+		deleteOptions = options
 		return self
 	}
 
@@ -153,8 +156,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		}
 
 		let headers = buildHeaders(withAuthentication: config.authentication)
-		var body: HTTPClient.Body? = nil
-
+		var body: HTTPClient.Body?
 
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .iso8601
@@ -165,7 +167,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		}
 
 		if let options = deleteOptions {
-			let data =  try encoder.encode(options)
+			let data = try encoder.encode(options)
 			body = .data(data)
 		}
 
@@ -189,7 +191,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	}
 
 	func add(queryItem: URLQueryItem) {
-		if (components?.queryItems == nil) {
+		if components?.queryItems == nil {
 			components?.queryItems = []
 		}
 		components?.queryItems?.append(queryItem)

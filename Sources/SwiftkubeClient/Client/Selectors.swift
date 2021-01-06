@@ -21,6 +21,8 @@ import NIO
 import NIOHTTP1
 import SwiftkubeModel
 
+// MARK: - NamespaceSelector
+
 public enum NamespaceSelector {
 	case namespace(String)
 	case `default`
@@ -48,23 +50,23 @@ public enum NamespaceSelector {
 }
 
 internal extension Dictionary where Key == String, Value == String {
-
 	func asQueryParam(joiner op: String) -> String {
-		self.map { key, value in "\(key)\(op)\(value)"}
+		map { key, value in "\(key)\(op)\(value)" }
 			.joined(separator: ",")
 	}
 }
 
 internal extension Dictionary where Key == String, Value == [String] {
-
 	func asQueryParam(joiner op: String) -> String {
-		self.map { key, value in
+		map { key, value in
 			let joinedValue = value.joined(separator: ",")
 			return "\(key) \(op) (\(joinedValue))"
 		}
 		.joined(separator: ",")
 	}
 }
+
+// MARK: - LabelSelectorRequirement
 
 public enum LabelSelectorRequirement {
 	case eq([String: String])
@@ -75,19 +77,21 @@ public enum LabelSelectorRequirement {
 
 	internal var value: String {
 		switch self {
-		case .eq(let labels):
+		case let .eq(labels):
 			return labels.asQueryParam(joiner: "=")
-		case .neq(let labels):
+		case let .neq(labels):
 			return labels.asQueryParam(joiner: "!=")
-		case .in(let labels):
+		case let .in(labels):
 			return labels.asQueryParam(joiner: "in")
-		case .notIn(let labels):
+		case let .notIn(labels):
 			return labels.asQueryParam(joiner: "notin")
-		case .exists(let labels):
+		case let .exists(labels):
 			return labels.joined(separator: ",")
 		}
 	}
 }
+
+// MARK: - FieldSelectorRequirement
 
 public enum FieldSelectorRequirement {
 	case eq([String: String])
@@ -95,13 +99,15 @@ public enum FieldSelectorRequirement {
 
 	internal var value: String {
 		switch self {
-		case .eq(let labels):
+		case let .eq(labels):
 			return labels.asQueryParam(joiner: "=")
-		case .neq(let labels):
+		case let .neq(labels):
 			return labels.asQueryParam(joiner: "!=")
 		}
 	}
 }
+
+// MARK: - ListOption
 
 public enum ListOption {
 	case limit(Int)
@@ -113,34 +119,34 @@ public enum ListOption {
 
 	public var name: String {
 		switch self {
-		case .limit(_):
+		case .limit:
 			return "limit"
 		case .labelSelector:
 			return "labelSelector"
 		case .fieldSelector:
 			return "fieldSelector"
-		case .resourceVersion(_):
+		case .resourceVersion:
 			return "resourceVersion"
-		case .timeoutSeconds(_):
+		case .timeoutSeconds:
 			return "timeoutSeconds"
-		case .pretty(_):
+		case .pretty:
 			return "pretty"
 		}
 	}
 
 	public var value: String {
 		switch self {
-		case .limit(let limit):
+		case let .limit(limit):
 			return limit.description
-		case .labelSelector(let requirement):
+		case let .labelSelector(requirement):
 			return requirement.value
-		case .fieldSelector(let requirement):
+		case let .fieldSelector(requirement):
 			return requirement.value
-		case .resourceVersion(let version):
+		case let .resourceVersion(version):
 			return version
-		case .timeoutSeconds(let timeout):
+		case let .timeoutSeconds(timeout):
 			return timeout.description
-		case .pretty(let pretty):
+		case let .pretty(pretty):
 			return pretty.description
 		}
 	}

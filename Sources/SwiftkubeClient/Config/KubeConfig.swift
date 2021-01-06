@@ -16,6 +16,8 @@
 
 import Foundation
 
+// MARK: - KubeConfig
+
 public struct KubeConfig: Codable {
 
 	enum CodingKeys: String, CodingKey {
@@ -34,8 +36,9 @@ public struct KubeConfig: Codable {
 	public var contexts: [NamedContext]?
 
 	public var currentContext: String?
-
 }
+
+// MARK: - Cluster
 
 public struct Cluster: Codable {
 
@@ -59,8 +62,9 @@ public struct Cluster: Codable {
 	public var certificateAuthorityData: Data?
 
 	public var proxyURL: String?
-
 }
+
+// MARK: - AuthInfo
 
 public struct AuthInfo: Codable {
 
@@ -107,8 +111,9 @@ public struct AuthInfo: Codable {
 	public var exec: ExecConfig?
 }
 
-public struct Context: Codable {
+// MARK: - Context
 
+public struct Context: Codable {
 	public var cluster: String
 
 	public var user: String
@@ -116,22 +121,25 @@ public struct Context: Codable {
 	public var namespace: String?
 }
 
-public struct NamedCluster: Codable {
+// MARK: - NamedCluster
 
+public struct NamedCluster: Codable {
 	public var name: String
 
 	public var cluster: Cluster
 }
 
-public struct NamedContext: Codable {
+// MARK: - NamedContext
 
+public struct NamedContext: Codable {
 	public var name: String
 
 	public var context: Context
 }
 
-public struct NamedAuthInfo: Codable {
+// MARK: - NamedAuthInfo
 
+public struct NamedAuthInfo: Codable {
 	enum CodingKeys: String, CodingKey {
 		case name
 		case authInfo = "user"
@@ -142,15 +150,17 @@ public struct NamedAuthInfo: Codable {
 	public var authInfo: AuthInfo
 }
 
-public struct AuthProviderConfig: Codable {
+// MARK: - AuthProviderConfig
 
+public struct AuthProviderConfig: Codable {
 	public var name: String
 
 	public var config: [String: String]
 }
 
-public struct ExecConfig: Codable {
+// MARK: - ExecConfig
 
+public struct ExecConfig: Codable {
 	public var command: String
 
 	public var args: [String]?
@@ -160,8 +170,9 @@ public struct ExecConfig: Codable {
 	public var apiVersion: String
 }
 
-public struct ExecEnvVar: Codable {
+// MARK: - ExecEnvVar
 
+public struct ExecEnvVar: Codable {
 	public var name: String
 
 	public var value: String

@@ -18,7 +18,7 @@ import AsyncHTTPClient
 import NIO
 import SwiftkubeModel
 
-// MARK: - Namespace Scoped Client
+// MARK: - NamespacedGenericKubernetesClient
 
 /// A generic Kubernetes client class for namespace-scoped API resource objects.
 public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource & NamespacedResource>: GenericKubernetesClient<Resource> {
@@ -39,7 +39,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
 	func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
-		return super.get(in: namespace ?? .namespace(self.config.namespace), name: name)
+		super.get(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	/// Watches the API resource collection in the given namespace.
@@ -64,7 +64,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
 	func watch(in namespace: NamespaceSelector? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
-		return try super.watch(in: namespace ?? .namespace(self.config.namespace), using: ResourceWatch<Resource>(logger: logger, eventHandler))
+		try super.watch(in: namespace ?? .namespace(config.namespace), using: ResourceWatch<Resource>(logger: logger, eventHandler))
 	}
 }
 
@@ -83,7 +83,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ListableResou
 	///
 	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
 	func list(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
-		return super.list(in: namespace ?? .namespace(self.config.namespace) , options: options)
+		super.list(in: namespace ?? .namespace(config.namespace), options: options)
 	}
 }
 
@@ -102,7 +102,7 @@ public extension NamespacedGenericKubernetesClient where Resource: CreatableReso
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
 	func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: namespace ?? .namespace(config.namespace), resource)
+		super.create(in: namespace ?? .namespace(config.namespace), resource)
 	}
 
 	/// Creates an API resource in the given namespace.
@@ -115,7 +115,7 @@ public extension NamespacedGenericKubernetesClient where Resource: CreatableReso
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
 	func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
-		return super.create(in: namespace ?? .namespace(config.namespace), block())
+		super.create(in: namespace ?? .namespace(config.namespace), block())
 	}
 }
 
@@ -134,7 +134,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReplaceableRe
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
 	func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		return super.update(in: namespace ?? .namespace(config.namespace), resource)
+		super.update(in: namespace ?? .namespace(config.namespace), resource)
 	}
 }
 
@@ -154,7 +154,7 @@ public extension NamespacedGenericKubernetesClient where Resource: DeletableReso
 	///
 	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
 	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String, options: meta.v1.DeleteOptions? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
+		super.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 }
 
@@ -171,6 +171,6 @@ public extension NamespacedGenericKubernetesClient where Resource: CollectionDel
 	///
 	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
 	func deleteAll(inNamespace namespace: NamespaceSelector? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		return super.deleteAll(in: namespace ?? .namespace(config.namespace))
+		super.deleteAll(in: namespace ?? .namespace(config.namespace))
 	}
 }

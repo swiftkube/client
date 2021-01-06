@@ -22,12 +22,15 @@ import NIOHTTP1
 import NIOSSL
 import SwiftkubeModel
 
+// MARK: - ResourceOrStatus
+
 /// Represens a response with a concrete `KubernetesAPIResource` or a `meta.v1.Status` object.
 public enum ResourceOrStatus<T> {
 	case resource(T)
 	case status(meta.v1.Status)
 }
 
+// MARK: - GenericKubernetesClient
 
 /// A generic client implementation following the Kubernetes API style.
 public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
@@ -86,7 +89,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
 		do {
-			let eventLoop = self.httpClient.eventLoopGroup.next()
+			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.GET).resource(withName: name).in(namespace).build()
 
 			return httpClient.execute(request: request, logger: logger).flatMap { response in
@@ -99,14 +102,14 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 	public func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		do {
-			let eventLoop = self.httpClient.eventLoopGroup.next()
+			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.POST).resource(resource).in(namespace).build()
 
 			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
 			}
 		} catch {
-			return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
 
@@ -148,17 +151,16 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
 }
 
 internal extension GenericKubernetesClient {
 
 	func makeRequest() -> RequestBuilder<Resource> {
-		return RequestBuilder(config: config, gvk: gvk)
+		RequestBuilder(config: config, gvk: gvk)
 	}
 
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
-		return handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
+		handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
 			guard case let ResourceOrStatus.resource(resource) = result else {
 				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
 			}
@@ -251,6 +253,6 @@ internal extension GenericKubernetesClient {
 		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 
-		return self.httpClient.execute(request: request, delegate: delegate, logger: logger)
+		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
 }

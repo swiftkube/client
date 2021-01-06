@@ -21,6 +21,8 @@ import NIO
 import NIOHTTP1
 import SwiftkubeModel
 
+// MARK: - EventType
+
 public enum EventType: String, RawRepresentable {
 	case added = "ADDED"
 	case modified = "MODIFIED"
@@ -28,9 +30,13 @@ public enum EventType: String, RawRepresentable {
 	case error = "ERROR"
 }
 
+// MARK: - Watcher
+
 protocol Watcher {
 	func handle(payload: Data)
 }
+
+// MARK: - ResourceWatch
 
 final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 
@@ -51,7 +57,7 @@ final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 			return
 		}
 
-		string.enumerateLines { (line, _) in
+		string.enumerateLines { line, _ in
 			guard
 				let data = line.data(using: .utf8),
 				let event = try? self.decoder.decode(meta.v1.WatchEvent.self, from: data)
@@ -67,7 +73,7 @@ final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 
 			guard
 				let jsonData = try? JSONSerialization.data(withJSONObject: event.object),
-				let resource = try?	self.decoder.decode(Resource.self, from: jsonData)
+				let resource = try? self.decoder.decode(Resource.self, from: jsonData)
 			else {
 				self.logger.warning("Error deserializing \(String(describing: Resource.self))")
 				return
@@ -77,6 +83,8 @@ final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 		}
 	}
 }
+
+// MARK: - LogWatch
 
 final public class LogWatch: Watcher {
 
@@ -96,13 +104,16 @@ final public class LogWatch: Watcher {
 			return
 		}
 
-		string.enumerateLines { (line, _) in
+		string.enumerateLines { line, _ in
 			self.lineHandler(line)
 		}
 	}
 }
 
+// MARK: - WatchDelegate
+
 internal class WatchDelegate: HTTPClientResponseDelegate {
+
 	typealias Response = Void
 
 	private let watch: Watcher
@@ -137,7 +148,7 @@ internal class WatchDelegate: HTTPClientResponseDelegate {
 		return task.eventLoop.makeSucceededFuture(())
 	}
 
-	func didFinishRequest(task: HTTPClient.Task<Response>) throws -> Void {
+	func didFinishRequest(task: HTTPClient.Task<Response>) throws {
 		logger.debug("Did finish request: \(task)")
 		return ()
 	}

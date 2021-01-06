@@ -17,6 +17,8 @@
 import Foundation
 import SwiftkubeModel
 
+// MARK: - AppsV1API
+
 public protocol AppsV1API {
 	var daemonSets: NamespacedGenericKubernetesClient<apps.v1.DaemonSet> { get }
 	var deployments: NamespacedGenericKubernetesClient<apps.v1.Deployment> { get }
@@ -49,8 +51,9 @@ public extension KubernetesClient {
 	var appsV1: AppsV1API { AppsV1(self) }
 }
 
-public protocol NetworkingV1Beta1API {
+// MARK: - NetworkingV1Beta1API
 
+public protocol NetworkingV1Beta1API {
 	var ingresses: NamespacedGenericKubernetesClient<networking.v1beta1.Ingress> { get }
 }
 
@@ -72,8 +75,9 @@ public extension KubernetesClient {
 	var networkingV1Beta1: NetworkingV1Beta1API { NetworkingV1Beta1(self) }
 }
 
-public protocol RBACV1API {
+// MARK: - RBACV1API
 
+public protocol RBACV1API {
 	var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRole> { get }
 	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBinding> { get }
 	var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> { get }
