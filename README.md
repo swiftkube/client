@@ -44,7 +44,7 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [x] Loading resources from external sources
   - [x] from files
   - [x] from URLs
-- [ ] Read Options
+- [x] Read Options
 - [x] List Options
 - [x] Delete Options
 - [ ] PATCH API
@@ -153,6 +153,16 @@ let deployments = try client.appsV1.deployments.list(in: .allNamespaces, options
 let namespace = try client.namespaces.get(name: "ns").wait()
 let deployment = try client.appsV1.deployments.get(in: .namespace("ns"), name: "nginx").wait()
 let roles = try client.rbacV1.roles.get(in: .namespace("ns"), name: "role").wait()
+```
+
+You can also provide the following `ReadOptions`:
+
+```swift
+let deployments = try client.appsV1.deployments.get(in: .allNamespaces, options: [
+	.pretty(true),
+	.exact(false),
+	.export(true)
+]).wait()
 ```
 
 #### Delete a resource
