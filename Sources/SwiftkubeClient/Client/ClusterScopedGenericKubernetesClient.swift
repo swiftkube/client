@@ -38,7 +38,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 		super.get(in: .allNamespaces, name: name)
 	}
 
-	/// Watches the API resource collection.
+	/// Watches cluster-scoped resources.
 	///
 	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
 	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.

@@ -76,7 +76,7 @@ public class KubernetesClient {
 	/// Create a new instance of the Kubernetes client.
 	///
 	/// - Parameters:
-	///    - config; The configuration for this client instance.
+	///    - config: The configuration for this client instance.
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
 	public init(
@@ -155,30 +155,37 @@ public extension KubernetesClient {
 /// Scoped client DSL for the `core` API Group
 public extension KubernetesClient {
 
+	/// Constructs a namespace-scoped client for `core.v1.ConfigMap` resources.
 	var configMaps: NamespacedGenericKubernetesClient<core.v1.ConfigMap> {
 		namespaceScoped(for: core.v1.ConfigMap.self)
 	}
 
+	/// Constructs a namespace-scoped client for `core.v1.Event` resources.
 	var events: NamespacedGenericKubernetesClient<core.v1.Event> {
 		namespaceScoped(for: core.v1.Event.self)
 	}
 
+	/// Constructs a cluster-scoped client for `core.v1.Namespace` resources.
 	var namespaces: ClusterScopedGenericKubernetesClient<core.v1.Namespace> {
 		clusterScoped(for: core.v1.Namespace.self)
 	}
 
+	/// Constructs a cluster-scoped client for `core.v1.Node` resources.
 	var nodes: ClusterScopedGenericKubernetesClient<core.v1.Node> {
 		clusterScoped(for: core.v1.Node.self)
 	}
 
+	/// Constructs a namespace-scoped client for `core.v1.Pod` resources.
 	var pods: NamespacedGenericKubernetesClient<core.v1.Pod> {
 		namespaceScoped(for: core.v1.Pod.self)
 	}
 
+	/// Constructs a namespace-scoped client for `core.v1.Secret` resources.
 	var secrets: NamespacedGenericKubernetesClient<core.v1.Secret> {
 		namespaceScoped(for: core.v1.Secret.self)
 	}
 
+	/// Constructs a namespace-scoped client for `core.v1.Service` resources.
 	var services: NamespacedGenericKubernetesClient<core.v1.Service> {
 		namespaceScoped(for: core.v1.Service.self)
 	}

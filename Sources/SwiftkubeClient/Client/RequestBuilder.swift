@@ -35,10 +35,9 @@ extension HTTPMethod {
 // MARK: - RequestBuilder
 
 ///
-/// An internal builder class for building API request objects.
+/// An internal class for building API request objects.
 ///
 /// It assumes a correct usage and does only minimal sanity checks.
-///
 internal class RequestBuilder<Resource: KubernetesAPIResource> {
 
 	let config: KubernetesClientConfig

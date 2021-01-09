@@ -42,7 +42,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 		super.get(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
-	/// Watches the API resource collection in the given namespace.
+	/// Watches the API resources in the given namespace.
 	///
 	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
 	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
@@ -73,7 +73,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 /// API functions for `ListableResource`.
 public extension NamespacedGenericKubernetesClient where Resource: ListableResource {
 
-	/// Lists the collection of API resources in the given namespace.
+	/// Lists API resources in the given namespace.
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
 	///
@@ -163,7 +163,7 @@ public extension NamespacedGenericKubernetesClient where Resource: DeletableReso
 /// API functions for `CollectionDeletableResource`.
 public extension NamespacedGenericKubernetesClient where Resource: CollectionDeletableResource {
 
-	/// Deletes all API resources in the target collection in the given namespace.
+	/// Deletes all API resources in the given namespace.
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
 	///
