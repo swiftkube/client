@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+### New
+
+- Add SwiftFormat config and format code base accordingly
+- Add support for `ReadOptions`
+
+### Bug Fixes
+
+- Fix massive memory leak by breaking retain cycle between the `JSONDecoder` and `DateFormatters` #4 by @t089
+
 ## 0.3.2
 
 - Change personal copyright to Swiftkube Project
