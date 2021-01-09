@@ -38,8 +38,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///   - name: The name of the API resource to load.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
-	func get(in namespace: NamespaceSelector? = nil, name: String) -> EventLoopFuture<Resource> {
-		super.get(in: namespace ?? .namespace(config.namespace), name: name)
+	func get(in namespace: NamespaceSelector? = nil, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
+		super.get(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 
 	/// Watches the API resources in the given namespace.

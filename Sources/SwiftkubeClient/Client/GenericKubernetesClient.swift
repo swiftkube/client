@@ -115,10 +115,10 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - name: The name of the API resource to load.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
-	public func get(in namespace: NamespaceSelector, name: String) -> EventLoopFuture<Resource> {
+	public func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.GET).resource(withName: name).in(namespace).build()
+			let request = try makeRequest().to(.GET).resource(withName: name).in(namespace).with(options: options).build()
 
 			return httpClient.execute(request: request, logger: logger).flatMap { response in
 				self.handle(response, eventLoop: eventLoop)

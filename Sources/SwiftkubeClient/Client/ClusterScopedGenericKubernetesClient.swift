@@ -34,8 +34,8 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	/// - Parameter name: The name of the API resource to load.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name.
-	func get(name: String) -> EventLoopFuture<Resource> {
-		super.get(in: .allNamespaces, name: name)
+	func get(name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
+		super.get(in: .allNamespaces, name: name, options: options)
 	}
 
 	/// Watches cluster-scoped resources.

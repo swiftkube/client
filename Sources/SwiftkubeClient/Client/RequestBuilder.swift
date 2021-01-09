@@ -49,6 +49,7 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 	var resource: Resource?
 	var resourceName: String?
 	var listOptions: [ListOption]?
+	var readOptions: [ReadOption]?
 	var deleteOptions: meta.v1.DeleteOptions?
 	var statusRequest: Bool = false
 	var watchRequest: Bool = false
@@ -105,6 +106,11 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return self
 	}
 
+	func with(options: [ReadOption]?) -> RequestBuilder {
+		readOptions = options
+		return self
+	}
+
 	func with(options: meta.v1.DeleteOptions?) -> RequestBuilder {
 		deleteOptions = options
 		return self
@@ -129,13 +135,12 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 			throw SwiftkubeClientError.badRequest("Resource can't be set for DELETE call.")
 		}
 
+		if let readOptions = readOptions {
+			readOptions.collectQueryItems().forEach(add(queryItem:))
+		}
+
 		if let listOptions = listOptions {
-			Dictionary(grouping: listOptions, by: { $0.name })
-				.map {
-					let value = $0.value.map(\.value).joined(separator: ",")
-					return URLQueryItem(name: $0.key, value: value)
-				}
-				.forEach(add(queryItem:))
+			listOptions.collectQueryItems().forEach(add(queryItem:))
 		}
 
 		if watchRequest {
