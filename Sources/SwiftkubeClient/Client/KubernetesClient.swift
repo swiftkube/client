@@ -17,6 +17,7 @@
 import AsyncHTTPClient
 import Foundation
 import Logging
+import Metrics
 import NIO
 import NIOHTTP1
 import NIOSSL
@@ -109,8 +110,8 @@ public class KubernetesClient {
 		)
 	}
 
-	deinit {
-		try? httpClient.syncShutdown()
+	public func syncShutdown() throws {
+		try httpClient.syncShutdown()
 	}
 }
 
