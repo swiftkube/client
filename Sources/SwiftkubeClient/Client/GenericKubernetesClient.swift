@@ -17,6 +17,7 @@
 import AsyncHTTPClient
 import Foundation
 import Logging
+import Metrics
 import NIO
 import NIOHTTP1
 import NIOSSL
@@ -120,9 +121,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.GET).resource(withName: name).in(namespace).with(options: options).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
@@ -142,9 +141,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.POST).resource(resource).in(namespace).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
@@ -164,9 +161,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.PUT).resource(withName: resource.name).resource(resource).in(namespace).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
@@ -186,9 +181,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.DELETE).resource(withName: name).in(namespace).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handleResourceOrStatus(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
@@ -206,9 +199,30 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.DELETE).in(namespace).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handleResourceOrStatus(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
+public extension GenericKubernetesClient where Resource: ListableResource {
+
+	/// Lists API resources in the given namespace.
+	///
+	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - options: `ListOptions` instance to control the behaviour of the `List` operation.
+	///
+	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
+	func list(in namespace: NamespaceSelector, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().to(.GET).in(namespace).with(options: options).build()
+
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
@@ -219,6 +233,63 @@ internal extension GenericKubernetesClient {
 
 	func makeRequest() -> RequestBuilder<Resource> {
 		RequestBuilder(config: config, gvk: gvk)
+	}
+
+	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<T> {
+		let startTime = DispatchTime.now().uptimeNanoseconds
+
+		return httpClient.execute(request: request, logger: logger)
+			.always { (result: Result<HTTPClient.Response, Error>) in
+				self.updateMetrics(startTime: startTime, request: request, result: result)
+			}
+			.flatMap { response in
+				self.handle(response, eventLoop: eventLoop)
+			}
+	}
+
+	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
+		let startTime = DispatchTime.now().uptimeNanoseconds
+
+		return httpClient.execute(request: request, logger: logger)
+			.always { (result: Result<HTTPClient.Response, Error>) in
+				self.updateMetrics(startTime: startTime, request: request, result: result)
+			}
+			.flatMap { response in
+				self.handleResourceOrStatus(response, eventLoop: eventLoop)
+			}
+	}
+
+	func updateMetrics(startTime: UInt64, request: HTTPClient.Request, result: Result<HTTPClient.Response, Error>) {
+		let method = request.method.rawValue
+		let path = request.url.path
+
+		switch result {
+		case let .success(response):
+			let statusCode = response.status.code
+			let counterDimensions = [
+				("method", method),
+				("path", path),
+				("status", statusCode.description),
+			]
+
+			Counter(label: "sk_http_requests_total", dimensions: counterDimensions).increment()
+			if statusCode >= 500 {
+				Counter(label: "sk_http_request_errors_total", dimensions: counterDimensions).increment()
+			}
+		case .failure:
+			let counterDimensions = [
+				("method", method),
+				("path", path),
+			]
+			Counter(label: "sk_request_errors_total", dimensions: counterDimensions).increment()
+		}
+
+		Timer(
+			label: "sk_http_request_duration_seconds",
+			dimensions: [("method", method), ("path", path)],
+			preferredDisplayUnit: .seconds
+		)
+		.recordNanoseconds(DispatchTime.now().uptimeNanoseconds - startTime)
 	}
 
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
@@ -257,31 +328,6 @@ internal extension GenericKubernetesClient {
 	}
 }
 
-public extension GenericKubernetesClient where Resource: ListableResource {
-
-	/// Lists API resources in the given namespace.
-	///
-	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
-	///
-	/// - Parameters:
-	///   - namespace: The namespace for this API request.
-	///   - options: `ListOptions` instance to control the behaviour of the `List` operation.
-	///
-	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
-	func list(in namespace: NamespaceSelector, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.GET).in(namespace).with(options: options).build()
-
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-}
-
 internal extension GenericKubernetesClient {
 
 	func status(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<Resource> {
@@ -289,9 +335,7 @@ internal extension GenericKubernetesClient {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.GET).resource(withName: name).status().in(namespace).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
@@ -302,9 +346,7 @@ internal extension GenericKubernetesClient {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().to(.PUT).resource(resource).status().in(namespace).build()
 
-			return httpClient.execute(request: request, logger: logger).flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
