@@ -27,6 +27,7 @@
   * [Client authentication](#client-authentication)
   * [Client DSL](#client-dsl)
 * [Advance usage](#advanced-usage)
+* [Metrics](#metrics)
 * [Installation](#installation)
 * [License](#license)
 
@@ -53,15 +54,15 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [ ] Better resource watch support
 - [ ] Better CRD support
 - [ ] Controller/Informer support
-- [ ] Swift Metrics
+- [x] Swift Metrics
 - [ ] Complete documentation
 - [ ] End-to-end tests
 
 ## Compatibility Matrix
 
-|                                        | K8s <1.18.9 | K8s 1.18.9 - 1.18.13 |
-|---------------------------------|------------------|-----------------------------|
-| SwiftkubeClient 0.3.x     | -                   | ✓                               |
+|                           | K8s <1.18.9 | K8s 1.18.9 - 1.18.13 |
+|---------------------------|-------------|----------------------|
+| SwiftkubeClient 0.4.x     | -           | ✓                    |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
@@ -80,7 +81,13 @@ To create a client just import `SwiftkubeClient` and init an instance.
  import SwiftkubeClient
  
  let client = try KubernetesClient()
+ 
+ // when finished
+ try client.syncShutdown()
  ```
+
+You should shut down the `KubernetesClient` instance, which in turn shuts down the underlying `HTTPClient`. Thus you shouldn't call `client.syncShutdown()` before all requests have finished:
+
 
 ### Configuring the client
 
@@ -300,6 +307,41 @@ let gvk = GroupVersionKind(rawValue: "apps/v1/Deployment")
 let gvk = GroupVersionKind(for: "deployment")
 let gvk = GroupVersionKind(for: "deployments")
 let gvk = GroupVersionKind(for: "deploy")
+```
+
+## Metrics
+
+`KubernetesClient` uses [SwiftMetrics](https://github.com/apple/swift-metrics) to collect metric information about the requests count and latencies.
+
+The following metrics are gathered:
+
+- `sk_http_requests_total(counter)`: the total count of the requests made by the client.
+- `sk_http_request_errors_total(counter)`: the total number of requests made, that returned a http error.
+- `sk_request_errors_total(counter)`: the total number of requests that couldn't be dispatched due to non-http errors.
+- `sk_http_request_duration_seconds(timer)`: the complete request durations.
+
+
+### Collecting the metrics
+
+To collect the metrics you have to bootstrap a metrics backend in your application. For example you can collect the metrics to prometheus via `SwiftPrometheus`:
+
+```swift
+import Metrics
+import Prometheus
+
+let prom = PrometheusClient()
+MetricsSystem.bootstrap(prom)
+```
+
+and expose a `/metrics` endpoint for scraping:
+
+```swift
+// if using vapor
+app.get("metrics") { request -> EventLoopFuture<String> in
+    let promise = request.eventLoop.makePromise(of: String.self)
+    try MetricsSystem.prometheus().collect(into: promise)
+    return promise.futureResult
+}
 ```
 
 ## Installation
