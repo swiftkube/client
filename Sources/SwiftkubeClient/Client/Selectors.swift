@@ -23,7 +23,7 @@ import SwiftkubeModel
 
 // MARK: - NamespaceSelector
 
-public enum NamespaceSelector {
+public enum NamespaceSelector: Hashable {
 	case namespace(String)
 	case `default`
 	case `public`
@@ -51,7 +51,7 @@ public enum NamespaceSelector {
 
 // MARK: - LabelSelectorRequirement
 
-public enum LabelSelectorRequirement {
+public enum LabelSelectorRequirement: Hashable {
 	case eq([String: String])
 	case neq([String: String])
 	case `in`([String: [String]])
@@ -76,7 +76,7 @@ public enum LabelSelectorRequirement {
 
 // MARK: - FieldSelectorRequirement
 
-public enum FieldSelectorRequirement {
+public enum FieldSelectorRequirement: Hashable {
 	case eq([String: String])
 	case neq([String: String])
 
@@ -93,7 +93,7 @@ public enum FieldSelectorRequirement {
 // MARK: - ListOption
 
 /// Options for `List` API calls.
-public enum ListOption {
+public enum ListOption: Hashable {
 	/// Limit is a maximum number of responses to return for a list call.
 	///
 	/// If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial
@@ -164,7 +164,7 @@ public enum ListOption {
 // MARK: - ReadOption
 
 /// Options for `Read` API calls
-public enum ReadOption {
+public enum ReadOption: Hashable {
 	/// If 'true', then the output is pretty printed.
 	case pretty(Bool)
 	/// Should the export be exact. Exact export maintains cluster-specific fields like 'Namespace'.
