@@ -376,8 +376,8 @@ internal extension GenericKubernetesClient {
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(in namespace: NamespaceSelector, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
-		let request = try makeRequest().toWatch().in(namespace).build()
+	func watch(in namespace: NamespaceSelector, options: [ListOption]? = nil, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
+		let request = try makeRequest().toWatch().in(namespace).with(options: options).build()
 		let delegate = WatchDelegate(watch: watch, logger: logger)
 
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)

@@ -55,8 +55,8 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
-		try super.watch(in: .allNamespaces, using: ResourceWatch<Resource>(eventHandler))
+	func watch(options: [ListOption]? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
+		try super.watch(in: .allNamespaces, options: options, using: ResourceWatch<Resource>(eventHandler))
 	}
 }
 
