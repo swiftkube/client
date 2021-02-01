@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.0
+
+### New
+
+- Add metrics support for gathering request latencies and counts
+- Support `ListOptions` in watch call
+- Add `watch` and `follow` API that accept a `RecourceWatch` or `LogWatch` instance
+- Add an `errorHandler` closure to `ResourceWatch` and `LogWatch`
+- Make Selectors (`NamespaceSelector`, `LabelSelector` etc.) Hashable
+
+### API Changes
+
+- Replace implicit client shutdown on deinit with explicit `syncShutdow`
+- Expose `ResourceWatch` and `LogWatch` classes for extension
+
 ## 0.4.0
 
 ### New
