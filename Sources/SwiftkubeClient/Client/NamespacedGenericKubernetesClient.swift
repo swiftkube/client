@@ -63,8 +63,42 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
-		try super.watch(in: namespace ?? .namespace(config.namespace), options: options, using: ResourceWatch<Resource>(logger: logger, eventHandler))
+	func watch(
+		in namespace: NamespaceSelector? = nil,
+		options: [ListOption]? = nil,
+		eventHandler: @escaping ResourceWatch<Resource>.EventHandler
+	) throws -> HTTPClient.Task<Void> {
+		let resourceWatch = ResourceWatch<Resource>(onError: nil, onEvent: eventHandler)
+		return try watch(in: namespace, options: options, resourceWatch: resourceWatch)
+	}
+
+	/// Watches the API resources in the given namespace.
+	///
+	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
+	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
+	///
+	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
+	///
+	/// ```swift
+	/// let watch = ResourceWatch<core.v1.Pod>(logger: logger, onError: errorHandler) { (event, pod) in
+	///    print("\(event): \(pod)")
+	///	}
+	/// let task: HTTPClient.Task<Void> = client.pods.watch(in: .namespace("default"), resourceWatch: watch)
+	///	task.cancel()
+	/// ```
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - resourceWatch: A `ResourceWatch` instance, which is used for error and event callbacks. The clients sends each
+	/// event paired with the corresponding resource as a pair to the `eventHandler`. Errors are sent to the `errorHandler`.
+	///
+	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
+	func watch(
+		in namespace: NamespaceSelector? = nil,
+		options: [ListOption]? = nil,
+		resourceWatch: ResourceWatch<Resource>
+	) throws -> HTTPClient.Task<Void> {
+		try super.watch(in: namespace ?? .namespace(config.namespace), options: options, using: resourceWatch)
 	}
 }
 

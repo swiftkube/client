@@ -378,7 +378,7 @@ internal extension GenericKubernetesClient {
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
 	func watch(in namespace: NamespaceSelector, options: [ListOption]? = nil, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toWatch().in(namespace).with(options: options).build()
-		let delegate = WatchDelegate(watch: watch, logger: logger)
+		let delegate = WatchDelegate(watcher: watch, logger: logger)
 
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
@@ -407,7 +407,7 @@ internal extension GenericKubernetesClient {
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
 	func follow(in namespace: NamespaceSelector, name: String, container: String?, using watch: LogWatch) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
-		let delegate = WatchDelegate(watch: watch, logger: logger)
+		let delegate = WatchDelegate(watcher: watch, logger: logger)
 
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}

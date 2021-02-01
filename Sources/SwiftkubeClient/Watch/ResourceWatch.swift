@@ -32,28 +32,40 @@ public enum EventType: String, RawRepresentable {
 
 // MARK: - Watcher
 
-protocol Watcher {
-	func handle(payload: Data)
+public protocol Watcher {
+	typealias ErrorHandler = (SwiftkubeClientError) -> Void
+
+	func onError(error: SwiftkubeClientError)
+	func onNext(payload: Data)
 }
 
 // MARK: - ResourceWatch
 
-final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
+open class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 
 	public typealias EventHandler = (EventType, Resource) -> Void
 
-	private let decoder = JSONDecoder()
-	private let handler: EventHandler
-	private let logger: Logger
+	private let decoder: JSONDecoder
+	private let errorHandler: ErrorHandler?
+	private let eventHandler: EventHandler
 
-	init(logger: Logger? = nil, _ handler: @escaping EventHandler) {
-		self.handler = handler
-		self.logger = logger ?? KubernetesClient.loggingDisabled
+	public init(
+		decoder: JSONDecoder = JSONDecoder(),
+		onError errorHandler: ErrorHandler? = nil,
+		onEvent eventHandler: @escaping EventHandler
+	) {
+		self.decoder = decoder
+		self.errorHandler = errorHandler
+		self.eventHandler = eventHandler
 	}
 
-	internal func handle(payload: Data) {
+	public func onError(error: SwiftkubeClientError) {
+		errorHandler?(error)
+	}
+
+	public func onNext(payload: Data) {
 		guard let string = String(data: payload, encoding: .utf8) else {
-			logger.warning("Could not deserialize payload")
+			errorHandler?(.decodingError("Could not deserialize payload"))
 			return
 		}
 
@@ -62,12 +74,12 @@ final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 				let data = line.data(using: .utf8),
 				let event = try? self.decoder.decode(meta.v1.WatchEvent.self, from: data)
 			else {
-				self.logger.warning("Error decoding meta.v1.WatchEvent payload")
+				self.errorHandler?(.decodingError("Error decoding meta.v1.WatchEvent payload"))
 				return
 			}
 
 			guard let eventType = EventType(rawValue: event.type) else {
-				self.logger.warning("Error parsing EventType")
+				self.errorHandler?(.decodingError("Error parsing EventType"))
 				return
 			}
 
@@ -75,32 +87,39 @@ final public class ResourceWatch<Resource: KubernetesAPIResource>: Watcher {
 				let jsonData = try? JSONSerialization.data(withJSONObject: event.object),
 				let resource = try? self.decoder.decode(Resource.self, from: jsonData)
 			else {
-				self.logger.warning("Error deserializing \(String(describing: Resource.self))")
+				self.errorHandler?(.decodingError("Error deserializing \(String(describing: Resource.self))"))
 				return
 			}
 
-			self.handler(eventType, resource)
+			self.eventHandler(eventType, resource)
 		}
 	}
 }
 
 // MARK: - LogWatch
 
-final public class LogWatch: Watcher {
+open class LogWatch: Watcher {
 
 	public typealias LineHandler = (String) -> Void
 
-	private let logger: Logger
+	private let errorHandler: ErrorHandler?
 	private let lineHandler: LineHandler
 
-	public init(logger: Logger? = nil, _ lineHandler: @escaping LineHandler = { line in print(line) }) {
-		self.logger = logger ?? KubernetesClient.loggingDisabled
+	public init(
+		onError errorHandler: ErrorHandler? = nil,
+		onNext lineHandler: @escaping LineHandler
+	) {
+		self.errorHandler = errorHandler
 		self.lineHandler = lineHandler
 	}
 
-	internal func handle(payload: Data) {
+	public func onError(error: SwiftkubeClientError) {
+		errorHandler?(error)
+	}
+
+	public func onNext(payload: Data) {
 		guard let string = String(data: payload, encoding: .utf8) else {
-			logger.warning("Could not deserialize payload")
+			errorHandler?(.decodingError("Could not deserialize payload"))
 			return
 		}
 
@@ -116,35 +135,30 @@ internal class WatchDelegate: HTTPClientResponseDelegate {
 
 	typealias Response = Void
 
-	private let watch: Watcher
+	private let watcher: Watcher
 	private let logger: Logger
 
-	init(watch: Watcher, logger: Logger) {
-		self.watch = watch
+	init(watcher: Watcher, logger: Logger) {
+		self.watcher = watcher
 		self.logger = logger
-	}
-
-	func didSendRequestHead(task: HTTPClient.Task<Response>, _ head: HTTPRequestHead) {
-		logger.debug("Did send request head: \(head.headers)")
-	}
-
-	func didSendRequestPart(task: HTTPClient.Task<Response>, _ part: IOData) {
-		logger.debug("Did send request part: \(part)")
-	}
-
-	func didSendRequest(task: HTTPClient.Task<Response>) {
-		logger.debug("Did send request: \(task)")
 	}
 
 	func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
 		logger.debug("Did receive response head: \(head.headers)")
+		switch head.status.code {
+		case HTTPResponseStatus.badRequest.code:
+			watcher.onError(error: .badRequest(head.status.reasonPhrase))
+		default:
+			watcher.onError(error: .emptyResponse)
+		}
+
 		return task.eventLoop.makeSucceededFuture(())
 	}
 
 	func didReceiveBodyPart(task: HTTPClient.Task<Response>, _ buffer: ByteBuffer) -> EventLoopFuture<Void> {
 		logger.debug("Did receive body part: \(task)")
 		let payload = Data(buffer: buffer)
-		watch.handle(payload: payload)
+		watcher.onNext(payload: payload)
 		return task.eventLoop.makeSucceededFuture(())
 	}
 
@@ -154,6 +168,7 @@ internal class WatchDelegate: HTTPClientResponseDelegate {
 	}
 
 	func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
-		logger.warning("Did receive error: \(error.localizedDescription)")
+		logger.debug("Did receive error: \(error.localizedDescription)")
+		watcher.onError(error: .clientError(error))
 	}
 }

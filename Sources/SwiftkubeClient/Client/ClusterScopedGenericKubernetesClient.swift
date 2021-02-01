@@ -55,8 +55,36 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(options: [ListOption]? = nil, eventHandler: @escaping ResourceWatch<Resource>.EventHandler) throws -> HTTPClient.Task<Void> {
-		try super.watch(in: .allNamespaces, options: options, using: ResourceWatch<Resource>(eventHandler))
+	func watch(
+		options: [ListOption]? = nil,
+		eventHandler: @escaping ResourceWatch<Resource>.EventHandler
+	) throws -> HTTPClient.Task<Void> {
+		let resourceWatch = ResourceWatch<Resource>(onError: nil, onEvent: eventHandler)
+		return try watch(options: options, resourceWatch: resourceWatch)
+	}
+
+	/// Watches cluster-scoped resources.
+	///
+	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
+	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
+	///
+	/// ```swift
+	/// let task: HTTPClient.Task<Void> = client.namespaces.watch() { (event, namespace) in
+	///    print("\(event): \(namespace)")
+	///	}
+	///
+	///	task.cancel()
+	/// ```
+	///
+	/// - Parameter eventHandler: A `ResourceWatch` instance, which is used as a callback for new events. The clients sends each
+	/// event paired with the corresponding resource as a pair to the `eventHandler`.   Errors are sent to the `errorHandler`.
+	///
+	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
+	func watch(
+		options: [ListOption]? = nil,
+		resourceWatch: ResourceWatch<Resource>
+	) throws -> HTTPClient.Task<Void> {
+		try super.watch(in: .allNamespaces, options: options, using: resourceWatch)
 	}
 }
 

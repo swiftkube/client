@@ -30,6 +30,8 @@ public enum SwiftkubeClientError: Error {
 	case decodingError(String)
 	/// Thrown on all  errors returned from the Kubernetes API server.
 	case requestError(meta.v1.Status)
+	/// Thrown when the underlying HTTPClient reports an error.
+	case clientError(Error)
 
 	internal static func methodNotAllowed(_ method: HTTPMethod) -> SwiftkubeClientError {
 		let status = sk.status {
