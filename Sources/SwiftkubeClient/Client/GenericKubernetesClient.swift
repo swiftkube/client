@@ -311,6 +311,7 @@ internal extension GenericKubernetesClient {
 		jsonDecoder.userInfo[CodingUserInfoKey.apiVersion] = gvk.apiVersion
 		jsonDecoder.userInfo[CodingUserInfoKey.kind] = gvk.kind
 
+		// TODO: Improve this
 		if response.status.code >= 400 {
 			guard let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) else {
 				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding meta.v1.Status"))
@@ -385,6 +386,7 @@ internal extension GenericKubernetesClient {
 		let watcher = ResourceWatcher(decoder: jsonDecoder, delegate: delegate)
 		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
+		// TODO: Wrap this to handle reconnects
 		return httpClient.execute(request: request, delegate: clientDelegate, logger: logger)
 	}
 
@@ -415,6 +417,7 @@ internal extension GenericKubernetesClient {
 		let watcher = LogWatcher(delegate: delegate)
 		let delegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
+		// TODO: Wrap this to handle reconnects
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
 }

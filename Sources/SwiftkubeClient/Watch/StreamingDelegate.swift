@@ -47,6 +47,7 @@ internal class ClientStreamingDelegate: HTTPClientResponseDelegate {
 	func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
 		logger.debug("Did receive response head: \(head.headers)")
 		if head.status.code >= 400 {
+			// TODO: Proper status handling
 			watcher.onError(error: .requestError(meta.v1.Status()))
 		}
 
