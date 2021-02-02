@@ -66,10 +66,10 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	func watch(
 		in namespace: NamespaceSelector? = nil,
 		options: [ListOption]? = nil,
-		eventHandler: @escaping ResourceWatch<Resource>.EventHandler
+		eventHandler: @escaping ResourceWatcherCallback<Resource>.EventHandler
 	) throws -> HTTPClient.Task<Void> {
-		let resourceWatch = ResourceWatch<Resource>(onError: nil, onEvent: eventHandler)
-		return try watch(in: namespace, options: options, resourceWatch: resourceWatch)
+		let delegate = ResourceWatcherCallback<Resource>(onError: nil, onEvent: eventHandler)
+		return try watch(in: namespace, options: options, delegate: delegate)
 	}
 
 	/// Watches the API resources in the given namespace.
@@ -93,12 +93,12 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	/// event paired with the corresponding resource as a pair to the `eventHandler`. Errors are sent to the `errorHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(
+	func watch<Delegate: ResourceWatcherDelegate>(
 		in namespace: NamespaceSelector? = nil,
 		options: [ListOption]? = nil,
-		resourceWatch: ResourceWatch<Resource>
-	) throws -> HTTPClient.Task<Void> {
-		try super.watch(in: namespace ?? .namespace(config.namespace), options: options, using: resourceWatch)
+		delegate: Delegate
+	) throws -> HTTPClient.Task<Void> where Delegate.Resource == Resource {
+		try super.watch(in: namespace ?? .namespace(config.namespace), options: options, using: delegate)
 	}
 }
 

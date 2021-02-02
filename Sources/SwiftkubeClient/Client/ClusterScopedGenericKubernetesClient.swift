@@ -57,10 +57,10 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
 	func watch(
 		options: [ListOption]? = nil,
-		eventHandler: @escaping ResourceWatch<Resource>.EventHandler
+		eventHandler: @escaping ResourceWatcherCallback<Resource>.EventHandler
 	) throws -> HTTPClient.Task<Void> {
-		let resourceWatch = ResourceWatch<Resource>(onError: nil, onEvent: eventHandler)
-		return try watch(options: options, resourceWatch: resourceWatch)
+		let delegate = ResourceWatcherCallback<Resource>(onError: nil, onEvent: eventHandler)
+		return try watch(options: options, delegate: delegate)
 	}
 
 	/// Watches cluster-scoped resources.
@@ -80,11 +80,11 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.   Errors are sent to the `errorHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(
+	func watch<Delegate: ResourceWatcherDelegate>(
 		options: [ListOption]? = nil,
-		resourceWatch: ResourceWatch<Resource>
-	) throws -> HTTPClient.Task<Void> {
-		try super.watch(in: .allNamespaces, options: options, using: resourceWatch)
+		delegate: Delegate
+	) throws -> HTTPClient.Task<Void> where Delegate.Resource == Resource {
+		try super.watch(in: .allNamespaces, options: options, using: delegate)
 	}
 }
 

@@ -23,10 +23,10 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	func follow(
 		in namespace: NamespaceSelector? = nil,
 		name: String, container: String?,
-		lineHandler: @escaping LogWatch.LineHandler
+		lineHandler: @escaping LogWatcherCallback.LineHandler
 	) throws -> HTTPClient.Task<Void> {
-		let logWatch = LogWatch(onError: nil, onNext: lineHandler)
-		return try super.follow(in: namespace ?? .namespace(config.namespace), name: name, container: container, using: logWatch)
+		let delegate = LogWatcherCallback(onError: nil, onNext: lineHandler)
+		return try super.follow(in: namespace ?? .namespace(config.namespace), name: name, container: container, delegate: delegate)
 	}
 
 	func status(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<core.v1.Pod> {

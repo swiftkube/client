@@ -376,11 +376,16 @@ internal extension GenericKubernetesClient {
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func watch(in namespace: NamespaceSelector, options: [ListOption]? = nil, using watch: ResourceWatch<Resource>) throws -> HTTPClient.Task<Void> {
+	func watch<Delegate: ResourceWatcherDelegate>(
+		in namespace: NamespaceSelector,
+		options: [ListOption]? = nil,
+		using delegate: Delegate
+	) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toWatch().in(namespace).with(options: options).build()
-		let delegate = WatchDelegate(watcher: watch, logger: logger)
+		let watcher = ResourceWatcher(decoder: jsonDecoder, delegate: delegate)
+		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
-		return httpClient.execute(request: request, delegate: delegate, logger: logger)
+		return httpClient.execute(request: request, delegate: clientDelegate, logger: logger)
 	}
 
 	/// Follows the logs of the specified container.
@@ -405,9 +410,10 @@ internal extension GenericKubernetesClient {
 	///   - watch: A `LogWatch` instance, which is used as a callback for new log lines.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func follow(in namespace: NamespaceSelector, name: String, container: String?, using watch: LogWatch) throws -> HTTPClient.Task<Void> {
+	func follow(in namespace: NamespaceSelector, name: String, container: String?, delegate: LogWatcherDelegate) throws -> HTTPClient.Task<Void> {
 		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
-		let delegate = WatchDelegate(watcher: watch, logger: logger)
+		let watcher = LogWatcher(delegate: delegate)
+		let delegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
 		return httpClient.execute(request: request, delegate: delegate, logger: logger)
 	}
