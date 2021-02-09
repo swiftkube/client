@@ -57,6 +57,19 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///	task.cancel()
 	/// ```
 	///
+	/// The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`. The default is 10 retry attempts with a fixed 5 seconds
+	/// delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+	///
+	/// ```swift
+	/// let strategy = RetryStrategy(
+	///    policy: .maxAttemtps(20),
+	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    initialDelay = 5.0,
+	///    jitter = 0.2
+	/// )
+	/// let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in print(pod) }
+	/// ```
+	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
 	///   - eventHandler: A `ResourceWatch.EventHandler` instance, which is used as a callback for new events. The clients sends each
@@ -66,10 +79,11 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	func watch(
 		in namespace: NamespaceSelector? = nil,
 		options: [ListOption]? = nil,
+		retryStrategy: RetryStrategy = RetryStrategy(),
 		eventHandler: @escaping ResourceWatcherCallback<Resource>.EventHandler
-	) throws -> HTTPClient.Task<Void> {
+	) throws -> SwiftkubeClientTask {
 		let delegate = ResourceWatcherCallback<Resource>(onError: nil, onEvent: eventHandler)
-		return try watch(in: namespace, options: options, delegate: delegate)
+		return try watch(in: namespace, options: options, retryStrategy: retryStrategy, delegate: delegate)
 	}
 
 	/// Watches the API resources in the given namespace.
@@ -79,12 +93,17 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
 	///
+	/// The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`. The default is 10 retry attempts with a fixed 5 seconds
+	/// delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+	///
 	/// ```swift
-	/// let watch = ResourceWatch<core.v1.Pod>(logger: logger, onError: errorHandler) { (event, pod) in
-	///    print("\(event): \(pod)")
-	///	}
-	/// let task: HTTPClient.Task<Void> = client.pods.watch(in: .namespace("default"), resourceWatch: watch)
-	///	task.cancel()
+	/// let strategy = RetryStrategy(
+	///    policy: .maxAttemtps(20),
+	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    initialDelay = 5.0,
+	///    jitter = 0.2
+	/// )
+	/// let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in print(pod) }
 	/// ```
 	///
 	/// - Parameters:
@@ -96,9 +115,15 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	func watch<Delegate: ResourceWatcherDelegate>(
 		in namespace: NamespaceSelector? = nil,
 		options: [ListOption]? = nil,
+		retryStrategy: RetryStrategy = RetryStrategy(),
 		delegate: Delegate
-	) throws -> HTTPClient.Task<Void> where Delegate.Resource == Resource {
-		try super.watch(in: namespace ?? .namespace(config.namespace), options: options, using: delegate)
+	) throws -> SwiftkubeClientTask where Delegate.Resource == Resource {
+		try super.watch(
+			in: namespace ?? .namespace(config.namespace),
+			options: options,
+			retryStrategy: retryStrategy,
+			using: delegate
+		)
 	}
 }
 

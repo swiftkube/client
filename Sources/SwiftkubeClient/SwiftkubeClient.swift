@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import AsyncHTTPClient
 import Foundation
 import NIOHTTP1
 import SwiftkubeModel
@@ -32,6 +33,10 @@ public enum SwiftkubeClientError: Error {
 	case requestError(meta.v1.Status)
 	/// Thrown when the underlying HTTPClient reports an error.
 	case clientError(Error)
+	/// Thrown when a `SwiftkubeClientTask` encounters non-recoverable connection errors.
+	case taskError(Error)
+	/// Thrown when a `SwiftkubeClientTask` exhausts all retry attempts reconnecting to the API server.
+	case maxRetriesReached(request: HTTPClient.Request)
 
 	internal static func methodNotAllowed(_ method: HTTPMethod) -> SwiftkubeClientError {
 		let status = sk.status {

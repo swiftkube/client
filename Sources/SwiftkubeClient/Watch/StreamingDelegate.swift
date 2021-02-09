@@ -37,11 +37,16 @@ internal class ClientStreamingDelegate: HTTPClientResponseDelegate {
 	private let watcher: Watcher
 	private let logger: Logger
 	private var streamingBuffer: ByteBuffer
+	internal var taskDelegate: SwiftkubeClientTaskDelegate?
 
 	init(watcher: Watcher, logger: Logger) {
 		self.watcher = watcher
 		self.logger = logger
 		self.streamingBuffer = ByteBuffer()
+	}
+
+	func reset() {
+		streamingBuffer.clear()
 	}
 
 	func didReceiveHead(task: HTTPClient.Task<Response>, _ head: HTTPResponseHead) -> EventLoopFuture<Void> {
@@ -78,11 +83,13 @@ internal class ClientStreamingDelegate: HTTPClientResponseDelegate {
 
 	func didFinishRequest(task: HTTPClient.Task<Response>) throws {
 		logger.debug("Did finish request: \(task)")
+		taskDelegate?.onDidFinish(task: task)
 		return ()
 	}
 
 	func didReceiveError(task: HTTPClient.Task<Response>, _ error: Error) {
 		logger.debug("Did receive error: \(error.localizedDescription)")
 		watcher.onError(error: .clientError(error))
+		taskDelegate?.onError(error: .clientError(error))
 	}
 }

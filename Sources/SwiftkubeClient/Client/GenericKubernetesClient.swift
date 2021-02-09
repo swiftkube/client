@@ -358,44 +358,63 @@ internal extension GenericKubernetesClient {
 
 	/// Watches the API resources in the given namespace.
 	///
-	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
+	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `SwiftkubeClientTask` instance, that acts
 	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
 	///
-	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
-	///
 	/// ```swift
-	/// let task: HTTPClient.Task<Void> = client.pods.watch(in: .namespace("default")) { (event, pod) in
+	/// let task: SwiftkubeClientTask = client.pods.watch(in: .namespace("default")) { (event, pod) in
 	///    print("\(event): \(pod)")
 	///	}
 	///
 	///	task.cancel()
 	/// ```
 	///
+	/// The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`. The default is 10 retry attempts with a fixed 5 seconds
+	/// delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+	///
+	/// ```swift
+	/// let strategy = RetryStrategy(
+	///    policy: .maxAttemtps(20),
+	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    initialDelay = 5.0,
+	///    jitter = 0.2
+	/// )
+	/// let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in print(pod) }
+	/// ```
+	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
-	///   - eventHandler: A `ResourceWatch.EventHandler` instance, which is used as a callback for new events. The client sends each
-	/// event paired with the corresponding resource as a pair to the `eventHandler`.
+	///   - options: `ListOption` to filter/select the returned objects.
+	///   - retryStrategy: A strategy to control the reconnect behaviour.
+	///   - delegate: A `ResourceWatcherDelegate` instance, which is used for callbacks for new events. The client sends each
+	/// event paired with the corresponding resource as a pair to the delegate's `onNext(event:)` fucntion and errors to its `onError(error:)`.
 	///
-	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
+	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connetion to the API server.
 	func watch<Delegate: ResourceWatcherDelegate>(
 		in namespace: NamespaceSelector,
 		options: [ListOption]? = nil,
+		retryStrategy: RetryStrategy = RetryStrategy(),
 		using delegate: Delegate
-	) throws -> HTTPClient.Task<Void> {
+	) throws -> SwiftkubeClientTask {
 		let request = try makeRequest().toWatch().in(namespace).with(options: options).build()
 		let watcher = ResourceWatcher(decoder: jsonDecoder, delegate: delegate)
 		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
-		// TODO: Wrap this to handle reconnects
-		return httpClient.execute(request: request, delegate: clientDelegate, logger: logger)
+		let task = SwiftkubeClientTask(
+			client: httpClient,
+			request: request,
+			streamingDelegate: clientDelegate,
+			logger: logger
+		)
+
+		task.schedule(in: TimeAmount.zero)
+		return task
 	}
 
 	/// Follows the logs of the specified container.
 	///
 	/// Following the logs of a container opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
 	/// as an active "subscription" to the logs stream. The task can be cancelled any time to stop the watch.
-	///
-	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
 	///
 	/// ```swift
 	/// let task: HTTPClient.Task<Void> = client.pods.follow(in: .namespace("default"), name: "nginx") { line in
@@ -405,19 +424,44 @@ internal extension GenericKubernetesClient {
 	///	task.cancel()
 	/// ```
 	///
+	///  The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`. Per default `follow` requests are not retried.
+	///
+	/// ```swift
+	/// let strategy = RetryStrategy(
+	///    policy: .maxAttemtps(20),
+	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    initialDelay = 5.0,
+	///    jitter = 0.2
+	/// )
+	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy) { line in print(line) }
+	/// ```
+	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
-	///   - watch: A `LogWatch` instance, which is used as a callback for new log lines.
+	///   - watch: A `LogWatcherDelegate` instance, which is used as a callback for new log lines.
 	///
-	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
-	func follow(in namespace: NamespaceSelector, name: String, container: String?, delegate: LogWatcherDelegate) throws -> HTTPClient.Task<Void> {
+	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connetion to the API server.
+	func follow(
+		in namespace: NamespaceSelector,
+		name: String,
+		container: String?,
+		retryStrategy: RetryStrategy = RetryStrategy.never,
+		delegate: LogWatcherDelegate
+	) throws -> SwiftkubeClientTask {
 		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
 		let watcher = LogWatcher(delegate: delegate)
-		let delegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
+		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
-		// TODO: Wrap this to handle reconnects
-		return httpClient.execute(request: request, delegate: delegate, logger: logger)
+		let task = SwiftkubeClientTask(
+			client: httpClient,
+			request: request,
+			streamingDelegate: clientDelegate,
+			logger: logger
+		)
+
+		task.schedule(in: TimeAmount.zero)
+		return task
 	}
 }

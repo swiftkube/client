@@ -22,11 +22,19 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 
 	func follow(
 		in namespace: NamespaceSelector? = nil,
-		name: String, container: String?,
+		name: String,
+		container: String? = nil,
+		retryStrategy: RetryStrategy = RetryStrategy.never,
 		lineHandler: @escaping LogWatcherCallback.LineHandler
-	) throws -> HTTPClient.Task<Void> {
+	) throws -> SwiftkubeClientTask {
 		let delegate = LogWatcherCallback(onError: nil, onNext: lineHandler)
-		return try super.follow(in: namespace ?? .namespace(config.namespace), name: name, container: container, delegate: delegate)
+		return try super.follow(
+			in: namespace ?? .namespace(config.namespace),
+			name: name,
+			container: container,
+			retryStrategy: retryStrategy,
+			delegate: delegate
+		)
 	}
 
 	func status(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<core.v1.Pod> {
