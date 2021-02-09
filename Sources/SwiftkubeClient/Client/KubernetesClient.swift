@@ -110,6 +110,19 @@ public class KubernetesClient {
 		)
 	}
 
+	/// Shuts down the client gracefully.
+	///
+	/// This function uses a completion instead of an EventLoopFuture, because the underlying event loop will be closed by the time a EventLoopFuture
+	/// calls back. Instead the callback is executed on a DispatchQueue.
+	///
+	/// - Parameters:
+	///   - queue: The DispatchQueue for the callback upon completion.
+	///   - callback: The callback indicating any errors encountered during shutdown.
+	public func shutdown(queue: DispatchQueue, _ callback: @escaping (Error?) -> Void) {
+		httpClient.shutdown(queue: queue, callback)
+	}
+
+	/// Shuts down the client synchronously.
 	public func syncShutdown() throws {
 		try httpClient.syncShutdown()
 	}
