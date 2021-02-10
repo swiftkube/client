@@ -72,9 +72,8 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 		}
 
 		logger.debug("Scheduling task for request: \(request)")
-		let scheduled = client.eventLoopGroup.next().scheduleTask(in: amount) { [self] () -> HTTPClient.Task<Void> in
-			streamingDelegate.reset()
-			return client.execute(request: request, delegate: streamingDelegate, logger: logger)
+		let scheduled = client.eventLoopGroup.next().scheduleTask(in: amount) { () -> HTTPClient.Task<Void> in
+			self.resetAndExecute()
 		}
 
 		scheduled.futureResult.whenComplete { (result: Result<HTTPClient.Task<Void>, Error>) in
@@ -87,6 +86,11 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 		}
 	}
 
+	private func resetAndExecute() -> HTTPClient.Task<Void> {
+		streamingDelegate.reset()
+		return client.execute(request: request, delegate: streamingDelegate, logger: logger)
+	}
+
 	internal func onDidFinish(task: HTTPClient.Task<Void>) {
 		logger.debug("Task finished for request: \(request)")
 		reconnect()
@@ -97,7 +101,7 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 		reconnect()
 	}
 
-	internal func reconnect() {
+	private func reconnect() {
 		logger.debug("Reconnecting task for request: \(request)")
 		cancelCurrentTask()
 
