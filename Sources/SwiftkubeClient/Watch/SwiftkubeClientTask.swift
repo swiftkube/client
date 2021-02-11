@@ -46,7 +46,7 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 	let promise: EventLoopPromise<Void>
 	let retriesSequence: RetryStrategy.Iterator
 	let logger: Logger
-
+	var cancelled: Bool = false
 	var clientTask: HTTPClient.Task<Void>?
 
 	init(
@@ -102,8 +102,13 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 	}
 
 	private func reconnect() {
+		guard !cancelled else {
+			logger.debug("Task was cancelled for request: \(request)")
+			return
+		}
+
 		logger.debug("Reconnecting task for request: \(request)")
-		cancelCurrentTask()
+		stopCurrentTask()
 
 		guard let nextAttempt = retriesSequence.next() else {
 			logger.info("Max retries reached for request: \(request)")
@@ -114,7 +119,7 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 		schedule(in: TimeAmount.milliseconds(Int64(delayMillis)))
 	}
 
-	private func cancelCurrentTask() {
+	private func stopCurrentTask() {
 		clientTask?.cancel()
 		clientTask = nil
 	}
@@ -131,7 +136,8 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 
 	/// Cancels the task execution.
 	public func cancel() {
-		cancelCurrentTask()
+		cancelled = true
+		stopCurrentTask()
 		promise.succeed(())
 	}
 }

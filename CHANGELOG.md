@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+### Bug Fixes
+
+- Fix SwiftkubeClientTask cancelling
+ 
 ## 0.6.0
 
 ### New
