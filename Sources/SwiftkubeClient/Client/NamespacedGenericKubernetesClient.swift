@@ -72,7 +72,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
-	///   - eventHandler: A `ResourceWatch.EventHandler` instance, which is used as a callback for new events. The clients sends each
+	///   - eventHandler: A `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. The clients sends each
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.

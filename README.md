@@ -26,7 +26,7 @@
   * [Configuring a client](#configuring-the-client)
   * [Client authentication](#client-authentication)
   * [Client DSL](#client-dsl)
-* [Advance usage](#advanced-usage)
+* [Advanced usage](#advanced-usage)
 * [Metrics](#metrics)
 * [Installation](#installation)
 * [License](#license)
@@ -51,8 +51,9 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [ ] PATCH API
 - [ ] `/scale` API
 - [ ] `/status` API
-- [ ] Better resource watch support
-- [ ] Better CRD support
+- [x] Resource watch support
+- [x] Follow pod logs support
+- [ ] CRD support
 - [ ] Controller/Informer support
 - [x] Swift Metrics
 - [ ] Complete documentation
@@ -62,7 +63,7 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 
 |                           | K8s <1.18.9 | K8s 1.18.9 - 1.18.13 |
 |---------------------------|-------------|----------------------|
-| SwiftkubeClient 0.4.x     | -           | ✓                    |
+| SwiftkubeClient 0.6.x     | -           | ✓                    |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
@@ -81,12 +82,20 @@ To create a client just import `SwiftkubeClient` and init an instance.
  import SwiftkubeClient
  
  let client = try KubernetesClient()
- 
- // when finished
- try client.syncShutdown()
  ```
 
-You should shut down the `KubernetesClient` instance, which in turn shuts down the underlying `HTTPClient`. Thus you shouldn't call `client.syncShutdown()` before all requests have finished:
+You should shut down the `KubernetesClient` instance, which in turn shuts down the underlying `HTTPClient`. Thus you shouldn't call `client.syncShutdown()` before all requests have finished. Alternatively, you can close the client asynchronously by providing a `DispatchQueue` for the completion callback.
+
+```swift
+// when finished close the client
+ try client.syncShutdown()
+ 
+// or asynchronously
+let queue: DispatchQueue = ...
+client.shutdown(queue: queue) { (error: Error?) in 
+    print(error)
+}
+```
 
 
 ### Configuring the client
@@ -221,27 +230,85 @@ let pod = try client.pods.create(inNamespace: .default) {
 
 #### Watch a resource
 
-> :warning: Watching a resource opens a persistent connection until the client is closed.
+You can watch for Kubernetes events about specific objects via the `watch` API.  
+
+Watching resources opens a persistent connection to the API server. The connection is represented by a `SwiftkubeClientTask` instance, that acts as an active "subscription" to the events stream.
+
+The task can be cancelled any time to stop the watch.
 
 ```swift
-let task: HTTPClient.Task<Void> = client.pods.watch(in: .namespace("default")) { (event, pod) in
+let task: SwiftkubeClientTask = client.pods.watch(in: .allNamespaces) { (event, pod) in
     print("\(event): \(pod)")
 }
 
-// The task can be cancelled later to stop watching
 task.cancel()
 ```
 
-#### Follow logs
-
-> :warning: Following a pod logs opens a persistent connection until the client is closed.
+You can also pass `ListOptions` to filter, i.e. select the required objects:
 
 ```swift
-let task: HTTPClient.Task<Void> = client.pods.follow(in: .namespace("default"), name: "nginx") { (line) in
+let options = [
+    .labelSelector(.eq(["app": "nginx"])),
+    .labelSelector(.exists(["env"]))
+]
+
+let task = client.pods.watch(in: .default, options: options) { (event, pod) in
+    print("\(event): \(pod)")
+}
+```
+
+The client reconnects automatically and restarts the watch upon encountering non-recoverable errors. The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`.
+
+The default strategy is 10 retry attempts with a fixed 5 seconds delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+
+Passing `RetryStrategy.never` disables any reconnection attempts.
+
+```swift
+let strategy = RetryStrategy(
+    policy: .maxAttemtps(20),
+    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+    initialDelay = 5.0,
+    jitter = 0.2
+)
+let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in
+    print(pod)
+}
+```
+
+To handle events you can pass a `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. The clients sends each event paired with the corresponding resource as a pair to this `eventHandler`.
+
+If you require more control or stateful logic, then you can implement the `ResourceWatcherDelegate` protocol and pass it to the `watch` call:
+
+
+```swift
+class MyDelegate: ResourceWatcherDelegate {
+   typealias Resource = core.v1.Pod
+   
+    func onEvent(event: EventType, resource: core.v1.Pod) {
+      // handle events
+    }
+
+    func onError(error: SwiftkubeClientError) {
+	  // handle errors
+    }
+}
+
+let task = client.pods.watch(in: .default, delegate: MyDelegate())
+```
+
+
+#### Follow logs
+
+The `follow` API resembles the `watch`. The difference being the closure/delegate signature:
+
+:warning: The client does not reconnect on errors in `follow` mode.
+
+```swift
+let task = client.pods.follow(in: .default, name: "nginx", container: "app") { (line) in
     print(line)
 }
 
-// The task can be cancelled later o stop following
+// The task can be cancelled later to stop following logs
 task.cancel()
 ```
 
@@ -349,7 +416,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.5.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.6.0"),
 ```
 
 then include it as a dependency in your target:
@@ -360,7 +427,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.5.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.6.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [

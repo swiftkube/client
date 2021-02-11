@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0
+
+### New
+
+- Implement asynchronous shutdown
+- Implement reconnect handling for `watch` and `follow` API requests
+- Introduce `ResourceWatcherDelegate` and `LogWatcherDelegate` protocols
+
+### API Changes
+
+- Changed signature of `watch` and `follow` APIs.
+- Replace `ResourceWatch` and `LogWatch` with new protocols 
+- The `follow` and `watch` functions return a cancellable `SwiftkubeClientTask` instance insteaf of `HTTPClient.Task<Void>`.
+
+
 ## 0.5.0
 
 ### New
