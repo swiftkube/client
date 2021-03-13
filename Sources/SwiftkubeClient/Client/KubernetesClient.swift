@@ -42,8 +42,43 @@ public class KubernetesClient {
 
 	/// The client's configuration object.
 	public let config: KubernetesClientConfig
-	private let httpClient: HTTPClient
-	private let logger: Logger
+	internal let httpClient: HTTPClient
+	internal let logger: Logger
+
+	internal let jsonDecoder: JSONDecoder = {
+		let timeFormatter: ISO8601DateFormatter = {
+			let formatter = ISO8601DateFormatter()
+			formatter.formatOptions = .withInternetDateTime
+			return formatter
+		}()
+
+		let microTimeFormatter: ISO8601DateFormatter = {
+			let formatter = ISO8601DateFormatter()
+			formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+			return formatter
+		}()
+
+		let jsonDecoder = JSONDecoder()
+		jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
+			let string = try decoder.singleValueContainer().decode(String.self)
+
+			if let date = timeFormatter.date(from: string) {
+				return date
+			}
+
+			if let date = microTimeFormatter.date(from: string) {
+				return date
+			}
+
+			let context = DecodingError.Context(
+				codingPath: decoder.codingPath,
+				debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
+			)
+			throw DecodingError.dataCorrupted(context)
+		}
+
+		return jsonDecoder
+	}()
 
 	/// Create a new instance of the Kubernetes client.
 	///
@@ -136,7 +171,7 @@ public extension KubernetesClient {
 	/// - Parameter gvk: The `KubernetesAPIResource` type.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `KubernetesAPIResource`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
-		GenericKubernetesClient<R>(httpClient: httpClient, config: config, logger: logger)
+		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new generic client for the given `GroupVersionKind`.
@@ -146,7 +181,7 @@ public extension KubernetesClient {
 	/// - Parameter gvk: The `GroupVersionKind` of the desired resource.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
 	func `for`(gvk: GroupVersionKind) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
-		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvk: gvk, logger: logger)
+		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvk: gvk, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new `cluster-scoped` client for the given cluster-scoped resoruce type.
@@ -154,7 +189,7 @@ public extension KubernetesClient {
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new `ClusterScopedGenericKubernetesClient` for the given resource type.
 	func clusterScoped<R: KubernetesAPIResource & ClusterScopedResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
-		ClusterScopedGenericKubernetesClient<R>(httpClient: httpClient, config: config, logger: logger)
+		ClusterScopedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new `namespace-scoped` client for the given namespace-scoped resoruce type.
@@ -162,7 +197,7 @@ public extension KubernetesClient {
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new `NamespacedGenericKubernetesClient` for the given resource type.
 	func namespaceScoped<R: KubernetesAPIResource & NamespacedResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
-		NamespacedGenericKubernetesClient<R>(httpClient: httpClient, config: config, logger: logger)
+		NamespacedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 }
 

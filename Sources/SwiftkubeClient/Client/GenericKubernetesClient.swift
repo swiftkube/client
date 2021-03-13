@@ -41,41 +41,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	internal let httpClient: HTTPClient
 	internal let config: KubernetesClientConfig
 	internal let logger: Logger
-
-	internal let jsonDecoder: JSONDecoder = {
-		let timeFormatter: ISO8601DateFormatter = {
-			let formatter = ISO8601DateFormatter()
-			formatter.formatOptions = .withInternetDateTime
-			return formatter
-		}()
-
-		let microTimeFormatter: ISO8601DateFormatter = {
-			let formatter = ISO8601DateFormatter()
-			formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-			return formatter
-		}()
-
-		let jsonDecoder = JSONDecoder()
-		jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
-			let string = try decoder.singleValueContainer().decode(String.self)
-
-			if let date = timeFormatter.date(from: string) {
-				return date
-			}
-
-			if let date = microTimeFormatter.date(from: string) {
-				return date
-			}
-
-			let context = DecodingError.Context(
-				codingPath: decoder.codingPath,
-				debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
-			)
-			throw DecodingError.dataCorrupted(context)
-		}
-
-		return jsonDecoder
-	}()
+	internal let jsonDecoder: JSONDecoder
 
 	/// Create a new instance of the generic client.
 	///
@@ -89,8 +55,8 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - httpClient: An instance of Async HTTPClient.
 	///   - config: The configuration for this client instance.
 	///   - logger: The logger to use for this client.
-	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, logger: Logger? = nil) {
-		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, logger: logger)
+	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
+		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new instance of the generic client for the given `GroupVersionKind`.
@@ -100,10 +66,11 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - config: The configuration for this client instance.
 	///   - gvk: The `GroupVersionKind` of the target resource.
 	///   - logger: The logger to use for this client.
-	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvk: GroupVersionKind, logger: Logger? = nil) {
+	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvk: GroupVersionKind, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
 		self.gvk = gvk
+		self.jsonDecoder = jsonDecoder
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
 
@@ -240,7 +207,7 @@ internal extension GenericKubernetesClient {
 
 		return httpClient.execute(request: request, logger: logger)
 			.always { (result: Result<HTTPClient.Response, Error>) in
-				self.updateMetrics(startTime: startTime, request: request, result: result)
+				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
 			}
 			.flatMap { response in
 				self.handle(response, eventLoop: eventLoop)
@@ -252,44 +219,11 @@ internal extension GenericKubernetesClient {
 
 		return httpClient.execute(request: request, logger: logger)
 			.always { (result: Result<HTTPClient.Response, Error>) in
-				self.updateMetrics(startTime: startTime, request: request, result: result)
+				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
 			}
 			.flatMap { response in
 				self.handleResourceOrStatus(response, eventLoop: eventLoop)
 			}
-	}
-
-	func updateMetrics(startTime: UInt64, request: HTTPClient.Request, result: Result<HTTPClient.Response, Error>) {
-		let method = request.method.rawValue
-		let path = request.url.path
-
-		switch result {
-		case let .success(response):
-			let statusCode = response.status.code
-			let counterDimensions = [
-				("method", method),
-				("path", path),
-				("status", statusCode.description),
-			]
-
-			Counter(label: "sk_http_requests_total", dimensions: counterDimensions).increment()
-			if statusCode >= 500 {
-				Counter(label: "sk_http_request_errors_total", dimensions: counterDimensions).increment()
-			}
-		case .failure:
-			let counterDimensions = [
-				("method", method),
-				("path", path),
-			]
-			Counter(label: "sk_request_errors_total", dimensions: counterDimensions).increment()
-		}
-
-		Timer(
-			label: "sk_http_request_duration_seconds",
-			dimensions: [("method", method), ("path", path)],
-			preferredDisplayUnit: .seconds
-		)
-		.recordNanoseconds(DispatchTime.now().uptimeNanoseconds - startTime)
 	}
 
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
