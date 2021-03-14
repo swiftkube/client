@@ -14,7 +14,7 @@ let package = Package(
 			targets: ["SwiftkubeClient"]),
 	],
 	dependencies: [
-		.package(name: "SwiftkubeModel", url: "https://github.com/swiftkube/model.git", .upToNextMajor(from: "0.2.2")),
+		.package(name: "SwiftkubeModel", url: "https://github.com/swiftkube/model.git", .upToNextMajor(from: "0.3.0")),
 		.package(name: "async-http-client", url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.2.0")),
 		.package(name: "swift-log", url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.4.0")),
 		.package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0"),
