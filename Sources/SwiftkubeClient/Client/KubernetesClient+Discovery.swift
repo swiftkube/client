@@ -39,6 +39,7 @@ public struct Info: Codable {
 public protocol DiscoveryAPI {
 	func serverVersion() -> EventLoopFuture<ResourceOrStatus<Info>>
 	func serverGroups() -> EventLoopFuture<ResourceOrStatus<meta.v1.APIGroupList>>
+	func serverResources(forGroupVersion groupVersion: String) -> EventLoopFuture<ResourceOrStatus<meta.v1.APIResourceList>>
 }
 
 // MARK: - KubernetesClient
@@ -108,6 +109,25 @@ internal class DiscoveryClient: DiscoveryAPI {
 					return .status(status)
 				}
 			}
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+
+	func serverResources(forGroupVersion groupVersion: String) -> EventLoopFuture<ResourceOrStatus<meta.v1.APIResourceList>> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+
+			let path: String
+			if groupVersion == "v1" {
+				path = "/api/v1"
+			} else {
+				path = "/apis/\(groupVersion)"
+			}
+
+			let request = try makeRequest().path(path).build()
+
+			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
