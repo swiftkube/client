@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0
+
+### New
+
+- Update to Kubernetes model v1.19.8
+- Discovery for server API groups and versions 
+
 ## 0.6.1
 
 ### Bug Fixes

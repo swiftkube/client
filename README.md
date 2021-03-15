@@ -53,6 +53,7 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [ ] `/status` API
 - [x] Resource watch support
 - [x] Follow pod logs support
+- [x] Discovery API
 - [ ] CRD support
 - [ ] Controller/Informer support
 - [x] Swift Metrics
@@ -311,6 +312,16 @@ let task = client.pods.follow(in: .default, name: "nginx", container: "app") { (
 
 // The task can be cancelled later to stop following logs
 task.cancel()
+```
+
+### Discovery
+
+The client provides a discovery interface for the API server, which can be used to retrieve the server version, the API groups and the API resources for a specific group version
+
+```swift
+let version: ResourceOrStatus<Info> = try client.discovery.serverVersion().wait()
+let groups: ResourceOrStatus<meta.v1.APIGroupList> = try client.discovery.serverGroups().wait()
+let resources: ResourceOrStatus<meta.v1.APIResourceList> = try client.discovery.serverResources(forGroupVersion: "apps/v1").wait()
 ```
 
 ## Advanced usage
