@@ -20,7 +20,7 @@ import NIO
 import NIOHTTP1
 import SwiftkubeModel
 
-extension HTTPMethod {
+internal extension HTTPMethod {
 
 	var hasRequestBody: Bool {
 		switch self {
