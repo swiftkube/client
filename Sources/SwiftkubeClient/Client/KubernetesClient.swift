@@ -204,14 +204,34 @@ public extension KubernetesClient {
 /// Scoped client DSL for the `core` API Group
 public extension KubernetesClient {
 
+	/// Constructs a namespace-scoped client for `core.v1.Binding` resources.
+	var bindings: NamespacedGenericKubernetesClient<core.v1.Binding> {
+		namespaceScoped(for: core.v1.Binding.self)
+	}
+
+	/// Constructs a cluster-scoped client for `core.v1.ComponentStatus` resources.
+	var componentstatuses: ClusterScopedGenericKubernetesClient<core.v1.ComponentStatus> {
+		clusterScoped(for: core.v1.ComponentStatus.self)
+	}
+
 	/// Constructs a namespace-scoped client for `core.v1.ConfigMap` resources.
 	var configMaps: NamespacedGenericKubernetesClient<core.v1.ConfigMap> {
 		namespaceScoped(for: core.v1.ConfigMap.self)
 	}
 
+	/// Constructs a namespace-scoped client for `core.v1.Endpoints` resources.
+	var endpoints: NamespacedGenericKubernetesClient<core.v1.Endpoints> {
+		namespaceScoped(for: core.v1.Endpoints.self)
+	}
+
 	/// Constructs a namespace-scoped client for `core.v1.Event` resources.
 	var events: NamespacedGenericKubernetesClient<core.v1.Event> {
 		namespaceScoped(for: core.v1.Event.self)
+	}
+
+	/// Constructs a namespace-scoped client for `core.v1.LimitRange` resources.
+	var limitranges: NamespacedGenericKubernetesClient<core.v1.LimitRange> {
+		namespaceScoped(for: core.v1.LimitRange.self)
 	}
 
 	/// Constructs a cluster-scoped client for `core.v1.Namespace` resources.
@@ -224,9 +244,34 @@ public extension KubernetesClient {
 		clusterScoped(for: core.v1.Node.self)
 	}
 
+	/// Constructs a cluster-scoped client for `core.v1.PersistentVolume` resources.
+	var persistentvolumes: ClusterScopedGenericKubernetesClient<core.v1.PersistentVolume> {
+		clusterScoped(for: core.v1.PersistentVolume.self)
+	}
+
+	/// Constructs a namespace-scoped client for `core.v1.PersistentVolumeClaim` resources.
+	var persistentvolumeclaims: NamespacedGenericKubernetesClient<core.v1.PersistentVolumeClaim> {
+		namespaceScoped(for: core.v1.PersistentVolumeClaim.self)
+	}
+
 	/// Constructs a namespace-scoped client for `core.v1.Pod` resources.
 	var pods: NamespacedGenericKubernetesClient<core.v1.Pod> {
 		namespaceScoped(for: core.v1.Pod.self)
+	}
+
+	/// Constructs a namespace-scoped client for `core.v1.PodTemplate` resources.
+	var podtemplates: NamespacedGenericKubernetesClient<core.v1.PodTemplate> {
+		namespaceScoped(for: core.v1.PodTemplate.self)
+	}
+
+	/// Constructs a namespace-scoped client for `core.v1.ReplicationController` resources.
+	var replicationcontrollers: NamespacedGenericKubernetesClient<core.v1.ReplicationController> {
+		namespaceScoped(for: core.v1.ReplicationController.self)
+	}
+
+	/// Constructs a namespace-scoped client for `core.v1.ResourceQuota` resources.
+	var resourcequotas: NamespacedGenericKubernetesClient<core.v1.ResourceQuota> {
+		namespaceScoped(for: core.v1.ResourceQuota.self)
 	}
 
 	/// Constructs a namespace-scoped client for `core.v1.Secret` resources.
@@ -237,5 +282,10 @@ public extension KubernetesClient {
 	/// Constructs a namespace-scoped client for `core.v1.Service` resources.
 	var services: NamespacedGenericKubernetesClient<core.v1.Service> {
 		namespaceScoped(for: core.v1.Service.self)
+	}
+
+	/// Constructs a namespace-scoped client for `core.v1.ServiceAccount` resources.
+	var serviceaccounts: NamespacedGenericKubernetesClient<core.v1.ServiceAccount> {
+		namespaceScoped(for: core.v1.ServiceAccount.self)
 	}
 }

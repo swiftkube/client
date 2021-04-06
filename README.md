@@ -38,8 +38,7 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [x] Covers all Kubernetes API Groups in v1.19.8
 - [x] Automatic configuration discovery
 - [x] DSL style API
-  - [x] Highest API version for the most common API Groups
-  - [ ] Cover all API Groups/Versions
+  - [x] For all API Groups/Versions
 - [x] Generic client support
 - [x] Swift-Logging support
 - [x] Loading resources from external sources

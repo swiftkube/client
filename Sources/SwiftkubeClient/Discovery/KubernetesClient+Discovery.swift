@@ -46,7 +46,7 @@ public protocol DiscoveryAPI {
 
 public extension KubernetesClient {
 
-	var discovery: DiscoveryAPI {
+	var discoveryClient: DiscoveryAPI {
 		DiscoveryClient(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 }
