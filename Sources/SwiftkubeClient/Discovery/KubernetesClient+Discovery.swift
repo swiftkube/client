@@ -98,7 +98,7 @@ internal class DiscoveryClient: DiscoveryAPI {
 				}
 			}
 
-			return legacyAPIGroup.and(apiGroupList).map { (coreGroup, groupList) -> ResourceOrStatus<meta.v1.APIGroupList> in
+			return legacyAPIGroup.and(apiGroupList).map { coreGroup, groupList -> ResourceOrStatus<meta.v1.APIGroupList> in
 				switch (coreGroup, groupList) {
 				case let (.resource(lhs), .resource(rhs)):
 					let allGroups = [lhs] + rhs.groups
