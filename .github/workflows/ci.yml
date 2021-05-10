@@ -27,6 +27,17 @@ jobs:
     - name: Test
       run: swift test  --enable-test-discovery
 
+  iOS:
+    name: Test iOS
+    runs-on: macOS-10.15
+    strategy:
+      matrix:
+        destination: ["platform=iOS Simulator,OS=14.4,name=iPhone 12 Pro"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: iOS - ${{ matrix.destination }}
+        run: set -o pipefail && xcodebuild -scheme SwiftkubeClient -destination "${{ matrix.destination }}" clean test | xcpretty
+
   linux:
     runs-on: ubuntu-18.04
     container: swift:5.2
