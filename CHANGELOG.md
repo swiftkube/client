@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0
+
+- Add supported platforms for Swift package
+- Add CI for iOS build
+
+## 0.8.0
+
+### New
+
+- DSL for all API Groups/Versions
+
 ## 0.7.0
 
 ### New

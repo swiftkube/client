@@ -10,7 +10,7 @@
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
 	</a>
-	<img src="https://img.shields.io/badge/platforms-mac+linux-brightgreen.svg?style=flat" alt="Mac + Linux" />
+	<img src="https://img.shields.io/badge/platforms-mac+ios+linux-brightgreen.svg?style=flat" alt="macOS + iOS Linux" />
 	<a href="https://github.com/swiftkube/client/actions">
 		<img src="https://github.com/swiftkube/client/workflows/swiftkube-client-ci/badge.svg" alt="CI Status">
 	</a>
@@ -65,6 +65,8 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 |---------------------------|---------|------------------|--------|
 | SwiftkubeClient 0.6.x     | -       | ✓                |-       |
 | SwiftkubeClient 0.7.x     | -       | -                |✓       |
+| SwiftkubeClient 0.8.x     | -       | -                |✓       |
+| SwiftkubeClient 0.9.x     | -       | -                |✓       |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
@@ -427,7 +429,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.6.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.9.0"),
 ```
 
 then include it as a dependency in your target:
@@ -438,7 +440,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.6.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.9.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
