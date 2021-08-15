@@ -228,3 +228,51 @@ private extension AuthInfo {
 		return nil
 	}
 }
+
+public extension KubernetesClientConfig {
+	static func loadConfigFromPath(logger: Logger, path: String) throws -> KubernetesClientConfig? {
+		let decoder = YAMLDecoder()
+
+		let fileURL = URL(fileURLWithPath: path)
+
+		guard let contents = try? String(contentsOf: fileURL, encoding: .utf8) else {
+			return nil
+		}
+
+		guard let kubeConfig = try? decoder.decode(KubeConfig.self, from: contents) else {
+			return nil
+		}
+
+		guard let currentContext = kubeConfig.currentContext else {
+			return nil
+		}
+
+		guard let context = kubeConfig.contexts?.filter({ $0.name == currentContext }).map(\.context).first else {
+			return nil
+		}
+
+		guard let cluster = kubeConfig.clusters?.filter({ $0.name == context.cluster }).map(\.cluster).first else {
+			return nil
+		}
+
+		guard let masterURL = URL(string: cluster.server) else {
+			return nil
+		}
+
+		guard let authInfo = kubeConfig.users?.filter({ $0.name == context.user }).map(\.authInfo).first else {
+			return nil
+		}
+
+		guard let authentication = authInfo.authentication(logger: logger) else {
+			return nil
+		}
+
+		return KubernetesClientConfig(
+			masterURL: masterURL,
+			namespace: context.namespace ?? "default",
+			authentication: authentication,
+			trustRoots: cluster.trustRoots(logger: logger),
+			insecureSkipTLSVerify: cluster.insecureSkipTLSVerify ?? true
+		)
+	}
+}
