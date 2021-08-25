@@ -86,7 +86,7 @@ final class RetryStrategyTests: XCTestCase {
 		XCTAssertEqual(attempts, [
 			RetryAttempt(attempt: 1, delay: 0.0),
 			RetryAttempt(attempt: 2, delay: 0.0),
-			RetryAttempt(attempt: 3, delay: 0.0)
+			RetryAttempt(attempt: 3, delay: 0.0),
 		])
 	}
 
@@ -97,7 +97,7 @@ final class RetryStrategyTests: XCTestCase {
 		XCTAssertEqual(attempts, [
 			RetryAttempt(attempt: 1, delay: 10.0),
 			RetryAttempt(attempt: 2, delay: 20.0),
-			RetryAttempt(attempt: 3, delay: 30.0)
+			RetryAttempt(attempt: 3, delay: 30.0),
 		])
 	}
 
@@ -108,7 +108,7 @@ final class RetryStrategyTests: XCTestCase {
 		XCTAssertEqual(attempts, [
 			RetryAttempt(attempt: 1, delay: 0.0),
 			RetryAttempt(attempt: 2, delay: 0.0),
-			RetryAttempt(attempt: 3, delay: 0.0)
+			RetryAttempt(attempt: 3, delay: 0.0),
 		])
 	}
 

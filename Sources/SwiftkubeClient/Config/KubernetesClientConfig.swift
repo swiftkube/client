@@ -50,20 +50,14 @@ internal protocol KubernetesClientConfigLoader {
 	func load(logger: Logger) throws -> KubernetesClientConfig?
 }
 
-// MARK: - LocalFileConfigLoader
+// MARK: - URLConfigLoader
 
-internal struct LocalFileConfigLoader: KubernetesClientConfigLoader {
+internal struct URLConfigLoader {
 
-	internal func load(logger: Logger) throws -> KubernetesClientConfig? {
+	internal func load(fromURL: URL, logger: Logger) throws -> KubernetesClientConfig? {
 		let decoder = YAMLDecoder()
-		guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
-			logger.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
-			return nil
-		}
 
-		let fileURL = URL(fileURLWithPath: homePath + "/.kube/config")
-
-		guard let contents = try? String(contentsOf: fileURL, encoding: .utf8) else {
+		guard let contents = try? String(contentsOf: fromURL, encoding: .utf8) else {
 			return nil
 		}
 
@@ -102,6 +96,28 @@ internal struct LocalFileConfigLoader: KubernetesClientConfigLoader {
 			trustRoots: cluster.trustRoots(logger: logger),
 			insecureSkipTLSVerify: cluster.insecureSkipTLSVerify ?? true
 		)
+	}
+}
+
+// MARK: - LocalFileConfigLoader
+
+internal struct LocalFileConfigLoader: KubernetesClientConfigLoader {
+	let fromURL: URL
+	func load(logger: Logger) throws -> KubernetesClientConfig? {
+		try? URLConfigLoader().load(fromURL: fromURL, logger: logger)
+	}
+}
+
+// MARK: - LocalKubeConfigLoader
+
+internal struct LocalKubeConfigLoader: KubernetesClientConfigLoader {
+	func load(logger: Logger) throws -> KubernetesClientConfig? {
+		guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
+			logger.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
+			return nil
+		}
+		let kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
+		return try? URLConfigLoader().load(fromURL: kubeConfigURL, logger: logger)
 	}
 }
 
