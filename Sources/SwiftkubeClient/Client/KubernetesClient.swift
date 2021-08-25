@@ -119,13 +119,8 @@ public class KubernetesClient {
 		fromURL: URL,
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
-	) throws {
+	) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
-		
-		guard fromURL.isFileURL else {
-			logger.debug("URL must point to a file")
-			throw URLError(.unsupportedURL)
-		}
 		
 		guard
 			let config = try? LocalFileConfigLoader(fromURL: fromURL).load(logger: logger)
