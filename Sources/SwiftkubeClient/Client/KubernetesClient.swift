@@ -108,7 +108,7 @@ public class KubernetesClient {
 
 		self.init(config: config, provider: provider, logger: logger)
 	}
-	
+
 	/// Create a new instance of the Kubernetes client.
 	///
 	/// - Parameters:
@@ -121,7 +121,7 @@ public class KubernetesClient {
 		logger: Logger? = nil
 	) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
-		
+
 		guard
 			let config = try? LocalFileConfigLoader(fromURL: fromURL).load(logger: logger)
 		else {

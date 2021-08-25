@@ -104,7 +104,7 @@ internal struct URLConfigLoader {
 internal struct LocalFileConfigLoader: KubernetesClientConfigLoader {
 	let fromURL: URL
 	func load(logger: Logger) throws -> KubernetesClientConfig? {
-		return try? URLConfigLoader().load(fromURL: fromURL, logger: logger)
+		try? URLConfigLoader().load(fromURL: fromURL, logger: logger)
 	}
 }
 

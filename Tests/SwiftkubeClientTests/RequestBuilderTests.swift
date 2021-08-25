@@ -17,8 +17,8 @@
 import AsyncHTTPClient
 import NIO
 import NIOHTTP1
-import SwiftkubeModel
 @testable import SwiftkubeClient
+import SwiftkubeModel
 import XCTest
 
 final class RequestBuilderTests: XCTestCase {
@@ -85,7 +85,7 @@ final class RequestBuilderTests: XCTestCase {
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.labelSelector(.eq(["app": "nginx"])),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "labelSelector=app%3Dnginx")
 	}
@@ -95,7 +95,7 @@ final class RequestBuilderTests: XCTestCase {
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.labelSelector(.neq(["app": "nginx"])),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "labelSelector=app!%3Dnginx")
 	}
@@ -105,7 +105,7 @@ final class RequestBuilderTests: XCTestCase {
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.labelSelector(.in(["env": ["dev", "staging"]])),
 		])
-		.build()
+			.build()
 		XCTAssertEqual(request?.url.query, "labelSelector=env%20in%20(dev,staging)")
 	}
 
@@ -114,17 +114,16 @@ final class RequestBuilderTests: XCTestCase {
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.labelSelector(.notIn(["env": ["dev", "staging"]])),
 		])
-		.build()
+			.build()
 		XCTAssertEqual(request?.url.query, "labelSelector=env%20notin%20(dev,staging)")
 	}
-
 
 	func testGetWithListOptions_Exists() {
 		let builder = RequestBuilder<core.v1.Pod>(config: config, gvk: gvk)
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.labelSelector(.exists(["app", "env"])),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "labelSelector=app,env")
 	}
@@ -134,7 +133,7 @@ final class RequestBuilderTests: XCTestCase {
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.fieldSelector(.eq(["app": "nginx"])),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "fieldSelector=app%3Dnginx")
 	}
@@ -144,7 +143,7 @@ final class RequestBuilderTests: XCTestCase {
 		let request = try? builder.to(.GET).in(.default).with(options: [
 			.fieldSelector(.neq(["app": "nginx"])),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "fieldSelector=app!%3Dnginx")
 	}
@@ -152,9 +151,9 @@ final class RequestBuilderTests: XCTestCase {
 	func testGetWithListOptions_Limit() {
 		let builder = RequestBuilder<core.v1.Pod>(config: config, gvk: gvk)
 		let request = try? builder.to(.GET).in(.default).with(options: [
-			.limit(2)
+			.limit(2),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "limit=2")
 	}
@@ -162,9 +161,9 @@ final class RequestBuilderTests: XCTestCase {
 	func testGetWithListOptions_Version() {
 		let builder = RequestBuilder<core.v1.Pod>(config: config, gvk: gvk)
 		let request = try? builder.to(.GET).in(.default).with(options: [
-			.resourceVersion("20")
+			.resourceVersion("20"),
 		])
-		.build()
+			.build()
 
 		XCTAssertEqual(request?.url.query, "resourceVersion=20")
 	}

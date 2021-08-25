@@ -16,8 +16,8 @@
 
 import AsyncHTTPClient
 import NIO
-import SwiftkubeModel
 import SwiftkubeClient
+import SwiftkubeModel
 import XCTest
 
 final class NodeTests: XCTestCase {
