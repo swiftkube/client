@@ -116,14 +116,14 @@ public class KubernetesClient {
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
 	public convenience init?(
-		fromURL: URL,
+		fromURL url: URL,
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
 	) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
 
 		guard
-			let config = try? LocalFileConfigLoader(fromURL: fromURL).load(logger: logger)
+			let config = try? URLConfigLoader(url: url).load(logger: logger)
 		else {
 			return nil
 		}
