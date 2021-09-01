@@ -145,14 +145,11 @@ public class KubernetesClient {
 		self.config = config
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 
-		var tlsConfiguration = TLSConfiguration.forClient(
-			minimumTLSVersion: .tlsv12,
-			certificateVerification: .fullVerification
-		)
+		var tlsConfiguration = TLSConfiguration.makeClientConfiguration()
+		tlsConfiguration.minimumTLSVersion = .tlsv12
+		tlsConfiguration.trustRoots = config.trustRoots
 
-		tlsConfiguration.trustRoots = self.config.trustRoots
-
-		if case let KubernetesClientAuthentication.x509(clientCertificate, clientKey) = self.config.authentication {
+		if case let KubernetesClientAuthentication.x509(clientCertificate, clientKey) = config.authentication {
 			tlsConfiguration.certificateChain = [.certificate(clientCertificate)]
 			tlsConfiguration.privateKey = NIOSSLPrivateKeySource.privateKey(clientKey)
 		}
