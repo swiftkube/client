@@ -21,8 +21,17 @@ import SwiftkubeModel
 import XCTest
 
 final class NodeTests: XCTestCase {
+//#if CI
+
+	static let client = KubernetesClient()!
+
+	override class func tearDown() {
+		try? client.syncShutdown()
+	}
 
 	func testListNodes() {
-		XCTAssert(true)
+		let nodes = try? NodeTests.client.nodes.list().wait()
+		XCTAssertEqual(nodes?.items.count, 3)
 	}
+//#endif
 }

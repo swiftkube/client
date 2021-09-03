@@ -25,7 +25,7 @@ jobs:
     - name: Build
       run: swift build -v
     - name: Test
-      run: swift test  --enable-test-discovery
+      run: swift test --enable-test-discovery
 
   iOS:
     name: Test iOS
@@ -43,7 +43,11 @@ jobs:
     container: swift:5.2
     steps:
     - uses: actions/checkout@v2
+    - uses: nolar/setup-k3d-k3s@v1
+      with:
+        k3d-args: --servers 1 --agents 2 --k3s-server-arg "--no-deploy=traefik"
     - name: Build
       run: swift build -v --enable-test-discovery
     - name: Test
-      run: swift test  --enable-test-discovery
+      run: swift test  --enable-test-discovery -Xswiftc -DCI
+
