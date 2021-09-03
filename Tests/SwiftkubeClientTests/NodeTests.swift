@@ -21,7 +21,7 @@ import SwiftkubeModel
 import XCTest
 
 final class NodeTests: XCTestCase {
-//#if CI
+#if CI
 
 	static let client = KubernetesClient()!
 
@@ -33,5 +33,5 @@ final class NodeTests: XCTestCase {
 		let nodes = try? NodeTests.client.nodes.list().wait()
 		XCTAssertEqual(nodes?.items.count, 3)
 	}
-//#endif
+#endif
 }
