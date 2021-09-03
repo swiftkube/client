@@ -191,7 +191,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReplaceableRe
 	///   - namespace: The namespace for this API request.
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
+	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
 	func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
 		super.update(in: namespace ?? .namespace(config.namespace), resource)
 	}
@@ -231,5 +231,71 @@ public extension NamespacedGenericKubernetesClient where Resource: CollectionDel
 	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
 	func deleteAll(inNamespace namespace: NamespaceSelector? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		super.deleteAll(in: namespace ?? .namespace(config.namespace))
+	}
+}
+
+// MARK: - StatusHavingResource
+
+/// API functions for `StatusHavingResource`.
+public extension NamespacedGenericKubernetesClient where Resource: StatusHavingResource {
+
+	/// Loads an API resource's status by name in the given namespace.
+	///
+	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the API resource to load.
+	///
+	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
+	func getStatus(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<Resource> {
+		try super.getStatus(in: namespace ?? .namespace(config.namespace), name: name)
+	}
+
+	/// Replaces, i.e. updates, an API resource's status in the given namespace.
+	///
+	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the resoruce to update.
+	///   - resource: A `KubernetesAPIResource` instance to update.
+	///
+	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
+	func updateStatus(in namespace: NamespaceSelector? = nil, name: String, _ resource: Resource) throws -> EventLoopFuture<Resource> {
+		try super.updateStatus(in: namespace ?? .namespace(config.namespace), name: name, resource)
+	}
+}
+
+// MARK: - ScalableResource
+
+/// API functions for `ScalableResource`.
+public extension NamespacedGenericKubernetesClient where Resource: ScalableResource {
+
+	/// Loads an API resource's scale by name in the given namespace.
+	///
+	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the API resource to load.
+	///
+	/// - Returns: An `EventLoopFuture` holding the `autoscaling.v1.Scale` of the resource specified by the given name in the given namespace.
+	func getScale(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<autoscaling.v1.Scale> {
+		try super.getScale(in: namespace ?? .namespace(config.namespace), name: name)
+	}
+
+	/// Replaces, i.e. updates, an API resource's scale in the given namespace.
+	///
+	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the resoruce to update.
+	///   - resource: A `autoscaling.v1.Scale` instance to update.
+	///
+	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale`.
+	func updateScale(in namespace: NamespaceSelector? = nil, name: String, scale: autoscaling.v1.Scale) throws -> EventLoopFuture<autoscaling.v1.Scale> {
+		try super.updateScale(in: namespace ?? .namespace(config.namespace), name: name, scale: scale)
 	}
 }

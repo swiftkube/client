@@ -86,7 +86,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	public func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.GET).resource(withName: name).in(namespace).with(options: options).build()
+			let request = try makeRequest().in(namespace).toGet().resource(withName: name).with(options: options).build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
@@ -106,7 +106,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	public func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.POST).resource(resource).in(namespace).build()
+			let request = try makeRequest().in(namespace).toPost().body(resource).build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
@@ -126,7 +126,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	public func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.PUT).resource(withName: resource.name).resource(resource).in(namespace).build()
+			let request = try makeRequest().in(namespace).toPut().resource(withName: resource.name).body(.resource(payload: resource)).build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
@@ -146,7 +146,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	public func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.DELETE).resource(withName: name).in(namespace).build()
+			let request = try makeRequest().in(namespace).toDelete().resource(withName: name).build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
@@ -164,7 +164,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	public func deleteAll(in namespace: NamespaceSelector) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.DELETE).in(namespace).build()
+			let request = try makeRequest().in(namespace).toDelete().build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
@@ -187,7 +187,87 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 	func list(in namespace: NamespaceSelector, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.GET).in(namespace).with(options: options).build()
+			let request = try makeRequest().in(namespace).toGet().with(options: options).build()
+
+			return dispatch(request: request, eventLoop: eventLoop)
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
+internal extension GenericKubernetesClient where Resource: ScalableResource {
+
+	/// Reads a resource's scale in the given namespace.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the resource to load.
+	///
+	/// - Returns: An `EventLoopFuture` holding the `autoscaling.v1.Scale` for the desired resource .
+	func getScale(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<autoscaling.v1.Scale> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().in(namespace).toGet().resource(withName: name).subResource(.scale).build()
+
+			return dispatch(request: request, eventLoop: eventLoop)
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+
+	/// Replaces the resource's scale in the given namespace.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the resource to update.
+	///   - scale: An instance of `autoscaling.v1.Scale` to replace.
+	///
+	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale` for the desired resource .
+	func updateScale(in namespace: NamespaceSelector, name: String, scale: autoscaling.v1.Scale) throws -> EventLoopFuture<autoscaling.v1.Scale> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().in(namespace).toPut().resource(withName: name).body(.subResource(type: .scale, payload: scale)).build()
+
+			return dispatch(request: request, eventLoop: eventLoop)
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
+internal extension GenericKubernetesClient where Resource: StatusHavingResource {
+
+	/// Reads a resource's status in the given namespace.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the resource to load.
+	///
+	/// - Returns: An `EventLoopFuture` holding the `KubernetesAPIResource`.
+	func getStatus(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<Resource> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().in(namespace).toGet().resource(withName: name).subResource(.status).build()
+
+			return dispatch(request: request, eventLoop: eventLoop)
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+
+	/// Replaces the resource's status in the given namespace.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the resource to update.
+	///   - resource: A `KubernetesAPIResource` instance to update.
+	///
+	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
+	func updateStatus(in namespace: NamespaceSelector, name: String, _ resource: Resource) throws -> EventLoopFuture<Resource> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().in(namespace).toPut().resource(withName: name).body(.subResource(type: .status, payload: resource)).build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
@@ -198,7 +278,7 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 
 internal extension GenericKubernetesClient {
 
-	func makeRequest() -> RequestBuilder<Resource> {
+	func makeRequest() -> NamespaceStep {
 		RequestBuilder(config: config, gvk: gvk)
 	}
 
@@ -265,31 +345,6 @@ internal extension GenericKubernetesClient {
 
 internal extension GenericKubernetesClient {
 
-	func status(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.GET).resource(withName: name).status().in(namespace).build()
-
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-
-	func updateStatus(in namespace: NamespaceSelector, _ resource: Resource) throws -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().to(.PUT).resource(resource).status().in(namespace).build()
-
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-}
-
-internal extension GenericKubernetesClient {
-
 	/// Watches the API resources in the given namespace.
 	///
 	/// Watching resources opens a persistent connection to the API server. The connection is represented by a `SwiftkubeClientTask` instance, that acts
@@ -330,7 +385,7 @@ internal extension GenericKubernetesClient {
 		retryStrategy: RetryStrategy = RetryStrategy(),
 		using delegate: Delegate
 	) throws -> SwiftkubeClientTask {
-		let request = try makeRequest().toWatch().in(namespace).with(options: options).build()
+		let request = try makeRequest().in(namespace).toWatch().with(options: options).build()
 		let watcher = ResourceWatcher(decoder: jsonDecoder, delegate: delegate)
 		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
@@ -384,7 +439,7 @@ internal extension GenericKubernetesClient {
 		retryStrategy: RetryStrategy = RetryStrategy.never,
 		delegate: LogWatcherDelegate
 	) throws -> SwiftkubeClientTask {
-		let request = try makeRequest().toFollow(pod: name, container: container).in(namespace).build()
+		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container).build()
 		let watcher = LogWatcher(delegate: delegate)
 		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 

@@ -188,3 +188,57 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Collection
 		super.deleteAll(in: .allNamespaces)
 	}
 }
+
+// MARK: - StatusHavingResource
+
+/// API functions for `StatusHavingResource`.
+public extension ClusterScopedGenericKubernetesClient where Resource: StatusHavingResource {
+
+	/// Loads an API resource's status by name.
+	///
+	/// - Parameters:
+	///   - name: The name of the API resource to load.
+	///
+	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name.
+	func getStatus(name: String) throws -> EventLoopFuture<Resource> {
+		try super.getStatus(in: .allNamespaces, name: name)
+	}
+
+	/// Replaces, i.e. updates, an API resource's status .
+	///
+	/// - Parameters:
+	///   - name: The name of the resoruce to update.
+	///   - resource: A `KubernetesAPIResource` instance to update.
+	///
+	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
+	func updateStatus(name: String, _ resource: Resource) throws -> EventLoopFuture<Resource> {
+		try super.updateStatus(in: .allNamespaces, name: name, resource)
+	}
+}
+
+// MARK: - ScalableResource
+
+/// API functions for `ScalableResource`.
+public extension ClusterScopedGenericKubernetesClient where Resource: ScalableResource {
+
+	/// Loads an API resource's scale by name.
+	///
+	/// - Parameters:
+	///   - name: The name of the API resource to load.
+	///
+	/// - Returns: An `EventLoopFuture` holding the `autoscaling.v1.Scale` of the resource specified by the given name.
+	func getScale(name: String) throws -> EventLoopFuture<autoscaling.v1.Scale> {
+		try super.getScale(in: .allNamespaces, name: name)
+	}
+
+	/// Replaces, i.e. updates, an API resource's scale.
+	///
+	/// - Parameters:
+	///   - name: The name of the resoruce to update.
+	///   - resource: A `autoscaling.v1.Scale` instance to update.
+	///
+	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale`.
+	func updateScale(name: String, scale: autoscaling.v1.Scale) throws -> EventLoopFuture<autoscaling.v1.Scale> {
+		try super.updateScale(in: .allNamespaces, name: name, scale: scale)
+	}
+}

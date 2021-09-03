@@ -20,16 +20,98 @@ import NIO
 import NIOHTTP1
 import SwiftkubeModel
 
-internal extension HTTPMethod {
+// MARK: - ResourceType
 
-	var hasRequestBody: Bool {
+internal enum ResourceType {
+	case root, log, scale, status
+
+	var path: String {
 		switch self {
-		case .POST, .PUT, .PATCH:
-			return true
-		default:
-			return false
+		case .root:
+			return ""
+		case .log:
+			return "/log"
+		case .scale:
+			return "/scale"
+		case .status:
+			return "/status"
 		}
 	}
+}
+
+// MARK: - RequestBody
+
+internal enum RequestBody {
+	case resource(payload: KubernetesAPIResource)
+	case subResource(type: ResourceType, payload: KubernetesResource)
+
+	var type: ResourceType {
+		switch self {
+		case .resource:
+			return .root
+		case let .subResource(type: subType, payload: _):
+			return subType
+		}
+	}
+
+	var payload: KubernetesResource {
+		switch self {
+		case let .resource(payload: payload):
+			return payload
+		case let .subResource(type: _, payload: payload):
+			return payload
+		}
+	}
+}
+
+// MARK: - NamespaceStep
+
+internal protocol NamespaceStep {
+	func `in`(_ namespace: NamespaceSelector) -> MethodStep
+}
+
+// MARK: - MethodStep
+
+internal protocol MethodStep {
+	func toGet() -> GetStep
+	func toWatch() -> GetStep
+	func toFollow(pod: String, container: String?) -> GetStep
+	func toPost() -> PostStep
+	func toPut() -> PutStep
+	func toDelete() -> DeleteStep
+}
+
+// MARK: - GetStep
+
+internal protocol GetStep {
+	func resource(withName name: String?) -> GetStep
+	func subResource(_ subType: ResourceType) -> GetStep
+	func with(options: [ListOption]?) -> GetStep
+	func with(options: [ReadOption]?) -> GetStep
+	func build() throws -> HTTPClient.Request
+}
+
+// MARK: - PostStep
+
+internal protocol PostStep {
+	func body<Resource: KubernetesAPIResource>(_ resource: Resource) -> PostStep
+	func build() throws -> HTTPClient.Request
+}
+
+// MARK: - PutStep
+
+internal protocol PutStep {
+	func resource(withName name: String?) -> PutStep
+	func body(_ body: RequestBody) -> PutStep
+	func build() throws -> HTTPClient.Request
+}
+
+// MARK: - DeleteStep
+
+internal protocol DeleteStep {
+	func resource(withName name: String?) -> DeleteStep
+	func with(options: meta.v1.DeleteOptions?) -> DeleteStep
+	func build() throws -> HTTPClient.Request
 }
 
 // MARK: - RequestBuilder
@@ -38,101 +120,225 @@ internal extension HTTPMethod {
 /// An internal class for building API request objects.
 ///
 /// It assumes a correct usage and does only minimal sanity checks.
-internal class RequestBuilder<Resource: KubernetesAPIResource> {
+internal class RequestBuilder {
 
 	let config: KubernetesClientConfig
 	let gvk: GroupVersionKind
 	var components: URLComponents?
 
-	var method: HTTPMethod!
 	var namespace: NamespaceSelector!
-	var resource: Resource?
+	var method: HTTPMethod! {
+		didSet {
+			switch method {
+			case .POST, .PUT, .PATCH:
+				hasPayload = true
+			default:
+				hasPayload = false
+			}
+		}
+	}
+
+	var hasPayload: Bool = false
+
 	var resourceName: String?
+	var requestBody: RequestBody? {
+		didSet {
+			subResourceType = requestBody?.type
+		}
+	}
+
+	var subResourceType: ResourceType?
+
+	var containerName: String?
 	var listOptions: [ListOption]?
 	var readOptions: [ReadOption]?
 	var deleteOptions: meta.v1.DeleteOptions?
-	var statusRequest: Bool = false
-	var watchRequest: Bool = false
-	var followRequest: Bool = false
-	var container: String?
+	var watchFlag: Bool = false
 
 	init(config: KubernetesClientConfig, gvk: GroupVersionKind) {
 		self.config = config
 		self.gvk = gvk
 		self.components = URLComponents(url: config.masterURL, resolvingAgainstBaseURL: false)
 	}
+}
 
-	func to(_ method: HTTPMethod) -> RequestBuilder {
-		self.method = method
-		return self
+// MARK: NamespaceStep
+
+extension RequestBuilder: NamespaceStep {
+
+	/// Set the namespace for the pending request and move to the Method Step
+	/// - Parameter namespace: The namespace for this request
+	/// - Returns: The builder instance as MethodStep
+	func `in`(_ namespace: NamespaceSelector) -> MethodStep {
+		self.namespace = namespace
+		return self as MethodStep
 	}
+}
 
-	func status() -> RequestBuilder {
-		statusRequest = true
-		return self
-	}
+// MARK: MethodStep
 
-	func toWatch() -> RequestBuilder {
+extension RequestBuilder: MethodStep {
+
+	/// Set request method to  GET for the pending request
+	/// - Returns:The builder instance as GetStep
+	func toGet() -> GetStep {
 		method = .GET
-		watchRequest = true
-		return self
+		return self as GetStep
 	}
 
-	func toFollow(pod: String, container: String?) -> RequestBuilder {
+	/// Set request method to  POST for the pending request
+	/// - Returns:The builder instance as PostStep
+	func toPost() -> PostStep {
+		method = .POST
+		return self as PostStep
+	}
+
+	/// Set request method to  PUT for the pending request
+	/// - Returns:The builder instance as PutStep
+	func toPut() -> PutStep {
+		method = .PUT
+		return self as PutStep
+	}
+
+	/// Set request method to  DELETE for the pending request
+	/// - Returns:The builder instance as DeleteStep
+	func toDelete() -> DeleteStep {
+		method = .DELETE
+		return self as DeleteStep
+	}
+
+	/// Set request method to  GET and toggle the `watch` flag
+	/// - Returns:The builder instance as GetStep
+	func toWatch() -> GetStep {
+		method = .GET
+		watchFlag = true
+		return self as GetStep
+	}
+
+	/// Set request method to  GET and notice the pod and container to follow for the pending request
+	/// - Returns:The builder instance as GetStep
+	func toFollow(pod: String, container: String?) -> GetStep {
 		method = .GET
 		resourceName = pod
-		self.container = container
-		followRequest = true
-		return self
+		containerName = container
+		subResourceType = .log
+		return self as GetStep
 	}
+}
 
-	func resource(_ resource: Resource) -> RequestBuilder {
-		self.resource = resource
-		return self
-	}
+// MARK: GetStep
 
-	func resource(withName name: String?) -> RequestBuilder {
+extension RequestBuilder: GetStep {
+
+	/// Set the name of the resource for the pending request
+	/// - Parameter name: The name of the resource
+	/// - Returns: The builder instance as GetStep
+	func resource(withName name: String?) -> GetStep {
 		resourceName = name
-		return self
+		return self as GetStep
 	}
 
-	func `in`(_ namespace: NamespaceSelector) -> RequestBuilder {
-		self.namespace = namespace
-		return self
+	/// Set the sub-reousrce type for the pending request
+	/// - Parameter subType: The `ResourceType`
+	/// - Returns: The builder instance as GetStep
+	func subResource(_ subType: ResourceType) -> GetStep {
+		subResourceType = subType
+		return self as GetStep
 	}
 
-	func with(options: [ListOption]?) -> RequestBuilder {
+	/// Set the `ListOptions` for the pending request
+	/// - Parameter options: The `ListOptions`
+	/// - Returns: The builder instance as GetStep
+	func with(options: [ListOption]?) -> GetStep {
 		listOptions = options
-		return self
+		return self as GetStep
 	}
 
-	func with(options: [ReadOption]?) -> RequestBuilder {
+	/// Set the `ReadOption` for the pending request
+	/// - Parameter options: The `ReadOption`
+	/// - Returns: The builder instance as GetStep
+	func with(options: [ReadOption]?) -> GetStep {
 		readOptions = options
-		return self
+		return self as GetStep
+	}
+}
+
+// MARK: PostStep
+
+extension RequestBuilder: PostStep {
+
+	/// Set the body payload for the pending request
+	/// - Parameter resource: The `KubernetesAPIResource` payload
+	/// - Returns: The builder instance as PostStep
+	func body<Resource: KubernetesAPIResource>(_ resource: Resource) -> PostStep {
+		requestBody = .resource(payload: resource)
+		return self as PostStep
+	}
+}
+
+// MARK: PutStep
+
+extension RequestBuilder: PutStep {
+
+	/// Set the name of the resource for the pending request
+	/// - Parameter name: The name of the resource
+	/// - Returns: The builder instance as PutStep
+	func resource(withName name: String?) -> PutStep {
+		resourceName = name
+		return self as PutStep
 	}
 
-	func with(options: meta.v1.DeleteOptions?) -> RequestBuilder {
-		deleteOptions = options
-		return self
+	/// Set the body payload for the pending request
+	/// - Parameter resource: The `KubernetesAPIResource` payload
+	/// - Returns: The builder instance as PostStep
+	func body(_ body: RequestBody) -> PutStep {
+		requestBody = body
+		return self as PutStep
 	}
+}
+
+// MARK: DeleteStep
+
+extension RequestBuilder: DeleteStep {
+
+	/// Set the name of the resource for the pending request
+	/// - Parameter name: The name of the resource
+	/// - Returns: The builder instance as DeleteStep
+	func resource(withName name: String?) -> DeleteStep {
+		resourceName = name
+		return self as DeleteStep
+	}
+
+	/// Set the `DeleteOptions` for the pending request
+	/// - Parameter options: The `DeleteOptions`
+	/// - Returns: The builder instance as DeleteStep
+	func with(options: meta.v1.DeleteOptions?) -> DeleteStep {
+		deleteOptions = options
+		return self as DeleteStep
+	}
+}
+
+internal extension RequestBuilder {
 
 	func build() throws -> HTTPClient.Request {
 		components?.path = urlPath(forNamespace: namespace, name: resourceName)
 
-		if statusRequest {
-			components?.path += "/status"
+		if let subResourceType = subResourceType {
+			components?.path += subResourceType.path
 		}
 
-		if followRequest {
-			components?.path += "/log"
+		if requestBody?.type == .root {
+			guard
+				let body = requestBody,
+				case let RequestBody.resource(payload: payload) = body,
+				payload.name != nil
+			else {
+				throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
+			}
 		}
 
-		guard !(method.hasRequestBody && resource?.name == nil) else {
-			throw SwiftkubeClientError.badRequest("Resource `metadata.name` must be set.")
-		}
-
-		guard !(method == .DELETE && resource != nil) else {
-			throw SwiftkubeClientError.badRequest("Resource can't be set for DELETE call.")
+		guard !(method == .DELETE && requestBody != nil) else {
+			throw SwiftkubeClientError.badRequest("RequestBody can't be set for DELETE call.")
 		}
 
 		if let readOptions = readOptions {
@@ -143,15 +349,15 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 			listOptions.collectQueryItems().forEach(add(queryItem:))
 		}
 
-		if watchRequest {
+		if watchFlag {
 			add(queryItem: URLQueryItem(name: "watch", value: "true"))
 		}
 
-		if followRequest {
+		if subResourceType == .log {
 			add(queryItem: URLQueryItem(name: "follow", value: "true"))
 		}
 
-		if let container = container {
+		if let container = containerName {
 			add(queryItem: URLQueryItem(name: "container", value: container))
 		}
 
@@ -160,25 +366,12 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		}
 
 		let headers = buildHeaders(withAuthentication: config.authentication)
-		var body: HTTPClient.Body?
-
-		let encoder = JSONEncoder()
-		encoder.dateEncodingStrategy = .iso8601
-
-		if let resource = resource {
-			let data = try encoder.encode(resource)
-			body = .data(data)
-		}
-
-		if let options = deleteOptions {
-			let data = try encoder.encode(options)
-			body = .data(data)
-		}
+		let body = try buildBody()
 
 		return try HTTPClient.Request(url: url, method: method, headers: headers, body: body)
 	}
 
-	func urlPath(forNamespace namespace: NamespaceSelector, name: String?) -> String {
+	private func urlPath(forNamespace namespace: NamespaceSelector, name: String?) -> String {
 		var url: String
 
 		if case NamespaceSelector.allNamespaces = namespace {
@@ -194,19 +387,42 @@ internal class RequestBuilder<Resource: KubernetesAPIResource> {
 		return url
 	}
 
-	func add(queryItem: URLQueryItem) {
+	private func add(queryItem: URLQueryItem) {
 		if components?.queryItems == nil {
 			components?.queryItems = []
 		}
 		components?.queryItems?.append(queryItem)
 	}
 
-	func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
+	private func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {
 		var headers: [(String, String)] = []
 		if let authorizationHeader = authentication?.authorizationHeader() {
 			headers.append(("Authorization", authorizationHeader))
 		}
 
 		return HTTPHeaders(headers)
+	}
+
+	private func buildBody() throws -> HTTPClient.Body? {
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+
+		if let requestBody = requestBody {
+			let data = try requestBody.payload.encode(encoder: encoder)
+			return .data(data)
+		}
+
+		if let options = deleteOptions {
+			let data = try encoder.encode(options)
+			return .data(data)
+		}
+
+		return nil
+	}
+}
+
+private extension KubernetesResource {
+	func encode(encoder: JSONEncoder) throws -> Data {
+		try encoder.encode(self)
 	}
 }

@@ -36,12 +36,4 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 			delegate: delegate
 		)
 	}
-
-	func status(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<core.v1.Pod> {
-		try super.status(in: namespace ?? .namespace(config.namespace), name: name)
-	}
-
-	func updateStatus(in namespace: NamespaceSelector? = nil, _ pod: core.v1.Pod) throws -> EventLoopFuture<core.v1.Pod> {
-		try super.updateStatus(in: namespace ?? .namespace(config.namespace), pod)
-	}
 }
