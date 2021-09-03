@@ -73,6 +73,11 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 		self.jsonDecoder = jsonDecoder
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
+}
+
+// MARK: - GenericKubernetesClient
+
+internal extension GenericKubernetesClient {
 
 	/// Loads an API resource by name in the given namespace.
 	///
@@ -83,7 +88,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - name: The name of the API resource to load.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
-	public func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
+	func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toGet().resource(withName: name).with(options: options).build()
@@ -103,7 +108,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - resource: A `KubernetesAPIResource` instance to create.
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	public func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+	func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toPost().body(resource).build()
@@ -123,7 +128,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	public func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
+	func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toPut().resource(withName: resource.name).body(.resource(payload: resource)).build()
@@ -143,7 +148,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	public func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+	func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toDelete().resource(withName: name).build()
@@ -161,7 +166,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	/// - Parameter namespace: The namespace for this API request.
 	///
 	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
-	public func deleteAll(in namespace: NamespaceSelector) -> EventLoopFuture<ResourceOrStatus<Resource>> {
+	func deleteAll(in namespace: NamespaceSelector) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toDelete().build()
@@ -173,7 +178,9 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	}
 }
 
-public extension GenericKubernetesClient where Resource: ListableResource {
+// MARK: - GenericKubernetesClient + ListableResource
+
+internal extension GenericKubernetesClient where Resource: ListableResource {
 
 	/// Lists API resources in the given namespace.
 	///
@@ -195,6 +202,8 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 		}
 	}
 }
+
+// MARK: - GenericKubernetesClient + ScalableResource
 
 internal extension GenericKubernetesClient where Resource: ScalableResource {
 
@@ -235,6 +244,8 @@ internal extension GenericKubernetesClient where Resource: ScalableResource {
 		}
 	}
 }
+
+// MARK: - GenericKubernetesClient + StatusHavingResource
 
 internal extension GenericKubernetesClient where Resource: StatusHavingResource {
 
