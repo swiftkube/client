@@ -43,11 +43,12 @@ jobs:
     container: swift:5.2
     steps:
     - uses: actions/checkout@v2
-    - uses: nolar/setup-k3d-k3s@v1
-      with:
-        k3d-args: --servers 1 --agents 2 --k3s-server-arg "--no-deploy=traefik"
+    - name: Create cluster
+      uses: AbsaOSS/k3d-action@v1.5.0
+        with:
+          cluster-name: "swiftkube"
+          args: -c k3d/swiftkube.yaml
     - name: Build
       run: swift build -v --enable-test-discovery
     - name: Test
-      run: swift test  --enable-test-discovery -Xswiftc -DCI
-
+      run: swift test --enable-test-discovery -Xswiftc -DCI
