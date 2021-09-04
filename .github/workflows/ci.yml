@@ -40,7 +40,6 @@ jobs:
 
   linux:
     runs-on: ubuntu-18.04
-    container: swift:5.2
     steps:
     - uses: actions/checkout@v2
     - name: Create cluster
@@ -48,6 +47,10 @@ jobs:
       with:
         cluster-name: "swiftkube"
         args: -c k3d/swiftkube.yaml
+    - name: Setup Swift
+      uses: fwal/setup-swift@v1
+      with:
+        swift-version: "5.4"
     - name: Build
       run: swift build -v --enable-test-discovery
     - name: Test
