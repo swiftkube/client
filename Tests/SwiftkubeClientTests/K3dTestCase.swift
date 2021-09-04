@@ -59,8 +59,8 @@ open class K3dTestCase: XCTestCase {
 		while !condition() {
 			sleep(2)
 			let now = DispatchTime.now()
-			let diff = start.distance(to: now)
-			if diff.timeInterval() ?? 0 > timeout.timeInterval() ?? 0 {
+			let diff = now.uptimeNanoseconds - start.uptimeNanoseconds
+			if diff > timeout.nanoseconds() {
 				return
 			}
 		}
@@ -78,20 +78,20 @@ open class K3dTestCase: XCTestCase {
 
 extension DispatchTimeInterval {
 
-	func timeInterval() -> TimeInterval? {
+	func nanoseconds() -> UInt64 {
 		switch self {
 		case .seconds(let value):
-			return Double(value)
+			return UInt64(value * 1_000_000_000)
 		case .milliseconds(let value):
-			return Double(value) / 1_000
+			return UInt64(value * 1_000_000)
 		case .microseconds(let value):
-			return Double(value) / 1_000_000
+			return UInt64(value * 1_000)
 		case .nanoseconds(let value):
-			return Double(value) / 1_000_000_000
+			return UInt64(value)
 		case .never:
-			return nil
+			return 0
 		@unknown default:
-			return nil
+			return 0
 		}
 	}
 }
