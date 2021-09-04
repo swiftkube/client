@@ -26,10 +26,12 @@ final class K3dConfigMapTests: K3dTestCase {
 		// ensure clean state
 		deleteNamespace("cm1")
 		deleteNamespace("cm2")
+		deleteNamespace("cm3")
 
 		// create namespaces for tests
 		createNamespace("cm1")
 		createNamespace("cm2")
+		createNamespace("cm3")
 	}
 
 	func testList() {
@@ -79,13 +81,64 @@ final class K3dConfigMapTests: K3dTestCase {
 				}
 			}
 
-		wait(for: [deletedConfigMap], timeout: 100)
+		wait(for: [deletedConfigMap], timeout: 0.1)
 	}
 
-	private func buildConfigMap(_ name: String, data: [String: String]) -> core.v1.ConfigMap {
+	func testWatch() {
+		let expectedRecords = expectation(description: "Expected Records")
+		let watcher = Watcher(excpectation: expectedRecords, expectedCount: 5)
+
+		let task = try? K3dTestCase.client.configMaps.watch(in: .namespace("cm3"), delegate: watcher)
+
+		_ = try? K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test1")).wait()
+		_ = try? K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test2")).wait()
+		_ = try? K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1").wait()
+		_ = try? K3dTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"])).wait()
+
+		wait(for: [watcher.excpectedRecords], timeout: 1)
+		task?.cancel()
+
+		assertEqual(watcher.records, [
+			Watcher.Record(eventType: .added, resource: "kube-root-ca.crt"),
+			Watcher.Record(eventType: .added, resource: "test1"),
+			Watcher.Record(eventType: .added, resource: "test2"),
+			Watcher.Record(eventType: .deleted, resource: "test1"),
+			Watcher.Record(eventType: .modified, resource: "test2"),
+		])
+	}
+
+	private func buildConfigMap(_ name: String, data: [String: String]? = nil) -> core.v1.ConfigMap {
 		return core.v1.ConfigMap(
 			metadata: meta.v1.ObjectMeta(name: name),
 			data: data
 		)
+	}
+
+	class Watcher: ResourceWatcherDelegate {
+
+		struct Record: Hashable {
+			let eventType: EventType
+			let resource: String
+		}
+
+		let excpectedRecords: XCTestExpectation
+		var expectedCount: Int
+		var records: [Record] = []
+
+		init(excpectation: XCTestExpectation, expectedCount: Int) {
+			self.excpectedRecords = excpectation
+			self.expectedCount = expectedCount
+		}
+
+		func onEvent(event: EventType, resource: core.v1.ConfigMap) {
+			records.append(Record(eventType: event, resource: resource.name!))
+			if records.count == expectedCount {
+				excpectedRecords.fulfill()
+			}
+		}
+
+		func onError(error: SwiftkubeClientError) {
+			// NOOP
+		}
 	}
 }

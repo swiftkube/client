@@ -20,7 +20,7 @@ import SwiftkubeModel
 
 // MARK: - EventType
 
-public enum EventType: String, RawRepresentable {
+public enum EventType: String, RawRepresentable, Equatable {
 	case added = "ADDED"
 	case modified = "MODIFIED"
 	case deleted = "DELETED"
