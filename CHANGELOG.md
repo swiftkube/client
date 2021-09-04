@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.0
+
+### New
+
+- Update to Kubernetes model v1.20.9
+- Add `LocalFileConfigLoader` for loading KubeConfigs from a local file given a URL #8 by @thomashorrobin
+- Add support for `scale` and `status` API
+- Setup CI with live K3d cluster and add several tests against it
+
+### Bug Fixes
+
+- Add missing support for `continue` token in  `ListOption` for retrieving subsequent list results #9
+- Track dependency on SwiftkubeModel up-to-next minor instead of major #10 
+
 ## 0.9.0
 
 - Add supported platforms for Swift package

@@ -4,8 +4,8 @@
 
 <p align="center">
 	<img src="https://img.shields.io/badge/Swift-5.2-orange.svg" />
-	<a href="https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.19.8-blue.svg" alt="Kubernetes 1.18.13"/>
+	<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/">
+		<img src="https://img.shields.io/badge/Kubernetes-1.20.9-blue.svg" alt="Kubernetes 1.20.9"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -35,7 +35,7 @@
 
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.19.8
+- [x] Covers all Kubernetes API Groups in v1.20.9
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -48,8 +48,8 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 - [x] List Options
 - [x] Delete Options
 - [ ] PATCH API
-- [ ] `/scale` API
-- [ ] `/status` API
+- [x] `/scale` API
+- [x] `/status` API
 - [x] Resource watch support
 - [x] Follow pod logs support
 - [x] Discovery API
@@ -61,12 +61,13 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 
 ## Compatibility Matrix
 
-|                           | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 |
-|---------------------------|---------|------------------|--------|
-| SwiftkubeClient 0.6.x     | -       | ✓                |-       |
-| SwiftkubeClient 0.7.x     | -       | -                |✓       |
-| SwiftkubeClient 0.8.x     | -       | -                |✓       |
-| SwiftkubeClient 0.9.x     | -       | -                |✓       |
+|                           | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 |1.20.9|
+|---------------------------|---------|------------------|--------|--------|
+| SwiftkubeClient 0.6.x     | -       | ✓                | -      | -      |
+| SwiftkubeClient 0.7.x     | -       | -                | ✓      | -      |
+| SwiftkubeClient 0.8.x     | -       | -                | ✓      | -      |
+| SwiftkubeClient 0.9.x     | -       | -                | ✓      | -      |
+| SwiftkubeClient 0.10.x    | -       | -                | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
@@ -429,7 +430,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.9.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.10.0"),
 ```
 
 then include it as a dependency in your target:
@@ -440,7 +441,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.9.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.10.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
