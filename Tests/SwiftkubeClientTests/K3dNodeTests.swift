@@ -14,24 +14,14 @@
 // limitations under the License.
 //
 
-import AsyncHTTPClient
-import NIO
 import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-final class NodeTests: XCTestCase {
-#if CI
-
-	static let client = KubernetesClient()!
-
-	override class func tearDown() {
-		try? client.syncShutdown()
-	}
+final class K3dNodeTests: K3dTestCase {
 
 	func testListNodes() {
-		let nodes = try? NodeTests.client.nodes.list().wait()
+		let nodes = try? K3dTestCase.client.nodes.list().wait()
 		XCTAssertEqual(nodes?.items.count, 3)
 	}
-#endif
 }
