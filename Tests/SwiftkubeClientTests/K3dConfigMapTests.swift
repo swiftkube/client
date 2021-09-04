@@ -70,16 +70,16 @@ final class K3dConfigMapTests: K3dTestCase {
 		}
 		.wait()
 
-		let expectation = expectation(description: "Deleted ConfigMap")
+		let deletedConfigMap = expectation(description: "Deleted ConfigMap")
 
 		K3dTestCase.client.configMaps.get(in: .namespace("cm2"), name: "deleteme")
 			.whenFailure{ error in
 				if case let SwiftkubeClientError.requestError(status) = error, status.code == 404 {
-					expectation.fulfill()
+					deletedConfigMap.fulfill()
 				}
 			}
 
-		wait(for: [expectation], timeout: 100)
+		wait(for: [deletedConfigMap], timeout: 100)
 	}
 
 	private func buildConfigMap(_ name: String, data: [String: String]) -> core.v1.ConfigMap {
