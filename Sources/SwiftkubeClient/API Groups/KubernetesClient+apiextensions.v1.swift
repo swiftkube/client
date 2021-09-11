@@ -24,7 +24,7 @@ public protocol APIExtensionsV1API {
 	var customResourceDefinitions: ClusterScopedGenericKubernetesClient<apiextensions.v1.CustomResourceDefinition> { get }
 }
 
-/// DSL for `apiextensions.v1` API Group
+/// DSL for `apiextensions.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class APIExtensionsV1: APIExtensionsV1API {

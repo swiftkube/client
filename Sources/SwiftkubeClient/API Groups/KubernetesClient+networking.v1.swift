@@ -22,13 +22,11 @@ import SwiftkubeModel
 public protocol NetworkingV1API {
 
 	var ingresses: NamespacedGenericKubernetesClient<networking.v1.Ingress> { get }
-
-	var networkPolicies: NamespacedGenericKubernetesClient<networking.v1.NetworkPolicy> { get }
-
 	var ingressClasses: ClusterScopedGenericKubernetesClient<networking.v1.IngressClass> { get }
+	var networkPolicies: NamespacedGenericKubernetesClient<networking.v1.NetworkPolicy> { get }
 }
 
-/// DSL for `networking.v1` API Group
+/// DSL for `networking.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class NetworkingV1: NetworkingV1API {
@@ -42,12 +40,12 @@ public extension KubernetesClient {
 			client.namespaceScoped(for: networking.v1.Ingress.self)
 		}
 
-		public var networkPolicies: NamespacedGenericKubernetesClient<networking.v1.NetworkPolicy> {
-			client.namespaceScoped(for: networking.v1.NetworkPolicy.self)
-		}
-
 		public var ingressClasses: ClusterScopedGenericKubernetesClient<networking.v1.IngressClass> {
 			client.clusterScoped(for: networking.v1.IngressClass.self)
+		}
+
+		public var networkPolicies: NamespacedGenericKubernetesClient<networking.v1.NetworkPolicy> {
+			client.namespaceScoped(for: networking.v1.NetworkPolicy.self)
 		}
 	}
 

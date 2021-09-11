@@ -24,7 +24,7 @@ public protocol AuthenticationV1Beta1API {
 	var tokenReviews: ClusterScopedGenericKubernetesClient<authentication.v1beta1.TokenReview> { get }
 }
 
-/// DSL for `authenticationV1Beta1` API Group
+/// DSL for `authentication.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class AuthenticationV1Beta1: AuthenticationV1Beta1API {

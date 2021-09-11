@@ -21,12 +21,11 @@ import SwiftkubeModel
 
 public protocol AuthenticationV1API {
 
-	var tokenReviews: ClusterScopedGenericKubernetesClient<authentication.v1.TokenReview> { get }
-
 	var tokenRequests: NamespacedGenericKubernetesClient<authentication.v1.TokenRequest> { get }
+	var tokenReviews: ClusterScopedGenericKubernetesClient<authentication.v1.TokenReview> { get }
 }
 
-/// DSL for `authentication.v1` API Group
+/// DSL for `authentication.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class AuthenticationV1: AuthenticationV1API {
@@ -36,12 +35,12 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var tokenReviews: ClusterScopedGenericKubernetesClient<authentication.v1.TokenReview> {
-			client.clusterScoped(for: authentication.v1.TokenReview.self)
-		}
-
 		public var tokenRequests: NamespacedGenericKubernetesClient<authentication.v1.TokenRequest> {
 			client.namespaceScoped(for: authentication.v1.TokenRequest.self)
+		}
+
+		public var tokenReviews: ClusterScopedGenericKubernetesClient<authentication.v1.TokenReview> {
+			client.clusterScoped(for: authentication.v1.TokenReview.self)
 		}
 	}
 

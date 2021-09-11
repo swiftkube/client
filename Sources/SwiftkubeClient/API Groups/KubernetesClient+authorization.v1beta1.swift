@@ -21,16 +21,13 @@ import SwiftkubeModel
 
 public protocol AuthorizationV1Beta1API {
 
-	var selfSubjectRulesReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectRulesReview> { get }
-
-	var selfSubjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectAccessReview> { get }
-
-	var subjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SubjectAccessReview> { get }
-
 	var localSubjectAccessReviews: NamespacedGenericKubernetesClient<authorization.v1beta1.LocalSubjectAccessReview> { get }
+	var selfSubjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectAccessReview> { get }
+	var selfSubjectRulesReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectRulesReview> { get }
+	var subjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SubjectAccessReview> { get }
 }
 
-/// DSL for `authorization.v1beta1` API Group
+/// DSL for `authorization.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class AuthorizationV1Beta1: AuthorizationV1Beta1API {
@@ -40,20 +37,20 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var selfSubjectRulesReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectRulesReview> {
-			client.clusterScoped(for: authorization.v1beta1.SelfSubjectRulesReview.self)
+		public var localSubjectAccessReviews: NamespacedGenericKubernetesClient<authorization.v1beta1.LocalSubjectAccessReview> {
+			client.namespaceScoped(for: authorization.v1beta1.LocalSubjectAccessReview.self)
 		}
 
 		public var selfSubjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectAccessReview> {
 			client.clusterScoped(for: authorization.v1beta1.SelfSubjectAccessReview.self)
 		}
 
-		public var subjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SubjectAccessReview> {
-			client.clusterScoped(for: authorization.v1beta1.SubjectAccessReview.self)
+		public var selfSubjectRulesReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SelfSubjectRulesReview> {
+			client.clusterScoped(for: authorization.v1beta1.SelfSubjectRulesReview.self)
 		}
 
-		public var localSubjectAccessReviews: NamespacedGenericKubernetesClient<authorization.v1beta1.LocalSubjectAccessReview> {
-			client.namespaceScoped(for: authorization.v1beta1.LocalSubjectAccessReview.self)
+		public var subjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1beta1.SubjectAccessReview> {
+			client.clusterScoped(for: authorization.v1beta1.SubjectAccessReview.self)
 		}
 	}
 

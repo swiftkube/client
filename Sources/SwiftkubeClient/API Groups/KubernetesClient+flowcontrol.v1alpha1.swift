@@ -21,12 +21,11 @@ import SwiftkubeModel
 
 public protocol FlowControlV1Alpha1API {
 
-	var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1alpha1.PriorityLevelConfiguration> { get }
-
 	var flowSchemas: ClusterScopedGenericKubernetesClient<flowcontrol.v1alpha1.FlowSchema> { get }
+	var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1alpha1.PriorityLevelConfiguration> { get }
 }
 
-/// DSL for `flowcontrol.v1alpha1` API Group
+/// DSL for `flowcontrol.apiserver.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
 	class FlowControlV1Alpha1: FlowControlV1Alpha1API {
@@ -36,12 +35,12 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1alpha1.PriorityLevelConfiguration> {
-			client.clusterScoped(for: flowcontrol.v1alpha1.PriorityLevelConfiguration.self)
-		}
-
 		public var flowSchemas: ClusterScopedGenericKubernetesClient<flowcontrol.v1alpha1.FlowSchema> {
 			client.clusterScoped(for: flowcontrol.v1alpha1.FlowSchema.self)
+		}
+
+		public var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1alpha1.PriorityLevelConfiguration> {
+			client.clusterScoped(for: flowcontrol.v1alpha1.PriorityLevelConfiguration.self)
 		}
 	}
 

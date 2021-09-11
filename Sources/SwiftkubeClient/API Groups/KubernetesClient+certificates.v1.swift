@@ -24,7 +24,7 @@ public protocol CertificatesV1API {
 	var certificateSigningRequests: ClusterScopedGenericKubernetesClient<certificates.v1.CertificateSigningRequest> { get }
 }
 
-/// DSL for `certificates.v1` API Group
+/// DSL for `certificates.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class CertificatesV1: CertificatesV1API {

@@ -22,11 +22,10 @@ import SwiftkubeModel
 public protocol FlowControlV1Beta1API {
 
 	var flowSchemas: ClusterScopedGenericKubernetesClient<flowcontrol.v1beta1.FlowSchema> { get }
-
 	var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1beta1.PriorityLevelConfiguration> { get }
 }
 
-/// DSL for `flowcontrol.v1beta1` API Group
+/// DSL for `flowcontrol.apiserver.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class FlowControlV1Beta1: FlowControlV1Beta1API {

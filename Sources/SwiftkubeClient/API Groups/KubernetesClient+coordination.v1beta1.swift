@@ -24,7 +24,7 @@ public protocol CoordinationV1Beta1API {
 	var leases: NamespacedGenericKubernetesClient<coordination.v1beta1.Lease> { get }
 }
 
-/// DSL for `coordination.v1beta1` API Group
+/// DSL for `coordination.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class CoordinationV1Beta1: CoordinationV1Beta1API {

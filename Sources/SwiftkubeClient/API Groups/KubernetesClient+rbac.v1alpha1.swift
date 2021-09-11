@@ -21,16 +21,13 @@ import SwiftkubeModel
 
 public protocol RBACV1Alpha1API {
 
-	var roles: NamespacedGenericKubernetesClient<rbac.v1alpha1.Role> { get }
-
-	var roleBindings: NamespacedGenericKubernetesClient<rbac.v1alpha1.RoleBinding> { get }
-
-	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1alpha1.ClusterRoleBinding> { get }
-
 	var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1alpha1.ClusterRole> { get }
+	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1alpha1.ClusterRoleBinding> { get }
+	var roles: NamespacedGenericKubernetesClient<rbac.v1alpha1.Role> { get }
+	var roleBindings: NamespacedGenericKubernetesClient<rbac.v1alpha1.RoleBinding> { get }
 }
 
-/// DSL for `rbac.v1alpha1` API Group
+/// DSL for `rbac.authorization.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
 	class RBACV1Alpha1: RBACV1Alpha1API {
@@ -40,20 +37,20 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var roles: NamespacedGenericKubernetesClient<rbac.v1alpha1.Role> {
-			client.namespaceScoped(for: rbac.v1alpha1.Role.self)
-		}
-
-		public var roleBindings: NamespacedGenericKubernetesClient<rbac.v1alpha1.RoleBinding> {
-			client.namespaceScoped(for: rbac.v1alpha1.RoleBinding.self)
+		public var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1alpha1.ClusterRole> {
+			client.clusterScoped(for: rbac.v1alpha1.ClusterRole.self)
 		}
 
 		public var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1alpha1.ClusterRoleBinding> {
 			client.clusterScoped(for: rbac.v1alpha1.ClusterRoleBinding.self)
 		}
 
-		public var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1alpha1.ClusterRole> {
-			client.clusterScoped(for: rbac.v1alpha1.ClusterRole.self)
+		public var roles: NamespacedGenericKubernetesClient<rbac.v1alpha1.Role> {
+			client.namespaceScoped(for: rbac.v1alpha1.Role.self)
+		}
+
+		public var roleBindings: NamespacedGenericKubernetesClient<rbac.v1alpha1.RoleBinding> {
+			client.namespaceScoped(for: rbac.v1alpha1.RoleBinding.self)
 		}
 	}
 

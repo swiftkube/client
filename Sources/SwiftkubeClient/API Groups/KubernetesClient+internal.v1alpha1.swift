@@ -24,7 +24,7 @@ public protocol InternalV1Alpha1API {
 	var storageVersions: ClusterScopedGenericKubernetesClient<`internal`.v1alpha1.StorageVersion> { get }
 }
 
-/// DSL for `internalV1Alpha1` API Group
+/// DSL for `internal.apiserver.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
 	class InternalV1Alpha1: InternalV1Alpha1API {

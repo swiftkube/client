@@ -24,7 +24,7 @@ public protocol SchedulingV1Beta1API {
 	var priorityClasses: ClusterScopedGenericKubernetesClient<scheduling.v1beta1.PriorityClass> { get }
 }
 
-/// DSL for `scheduling.v1beta1` API Group
+/// DSL for `scheduling.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class SchedulingV1Beta1: SchedulingV1Beta1API {

@@ -24,7 +24,7 @@ public protocol APIRegistrationV1API {
 	var apiServices: ClusterScopedGenericKubernetesClient<apiregistration.v1.APIService> { get }
 }
 
-/// DSL for `apiregistrationV1` API Group
+/// DSL for `apiregistration.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class APIRegistrationV1: APIRegistrationV1API {

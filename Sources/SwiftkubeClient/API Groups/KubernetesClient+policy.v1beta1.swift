@@ -22,7 +22,6 @@ import SwiftkubeModel
 public protocol PolicyV1Beta1API {
 
 	var podDisruptionBudgets: NamespacedGenericKubernetesClient<policy.v1beta1.PodDisruptionBudget> { get }
-
 	var podSecurityPolicies: ClusterScopedGenericKubernetesClient<policy.v1beta1.PodSecurityPolicy> { get }
 }
 

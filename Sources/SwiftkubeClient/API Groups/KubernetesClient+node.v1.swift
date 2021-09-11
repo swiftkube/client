@@ -24,7 +24,7 @@ public protocol NodeV1API {
 	var runtimeClasses: ClusterScopedGenericKubernetesClient<node.v1.RuntimeClass> { get }
 }
 
-/// DSL for `nodeV1` API Group
+/// DSL for `node.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class NodeV1: NodeV1API {

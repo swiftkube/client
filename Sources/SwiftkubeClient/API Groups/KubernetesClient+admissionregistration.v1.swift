@@ -22,11 +22,10 @@ import SwiftkubeModel
 public protocol AdmissionRegistrationV1API {
 
 	var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.MutatingWebhookConfiguration> { get }
-
 	var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingWebhookConfiguration> { get }
 }
 
-/// DSL for `admissionregistration.v1` API Group
+/// DSL for `admissionregistration.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class AdmissionRegistrationV1: AdmissionRegistrationV1API {

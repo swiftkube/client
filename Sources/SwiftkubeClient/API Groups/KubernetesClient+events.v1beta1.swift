@@ -24,7 +24,7 @@ public protocol EventsV1Beta1API {
 	var events: NamespacedGenericKubernetesClient<events.v1beta1.Event> { get }
 }
 
-/// DSL for `events.v1beta1` API Group
+/// DSL for `events.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class EventsV1Beta1: EventsV1Beta1API {

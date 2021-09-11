@@ -21,12 +21,11 @@ import SwiftkubeModel
 
 public protocol AdmissionRegistrationV1Beta1API {
 
-	var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.ValidatingWebhookConfiguration> { get }
-
-	var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.MutatingWebhookConfiguration> { get }
+	var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.MutatingWebhookConfiguration> { get }
+	var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.ValidatingWebhookConfiguration> { get }
 }
 
-/// DSL for `admissionregistration.v1beta1` API Group
+/// DSL for `admissionregistration.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class AdmissionRegistrationV1Beta1: AdmissionRegistrationV1Beta1API {
@@ -36,12 +35,12 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.ValidatingWebhookConfiguration> {
-			client.clusterScoped(for: admissionregistration.v1beta1.ValidatingWebhookConfiguration.self)
+		public var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.MutatingWebhookConfiguration> {
+			client.clusterScoped(for: admissionregistration.v1beta1.MutatingWebhookConfiguration.self)
 		}
 
-		public var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.MutatingWebhookConfiguration> {
-			client.clusterScoped(for: admissionregistration.v1beta1.MutatingWebhookConfiguration.self)
+		public var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1beta1.ValidatingWebhookConfiguration> {
+			client.clusterScoped(for: admissionregistration.v1beta1.ValidatingWebhookConfiguration.self)
 		}
 	}
 

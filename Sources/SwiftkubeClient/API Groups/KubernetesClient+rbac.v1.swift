@@ -21,16 +21,13 @@ import SwiftkubeModel
 
 public protocol RBACV1API {
 
-	var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> { get }
-
 	var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRole> { get }
-
 	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBinding> { get }
-
+	var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> { get }
 	var roleBindings: NamespacedGenericKubernetesClient<rbac.v1.RoleBinding> { get }
 }
 
-/// DSL for `rbac.v1` API Group
+/// DSL for `rbac.authorization.k8s.io.v1` API Group
 public extension KubernetesClient {
 
 	class RBACV1: RBACV1API {
@@ -40,16 +37,16 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> {
-			client.namespaceScoped(for: rbac.v1.Role.self)
-		}
-
 		public var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRole> {
 			client.clusterScoped(for: rbac.v1.ClusterRole.self)
 		}
 
 		public var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBinding> {
 			client.clusterScoped(for: rbac.v1.ClusterRoleBinding.self)
+		}
+
+		public var roles: NamespacedGenericKubernetesClient<rbac.v1.Role> {
+			client.namespaceScoped(for: rbac.v1.Role.self)
 		}
 
 		public var roleBindings: NamespacedGenericKubernetesClient<rbac.v1.RoleBinding> {

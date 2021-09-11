@@ -24,7 +24,7 @@ public protocol DiscoveryV1Beta1API {
 	var endpointSlices: NamespacedGenericKubernetesClient<discovery.v1beta1.EndpointSlice> { get }
 }
 
-/// DSL for `discovery.v1beta1` API Group
+/// DSL for `discovery.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class DiscoveryV1Beta1: DiscoveryV1Beta1API {
@@ -35,7 +35,7 @@ public extension KubernetesClient {
 		}
 
 		public var endpointSlices: NamespacedGenericKubernetesClient<discovery.v1beta1.EndpointSlice> {
-			client.namespaceScoped(for: SwiftkubeModel.discovery.v1beta1.EndpointSlice.self)
+			client.namespaceScoped(for: discovery.v1beta1.EndpointSlice.self)
 		}
 	}
 

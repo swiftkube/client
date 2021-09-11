@@ -21,16 +21,13 @@ import SwiftkubeModel
 
 public protocol StorageV1Beta1API {
 
-	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1beta1.VolumeAttachment> { get }
-
-	var csiNodes: ClusterScopedGenericKubernetesClient<storage.v1beta1.CSINode> { get }
-
-	var storageClasses: ClusterScopedGenericKubernetesClient<storage.v1beta1.StorageClass> { get }
-
 	var csiDrivers: ClusterScopedGenericKubernetesClient<storage.v1beta1.CSIDriver> { get }
+	var csiNodes: ClusterScopedGenericKubernetesClient<storage.v1beta1.CSINode> { get }
+	var storageClasses: ClusterScopedGenericKubernetesClient<storage.v1beta1.StorageClass> { get }
+	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1beta1.VolumeAttachment> { get }
 }
 
-/// DSL for `storage.v1beta1` API Group
+/// DSL for `storage.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
 	class StorageV1Beta1: StorageV1Beta1API {
@@ -40,8 +37,8 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1beta1.VolumeAttachment> {
-			client.clusterScoped(for: storage.v1beta1.VolumeAttachment.self)
+		public var csiDrivers: ClusterScopedGenericKubernetesClient<storage.v1beta1.CSIDriver> {
+			client.clusterScoped(for: storage.v1beta1.CSIDriver.self)
 		}
 
 		public var csiNodes: ClusterScopedGenericKubernetesClient<storage.v1beta1.CSINode> {
@@ -52,8 +49,8 @@ public extension KubernetesClient {
 			client.clusterScoped(for: storage.v1beta1.StorageClass.self)
 		}
 
-		public var csiDrivers: ClusterScopedGenericKubernetesClient<storage.v1beta1.CSIDriver> {
-			client.clusterScoped(for: storage.v1beta1.CSIDriver.self)
+		public var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1beta1.VolumeAttachment> {
+			client.clusterScoped(for: storage.v1beta1.VolumeAttachment.self)
 		}
 	}
 

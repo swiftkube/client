@@ -24,7 +24,7 @@ public protocol StorageV1Alpha1API {
 	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttachment> { get }
 }
 
-/// DSL for `storage.v1alpha1` API Group
+/// DSL for `storage.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
 	class StorageV1Alpha1: StorageV1Alpha1API {
