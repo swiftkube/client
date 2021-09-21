@@ -57,7 +57,7 @@ public extension KubernetesClient {
 		}
 	}
 
-	var sorageV1: StorageV1API {
+	var storageV1: StorageV1API {
 		StorageV1(self)
 	}
 }
