@@ -20,6 +20,7 @@ let package = Package(
 		.package(name: "swift-log", url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.4.0")),
 		.package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0"),
 		.package(name: "Yams", url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "4.0.0")),
+		.package(name: "NIO", url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.0.0"))
 	],
 	targets: [
 		.target(
@@ -30,6 +31,8 @@ let package = Package(
 				.product(name: "Logging", package: "swift-log"),
 				.product(name: "Metrics", package: "swift-metrics"),
 				.product(name: "Yams", package: "Yams"),
+				.product(name: "NIO", package: "swift-nio"),
+				.product(name: "NIOFoundationCompat", package: "swift-nio"),
 			]
 		),
 		.testTarget(
