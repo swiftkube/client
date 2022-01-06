@@ -18,6 +18,7 @@ import AsyncHTTPClient
 import Foundation
 import Logging
 import NIO
+import NIOFoundationCompat
 import NIOHTTP1
 import SwiftkubeModel
 
