@@ -374,8 +374,8 @@ internal extension GenericKubernetesClient {
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
-	///    policy: .maxAttemtps(20),
-	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    policy: .maxAttempts(20),
+	///    backoff: .exponentialBackoff(maxDelay: 60, multiplier: 2.0),
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
@@ -424,12 +424,12 @@ internal extension GenericKubernetesClient {
 	///	task.cancel()
 	/// ```
 	///
-	///  The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`. Per default `follow` requests are not retried.
+	/// The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`. Per default `follow` requests are not retried.
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
-	///    policy: .maxAttemtps(20),
-	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    policy: .maxAttempts(20),
+	///    backoff: .exponentialBackoff(maxDelay: 60, multiplier: 2.0),
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
@@ -442,7 +442,7 @@ internal extension GenericKubernetesClient {
 	///   - container: The name of the container.
 	///   - watch: A `LogWatcherDelegate` instance, which is used as a callback for new log lines.
 	///
-	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connetion to the API server.
+	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connection to the API server.
 	func follow(
 		in namespace: NamespaceSelector,
 		name: String,

@@ -203,16 +203,16 @@ private extension Cluster {
 private extension AuthInfo {
 
 	func authentication(logger: Logger) -> KubernetesClientAuthentication? {
-		if let username = self.username, let password = self.password {
+		if let username = username, let password = password {
 			return .basicAuth(username: username, password: password)
 		}
 
-		if let token = self.token {
+		if let token = token {
 			return .bearer(token: token)
 		}
 
 		do {
-			if let tokenFile = self.tokenFile {
+			if let tokenFile = tokenFile {
 				let fileURL = URL(fileURLWithPath: tokenFile)
 				let token = try String(contentsOf: fileURL, encoding: .utf8)
 				return .bearer(token: token)
@@ -228,7 +228,7 @@ private extension AuthInfo {
 				return .x509(clientCertificate: clientCertificate, clientKey: clientKey)
 			}
 
-			if let clientCertificateData = self.clientCertificateData, let clientKeyData = self.clientKeyData {
+			if let clientCertificateData = clientCertificateData, let clientKeyData = clientKeyData {
 				let clientCertificate = try NIOSSLCertificate(bytes: [UInt8](clientCertificateData), format: .pem)
 				let clientKey = try NIOSSLPrivateKey(bytes: [UInt8](clientKeyData), format: .pem)
 				return .x509(clientCertificate: clientCertificate, clientKey: clientKey)
