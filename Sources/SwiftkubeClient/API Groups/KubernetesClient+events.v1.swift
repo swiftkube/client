@@ -35,7 +35,7 @@ public extension KubernetesClient {
 		}
 
 		public var events: NamespacedGenericKubernetesClient<events.v1.Event> {
-			client.namespaceScoped(for: SwiftkubeModel.events.v1.Event.self)
+			client.namespaceScoped(for: events.v1.Event.self)
 		}
 	}
 

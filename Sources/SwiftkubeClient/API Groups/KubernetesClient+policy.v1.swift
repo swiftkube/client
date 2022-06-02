@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - APIExtensionsV1Beta1API
+// MARK: - PolicyV1API
 
-public protocol APIExtensionsV1Beta1API {
+public protocol PolicyV1API {
 
-	var customResourceDefinitions: ClusterScopedGenericKubernetesClient<apiextensions.v1beta1.CustomResourceDefinition> { get }
+	var podDisruptionBudgets: NamespacedGenericKubernetesClient<policy.v1.PodDisruptionBudget> { get }
 }
 
-/// DSL for `apiextensions.k8s.io.v1beta1` API Group
+/// DSL for `policy.v1` API Group
 public extension KubernetesClient {
 
-	class APIExtensionsV1Beta1: APIExtensionsV1Beta1API {
+	class PolicyV1: PolicyV1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var customResourceDefinitions: ClusterScopedGenericKubernetesClient<apiextensions.v1beta1.CustomResourceDefinition> {
-			client.clusterScoped(for: apiextensions.v1beta1.CustomResourceDefinition.self)
+		public var podDisruptionBudgets: NamespacedGenericKubernetesClient<policy.v1.PodDisruptionBudget> {
+			client.namespaceScoped(for: policy.v1.PodDisruptionBudget.self)
 		}
 	}
 
-	var apiExtensionsV1Beta1: APIExtensionsV1Beta1API {
-		APIExtensionsV1Beta1(self)
+	var policyV1: PolicyV1API {
+		PolicyV1(self)
 	}
 }

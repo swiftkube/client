@@ -21,6 +21,7 @@ import SwiftkubeModel
 
 public protocol BatchV1API {
 
+	var cronJobs: NamespacedGenericKubernetesClient<batch.v1.CronJob> { get }
 	var jobs: NamespacedGenericKubernetesClient<batch.v1.Job> { get }
 }
 
@@ -32,6 +33,10 @@ public extension KubernetesClient {
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
+		}
+
+		public var cronJobs: NamespacedGenericKubernetesClient<batch.v1.CronJob> {
+			client.namespaceScoped(for: batch.v1.CronJob.self)
 		}
 
 		public var jobs: NamespacedGenericKubernetesClient<batch.v1.Job> {

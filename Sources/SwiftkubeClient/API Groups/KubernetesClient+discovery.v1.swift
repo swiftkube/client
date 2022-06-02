@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - APIRegistrationV1Beta1API
+// MARK: - DiscoveryV1API
 
-public protocol APIRegistrationV1Beta1API {
+public protocol DiscoveryV1API {
 
-	var apiServices: ClusterScopedGenericKubernetesClient<apiregistration.v1beta1.APIService> { get }
+	var endpointSlices: NamespacedGenericKubernetesClient<discovery.v1.EndpointSlice> { get }
 }
 
-/// DSL for `apiregistration.k8s.io.v1beta1` API Group
+/// DSL for `discovery.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class APIRegistrationV1Beta1: APIRegistrationV1Beta1API {
+	class DiscoveryV1: DiscoveryV1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var apiServices: ClusterScopedGenericKubernetesClient<apiregistration.v1beta1.APIService> {
-			client.clusterScoped(for: apiregistration.v1beta1.APIService.self)
+		public var endpointSlices: NamespacedGenericKubernetesClient<discovery.v1.EndpointSlice> {
+			client.namespaceScoped(for: discovery.v1.EndpointSlice.self)
 		}
 	}
 
-	var apiRegistrationV1Beta1: APIRegistrationV1Beta1API {
-		APIRegistrationV1Beta1(self)
+	var discoveryV1: DiscoveryV1API {
+		DiscoveryV1(self)
 	}
 }

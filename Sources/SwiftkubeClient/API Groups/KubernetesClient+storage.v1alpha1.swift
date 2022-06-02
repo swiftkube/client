@@ -21,6 +21,7 @@ import SwiftkubeModel
 
 public protocol StorageV1Alpha1API {
 
+	var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1alpha1.CSIStorageCapacity> { get }
 	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttachment> { get }
 }
 
@@ -32,6 +33,10 @@ public extension KubernetesClient {
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
+		}
+
+		public var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1alpha1.CSIStorageCapacity> {
+			client.namespaceScoped(for: storage.v1alpha1.CSIStorageCapacity.self)
 		}
 
 		public var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttachment> {
