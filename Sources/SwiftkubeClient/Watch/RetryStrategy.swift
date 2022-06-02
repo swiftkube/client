@@ -43,7 +43,7 @@ public struct RetryStrategy: Sequence {
 		/// Never retries.
 		case never
 		/// Retries a maximum of given times before giving up.
-		case maxAttemtps(Int)
+		case maxAttempts(Int)
 
 		internal func shouldRetry(currentAttempt: UInt) -> Bool {
 			switch self {
@@ -51,7 +51,7 @@ public struct RetryStrategy: Sequence {
 				return false
 			case .always:
 				return true
-			case let .maxAttemtps(attempts):
+			case let .maxAttempts(attempts):
 				return currentAttempt <= attempts
 			}
 		}
@@ -100,7 +100,7 @@ public struct RetryStrategy: Sequence {
 	///   - initialDelay: The initial delay before the first retry attempt.
 	///   - jitter: The jitter value to apply on each delay.
 	public init(
-		policy: Policy = .maxAttemtps(10),
+		policy: Policy = .maxAttempts(10),
 		backoff: Backoff = .fixedDelay(5.0),
 		initialDelay: TimeInterval = 1.0,
 		jitter: Double = 0.2

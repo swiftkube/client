@@ -35,7 +35,7 @@ final class RetryStrategyTests: XCTestCase {
 	}
 
 	func testMaxAttemptsPolicy() {
-		let policy: RetryStrategy.Policy = .maxAttemtps(10)
+		let policy: RetryStrategy.Policy = .maxAttempts(10)
 		XCTAssertTrue(policy.shouldRetry(currentAttempt: 0))
 		XCTAssertTrue(policy.shouldRetry(currentAttempt: 9))
 		XCTAssertTrue(policy.shouldRetry(currentAttempt: 10))
@@ -80,7 +80,7 @@ final class RetryStrategyTests: XCTestCase {
 	}
 
 	func testMaxAttemptSequenceWithNoBackoff() {
-		let strategy = RetryStrategy(policy: .maxAttemtps(3), backoff: .none, initialDelay: 0.0, jitter: 0.0)
+		let strategy = RetryStrategy(policy: .maxAttempts(3), backoff: .none, initialDelay: 0.0, jitter: 0.0)
 		let attempts = Array(strategy)
 
 		XCTAssertEqual(attempts, [
@@ -91,7 +91,7 @@ final class RetryStrategyTests: XCTestCase {
 	}
 
 	func testMaxAttemptSequenceWithFixedDelay() {
-		let strategy = RetryStrategy(policy: .maxAttemtps(3), backoff: .fixedDelay(10), initialDelay: 10.0, jitter: 0.0)
+		let strategy = RetryStrategy(policy: .maxAttempts(3), backoff: .fixedDelay(10), initialDelay: 10.0, jitter: 0.0)
 		let attempts = Array(strategy)
 
 		XCTAssertEqual(attempts, [
@@ -102,7 +102,7 @@ final class RetryStrategyTests: XCTestCase {
 	}
 
 	func testMaxAttemptSequenceWithExponentialBackoff() {
-		let strategy = RetryStrategy(policy: .maxAttemtps(3), backoff: .exponential(maximumDelay: 80, multiplier: 2), initialDelay: 0.0, jitter: 0.0)
+		let strategy = RetryStrategy(policy: .maxAttempts(3), backoff: .exponential(maximumDelay: 80, multiplier: 2), initialDelay: 0.0, jitter: 0.0)
 		let attempts = Array(strategy)
 
 		XCTAssertEqual(attempts, [
@@ -113,7 +113,7 @@ final class RetryStrategyTests: XCTestCase {
 	}
 
 	func testBackoffSequence() {
-		let strategy = RetryStrategy(policy: .maxAttemtps(5), backoff: .exponential(maximumDelay: 80, multiplier: 2), initialDelay: 10.0, jitter: 0.0)
+		let strategy = RetryStrategy(policy: .maxAttempts(5), backoff: .exponential(maximumDelay: 80, multiplier: 2), initialDelay: 10.0, jitter: 0.0)
 		let attempts = Array(strategy)
 
 		XCTAssertEqual(attempts, [
