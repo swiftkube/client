@@ -123,7 +123,7 @@ internal protocol DeleteStep {
 internal class RequestBuilder {
 
 	let config: KubernetesClientConfig
-	let gvk: GroupVersionKind
+	let gvr: GroupVersionResource
 	var components: URLComponents?
 
 	var namespace: NamespaceSelector!
@@ -155,9 +155,9 @@ internal class RequestBuilder {
 	var deleteOptions: meta.v1.DeleteOptions?
 	var watchFlag: Bool = false
 
-	init(config: KubernetesClientConfig, gvk: GroupVersionKind) {
+	init(config: KubernetesClientConfig, gvr: GroupVersionResource) {
 		self.config = config
-		self.gvk = gvk
+		self.gvr = gvr
 		self.components = URLComponents(url: config.masterURL, resolvingAgainstBaseURL: false)
 	}
 }
@@ -375,9 +375,9 @@ internal extension RequestBuilder {
 		var url: String
 
 		if case NamespaceSelector.allNamespaces = namespace {
-			url = "\(gvk.urlPath)/\(gvk.pluralName)"
+			url = "\(gvr.urlPath)/\(gvr.resource)"
 		} else {
-			url = "\(gvk.urlPath)/namespaces/\(namespace.namespaceName())/\(gvk.pluralName)"
+			url = "\(gvr.urlPath)/namespaces/\(namespace.namespaceName())/\(gvr.resource)"
 		}
 
 		if let name = name {

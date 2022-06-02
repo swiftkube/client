@@ -24,7 +24,7 @@ import XCTest
 final class RequestBuilderTests: XCTestCase {
 
 	var config: KubernetesClientConfig!
-	var gvk: GroupVersionKind!
+	var gvr: GroupVersionResource!
 
 	override func setUp() {
 		config = KubernetesClientConfig(
@@ -35,11 +35,11 @@ final class RequestBuilderTests: XCTestCase {
 			insecureSkipTLSVerify: false
 		)
 
-		gvk = GroupVersionKind(of: core.v1.Pod.self)!
+		gvr = GroupVersionResource(of: core.v1.Pod.self)!
 	}
 
 	func testGetInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		var request = try? builder.in(.default).toGet().build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods")!)
@@ -52,7 +52,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetInAllNamespaces() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.allNamespaces).toGet().build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/pods")!)
@@ -60,7 +60,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetInNamespaceWithName() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		var request = try? builder.in(.default).toGet().resource(withName: "test").build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test")!)
@@ -73,7 +73,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testFollowInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container").build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?follow=true&container=container")!)
@@ -81,7 +81,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_Eq() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.labelSelector(.eq(["app": "nginx"])),
 		])
@@ -91,7 +91,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_NotEq() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.labelSelector(.neq(["app": "nginx"])),
 		])
@@ -101,7 +101,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_In() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.labelSelector(.in(["env": ["dev", "staging"]])),
 		])
@@ -110,7 +110,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_NotIn() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.labelSelector(.notIn(["env": ["dev", "staging"]])),
 		])
@@ -119,7 +119,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_Exists() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.labelSelector(.exists(["app", "env"])),
 		])
@@ -129,7 +129,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_FieldEq() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.fieldSelector(.eq(["app": "nginx"])),
 		])
@@ -139,7 +139,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_FieldNotEq() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.fieldSelector(.neq(["app": "nginx"])),
 		])
@@ -149,7 +149,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_Limit() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.limit(2),
 		])
@@ -159,7 +159,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetWithListOptions_Version() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().with(options: [
 			.resourceVersion("20"),
 		])
@@ -169,7 +169,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetStatus() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().resource(withName: "test").subResource(.status).build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test/status")!)
@@ -177,7 +177,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testGetScale() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().resource(withName: "test").subResource(.scale).build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test/scale")!)
@@ -185,7 +185,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testDeleteInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		var request = try? builder.in(.default).toDelete().resource(withName: "test").build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test")!)
@@ -198,7 +198,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testDeleteInAllNamespaces() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.allNamespaces).toDelete().build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/pods")!)
@@ -206,7 +206,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testCreateInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPost().body(pod).build()
 
@@ -215,7 +215,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testReplaceInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPut().resource(withName: "test").body(.resource(payload: pod)).build()
 
@@ -224,7 +224,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testReplaceStatusInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPut().resource(withName: "test").body(.subResource(type: .status, payload: pod)).build()
 
@@ -233,7 +233,7 @@ final class RequestBuilderTests: XCTestCase {
 	}
 
 	func testReplaceScaleInNamespace() {
-		let builder = RequestBuilder(config: config, gvk: gvk)
+		let builder = RequestBuilder(config: config, gvr: gvr)
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPut().resource(withName: "test").body(.subResource(type: .scale, payload: pod)).build()
 

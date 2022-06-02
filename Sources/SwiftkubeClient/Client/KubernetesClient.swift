@@ -197,10 +197,10 @@ public extension KubernetesClient {
 	///
 	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
 	///
-	/// - Parameter gvk: The `GroupVersionKind` of the desired resource.
+	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
-	func `for`(gvk: GroupVersionKind) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
-		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvk: gvk, jsonDecoder: jsonDecoder, logger: logger)
+	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
+		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new `cluster-scoped` client for the given cluster-scoped resoruce type.
@@ -306,12 +306,5 @@ public extension KubernetesClient {
 	/// Constructs a namespace-scoped client for `core.v1.ServiceAccount` resources.
 	var serviceAccounts: NamespacedGenericKubernetesClient<core.v1.ServiceAccount> {
 		namespaceScoped(for: core.v1.ServiceAccount.self)
-	}
-}
-
-extension KubernetesClient {
-
-	func forCustomResources<R: CustomResource>(ofType: R.Type) -> GenericKubernetesClient<R> {
-		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 }

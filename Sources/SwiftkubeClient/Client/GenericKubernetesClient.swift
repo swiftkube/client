@@ -36,7 +36,7 @@ public enum ResourceOrStatus<T> {
 /// A generic client implementation following the Kubernetes API style.
 public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
-	public let gvk: GroupVersionKind
+	public let gvr: GroupVersionResource
 
 	internal let httpClient: HTTPClient
 	internal let config: KubernetesClientConfig
@@ -56,7 +56,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - config: The configuration for this client instance.
 	///   - logger: The logger to use for this client.
 	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
-		self.init(httpClient: httpClient, config: config, gvk: GroupVersionKind(of: Resource.self)!, jsonDecoder: jsonDecoder, logger: logger)
+		self.init(httpClient: httpClient, config: config, gvr: GroupVersionResource(of: Resource.self)!, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new instance of the generic client for the given `GroupVersionKind`.
@@ -64,12 +64,12 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	/// - Parameters:
 	///   - httpClient: An instance of Async HTTPClient.
 	///   - config: The configuration for this client instance.
-	///   - gvk: The `GroupVersionKind` of the target resource.
+	///   - gvr: The `GroupVersionResource` of the target resource.
 	///   - logger: The logger to use for this client.
-	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvk: GroupVersionKind, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
+	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvr: GroupVersionResource, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
-		self.gvk = gvk
+		self.gvr = gvr
 		self.jsonDecoder = jsonDecoder
 		self.logger = logger ?? KubernetesClient.loggingDisabled
 	}
@@ -290,7 +290,7 @@ internal extension GenericKubernetesClient where Resource: StatusHavingResource 
 internal extension GenericKubernetesClient {
 
 	func makeRequest() -> NamespaceStep {
-		RequestBuilder(config: config, gvk: gvk)
+		RequestBuilder(config: config, gvr: gvr)
 	}
 
 	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<T> {
@@ -333,8 +333,8 @@ internal extension GenericKubernetesClient {
 		}
 
 		let data = Data(buffer: byteBuffer)
-		jsonDecoder.userInfo[CodingUserInfoKey.apiVersion] = gvk.apiVersion
-		jsonDecoder.userInfo[CodingUserInfoKey.kind] = gvk.kind
+		jsonDecoder.userInfo[CodingUserInfoKey.apiVersion] = gvr.apiVersion
+		jsonDecoder.userInfo[CodingUserInfoKey.resources] = gvr.resource
 
 		// TODO: Improve this
 		if response.status.code >= 400 {
