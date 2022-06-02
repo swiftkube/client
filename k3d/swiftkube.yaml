@@ -1,7 +1,7 @@
 apiVersion: k3d.io/v1alpha2
 kind: Simple
 name: swiftkube
-image: docker.io/rancher/k3s:v1.20.9-k3s1
+image: docker.io/rancher/k3s:v1.22.7-k3s1
 servers: 1
 agents: 2
 options:
