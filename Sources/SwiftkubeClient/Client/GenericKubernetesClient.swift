@@ -77,7 +77,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 // MARK: - GenericKubernetesClient
 
-internal extension GenericKubernetesClient {
+public extension GenericKubernetesClient {
 
 	/// Loads an API resource by name in the given namespace.
 	///
@@ -180,7 +180,7 @@ internal extension GenericKubernetesClient {
 
 // MARK: - GenericKubernetesClient + ListableResource
 
-internal extension GenericKubernetesClient where Resource: ListableResource {
+public extension GenericKubernetesClient where Resource: ListableResource {
 
 	/// Lists API resources in the given namespace.
 	///
@@ -205,7 +205,7 @@ internal extension GenericKubernetesClient where Resource: ListableResource {
 
 // MARK: - GenericKubernetesClient + ScalableResource
 
-internal extension GenericKubernetesClient where Resource: ScalableResource {
+public extension GenericKubernetesClient where Resource: ScalableResource {
 
 	/// Reads a resource's scale in the given namespace.
 	///
@@ -247,7 +247,7 @@ internal extension GenericKubernetesClient where Resource: ScalableResource {
 
 // MARK: - GenericKubernetesClient + StatusHavingResource
 
-internal extension GenericKubernetesClient where Resource: StatusHavingResource {
+public extension GenericKubernetesClient where Resource: StatusHavingResource {
 
 	/// Reads a resource's status in the given namespace.
 	///
@@ -354,7 +354,7 @@ internal extension GenericKubernetesClient {
 	}
 }
 
-internal extension GenericKubernetesClient {
+public extension GenericKubernetesClient {
 
 	/// Watches the API resources in the given namespace.
 	///
