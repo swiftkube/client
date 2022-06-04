@@ -193,7 +193,7 @@ public extension KubernetesClient {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
-	/// Create a new generic client for the given `GroupVersionKind`.
+	/// Create a new generic client for the given `GroupVersionResource`.
 	///
 	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
 	///
@@ -201,6 +201,16 @@ public extension KubernetesClient {
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
 	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
 		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
+	}
+
+	/// Create a new generic client for the given `GroupVersionResource`.
+	///
+	/// The returned instance is typed-inferred by the generic constraint.
+	///
+	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
+	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
+	func `for`<R: KubernetesAPIResource>(_ type: R.Type, gvr: GroupVersionResource) -> GenericKubernetesClient<R> {
+		GenericKubernetesClient<R>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new `cluster-scoped` client for the given cluster-scoped resoruce type.
