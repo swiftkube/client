@@ -39,6 +39,7 @@ public struct Info: Codable {
 public protocol DiscoveryAPI {
 	func serverVersion() -> EventLoopFuture<ResourceOrStatus<Info>>
 	func serverGroups() -> EventLoopFuture<ResourceOrStatus<meta.v1.APIGroupList>>
+	func serverResources() -> EventLoopFuture<ResourceOrStatus<[meta.v1.APIResourceList]>>
 	func serverResources(forGroupVersion groupVersion: String) -> EventLoopFuture<ResourceOrStatus<meta.v1.APIResourceList>>
 }
 
@@ -90,7 +91,9 @@ internal class DiscoveryClient: DiscoveryAPI {
 			let legacyAPIGroup = apiVersions.map { result -> ResourceOrStatus<meta.v1.APIGroup> in
 				switch result {
 				case let .resource(apiVersions):
-					let groupVersions = apiVersions.versions.map { version in meta.v1.GroupVersionForDiscovery(groupVersion: version, version: version) }
+					let groupVersions = apiVersions.versions.map { version in
+						meta.v1.GroupVersionForDiscovery(groupVersion: version, version: version)
+					}
 					let apiGroup = meta.v1.APIGroup(name: "", preferredVersion: groupVersions.first, serverAddressByClientCIDRs: nil, versions: groupVersions)
 					return .resource(apiGroup)
 				case let .status(status):
@@ -112,6 +115,37 @@ internal class DiscoveryClient: DiscoveryAPI {
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
+	}
+
+	func serverResources() -> EventLoopFuture<ResourceOrStatus<[meta.v1.APIResourceList]>> {
+		let eventLoop = httpClient.eventLoopGroup.next()
+
+		return serverGroups()
+			.flatMap { [self] (groupList: ResourceOrStatus<meta.v1.APIGroupList>) -> EventLoopFuture<ResourceOrStatus<[meta.v1.APIResourceList]>> in
+				switch groupList {
+				case let .status(status):
+					return eventLoop.makeCompletedFuture(.success(.status(status)))
+				case let .resource(groupList):
+					let calls = groupList.groups
+						.flatMap { group in group.versions }
+						.map { serverResources(forGroupVersion: $0.groupVersion) }
+
+					let success: EventLoopFuture<[meta.v1.APIResourceList]> = eventLoop.makeCompletedFuture(.success([]))
+
+					let allResourceLists = success.fold(calls) { (acc, other: ResourceOrStatus<meta.v1.APIResourceList>) in
+						switch other {
+						case .status:
+							return eventLoop.makeCompletedFuture(.success(acc))
+						case let .resource(apiResourceList):
+							var merged = acc
+							merged.append(apiResourceList)
+							return eventLoop.makeCompletedFuture(.success(merged))
+						}
+					}
+
+					return allResourceLists.map { ResourceOrStatus.resource($0) }
+				}
+			}
 	}
 
 	func serverResources(forGroupVersion groupVersion: String) -> EventLoopFuture<ResourceOrStatus<meta.v1.APIResourceList>> {
