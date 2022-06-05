@@ -70,7 +70,7 @@ internal class DiscoveryClient: DiscoveryAPI {
 	func serverVersion() -> EventLoopFuture<ResourceOrStatus<Info>> {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().path("/versions").build()
+			let request = try makeRequest().path("/version").build()
 
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
