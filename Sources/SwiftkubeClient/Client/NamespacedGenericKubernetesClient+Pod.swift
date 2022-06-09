@@ -40,8 +40,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	func logs(
 		in namespace: NamespaceSelector? = nil,
 		name: String,
-		container: String? = nil,
-		retryStrategy: RetryStrategy = RetryStrategy.never
+		container: String? = nil
 	) throws -> EventLoopFuture<String> {
 		try super.logs(
 			in: namespace ?? .namespace(config.namespace),
