@@ -23,7 +23,7 @@ import SwiftkubeModel
 // MARK: - ResourceType
 
 internal enum ResourceType {
-	case root, log, scale, status, logSync
+	case root, log, scale, status
 
 	var path: String {
 		switch self {
@@ -35,8 +35,6 @@ internal enum ResourceType {
 			return "/scale"
 		case .status:
 			return "/status"
-		case .logSync:
-			return "/log"
 		}
 	}
 }
