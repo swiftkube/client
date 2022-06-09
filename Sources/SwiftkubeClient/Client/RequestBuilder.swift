@@ -23,7 +23,7 @@ import SwiftkubeModel
 // MARK: - ResourceType
 
 internal enum ResourceType {
-	case root, log, scale, status
+	case root, log, scale, status, logSync
 
 	var path: String {
 		switch self {
@@ -35,6 +35,8 @@ internal enum ResourceType {
 			return "/scale"
 		case .status:
 			return "/status"
+		case .logSync:
+			return "/log"
 		}
 	}
 }
@@ -138,7 +140,7 @@ internal class RequestBuilder {
 		}
 	}
 
-	var hasPayload: Bool = false
+	var hasPayload = false
 
 	var resourceName: String?
 	var requestBody: RequestBody? {
@@ -153,7 +155,7 @@ internal class RequestBuilder {
 	var listOptions: [ListOption]?
 	var readOptions: [ReadOption]?
 	var deleteOptions: meta.v1.DeleteOptions?
-	var watchFlag: Bool = false
+	var watchFlag = false
 
 	init(config: KubernetesClientConfig, gvr: GroupVersionResource) {
 		self.config = config

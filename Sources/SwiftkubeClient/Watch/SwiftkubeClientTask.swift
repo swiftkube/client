@@ -46,7 +46,7 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 	let promise: EventLoopPromise<Void>
 	let retriesSequence: RetryStrategy.Iterator
 	let logger: Logger
-	var cancelled: Bool = false
+	var cancelled = false
 	var clientTask: HTTPClient.Task<Void>?
 
 	init(
