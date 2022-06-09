@@ -44,7 +44,8 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	) throws -> EventLoopFuture<String> {
 		try super.logs(
 			in: namespace ?? .namespace(config.namespace),
-			name: name
+			name: name,
+			container: container
 		)
 	}
 }
