@@ -95,7 +95,7 @@ final class K3dConfigMapTests: K3dTestCase {
 		_ = try? K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1").wait()
 		_ = try? K3dTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"])).wait()
 
-		wait(for: [watcher.excpectedRecords], timeout: 1)
+		wait(for: [watcher.excpectedRecords], timeout: 5)
 		task?.cancel()
 
 		assertEqual(watcher.records, [
