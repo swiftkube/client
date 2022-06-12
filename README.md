@@ -35,7 +35,7 @@
 
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.20.9
+- [x] Covers all Kubernetes API Groups in v1.22.7
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -61,13 +61,14 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 
 ## Compatibility Matrix
 
-|                           | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 |1.20.9|
-|---------------------------|---------|------------------|--------|--------|
-| SwiftkubeClient 0.6.x     | -       | ✓                | -      | -      |
-| SwiftkubeClient 0.7.x     | -       | -                | ✓      | -      |
-| SwiftkubeClient 0.8.x     | -       | -                | ✓      | -      |
-| SwiftkubeClient 0.9.x     | -       | -                | ✓      | -      |
-| SwiftkubeClient 0.10.x    | -       | -                | -      | ✓      |
+|                        | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 | 1.20.9 | 1.22.7 |
+|------------------------|---------|------------------|--------|--------|--------|
+| SwiftkubeClient 0.6.x  | -       | ✓                | -      | -      | -      |
+| SwiftkubeClient 0.7.x  | -       | -                | ✓      | -      | -      |
+| SwiftkubeClient 0.8.x  | -       | -                | ✓      | -      | -      |
+| SwiftkubeClient 0.9.x  | -       | -                | ✓      | -      | -      |
+| SwiftkubeClient 0.10.x | -       | -                | -      | ✓      | -      |
+| SwiftkubeClient 0.11.x | -       | -                | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
@@ -114,16 +115,16 @@ Alternatively it can be configured manually, for example:
 ```swift
 let caCert = try NIOSSLCertificate.fromPEMFile(caFile)
 let authentication = KubernetesClientAuthentication.basicAuth(
-    username: "admin", 
-    password: "admin"
+  username: "admin", 
+  password: "admin"
 )
 
 let config = KubernetesClientConfig(
-    masterURL: "https://kubernetesmaster",
-    namespace: "default",
-    authentication: authentication,
-    trustRoots: NIOSSLTrustRoots.certificates(caCert),
-    insecureSkipTLSVerify: false
+   masterURL: "https://kubernetesmaster",
+   namespace: "default",
+   authentication: authentication,
+   trustRoots: NIOSSLTrustRoots.certificates(caCert),
+   insecureSkipTLSVerify: false
 )
 
 let client = KubernetesClient(config: config)
@@ -157,13 +158,13 @@ You can filter the listed resources or limit the returned list size via the `Lis
 
 ```swift
 let deployments = try client.appsV1.deployments.list(in: .allNamespaces, options: [
-	.labelSelector(.eq(["app": "nginx"])),
-	.labelSelector(.notIn(["env": ["dev", "staging"]])),
-	.labelSelector(.exists(["app", "env"])),
-	.fieldSelector(.eq(["status.phase": "Running"])),
-	.resourceVersion("9001"),
-	.limit(20),
-	.timeoutSeconds(10)
+  .labelSelector(.eq(["app": "nginx"])),
+  .labelSelector(.notIn(["env": ["dev", "staging"]])),
+  .labelSelector(.exists(["app", "env"])),
+  .fieldSelector(.eq(["status.phase": "Running"])),
+  .resourceVersion("9001"),
+  .limit(20),
+  .timeoutSeconds(10)
 ]).wait()
 ```
 
@@ -179,9 +180,9 @@ You can also provide the following `ReadOptions`:
 
 ```swift
 let deployments = try client.appsV1.deployments.get(in: .allNamespaces, options: [
-	.pretty(true),
-	.exact(false),
-	.export(true)
+  .pretty(true),
+  .exact(false),
+  .export(true)
 ]).wait()
 ```
 
@@ -197,8 +198,8 @@ You can pass an instance of `meta.v1.DeleteOptions` to control the behaviour of 
 
 ```swift
 let deletOptions = meta.v1.DeleteOptions(
-	gracePeriodSeconds: 10,
-	propagationPolicy: "Foreground"
+  gracePeriodSeconds: 10,
+  propagationPolicy: "Foreground"
 )
 try client.pods.delete(in: .namespace("ns"), name: "nginx", options: deleteOptions).wait()
 ```
@@ -208,28 +209,28 @@ try client.pods.delete(in: .namespace("ns"), name: "nginx", options: deleteOptio
 Resources can be created/updated directly or via the convenience builders defined in [SwiftkubeModel](https://github.com/swiftkube/model)
 
 ```swift
-// Create a resouce instance and post it
+// Create a resource instance and post it
 let configMap = core.v1.ConfigMap(
-	metadata: meta.v1.Metadata(name: "test"),
-	data: ["foo": "bar"]
+  metadata: meta.v1.Metadata(name: "test"),
+  data: ["foo": "bar"]
 }
 try cm = try client.configMaps.create(inNamespace: .default, configMap).wait()
 
 
 // Or inline via a builder
 let pod = try client.pods.create(inNamespace: .default) {
-        sk.pod {
-            $0.metadata = sk.metadata(name: "nginx")
-            $0.spec = sk.podSpec {
-                $0.containers = [
-                    sk.container(name: "nginx") {
-                        $0.image = "nginx"
-                    }
-                ]
-            }
-        }
-    }
-    .wait()
+   sk.pod {
+     $0.metadata = sk.metadata(name: "nginx")
+     $0.spec = sk.podSpec {
+       $0.containers = [
+         sk.container(name: "nginx") {
+           $0.image = "nginx"
+         }
+       ]
+     }
+   }
+}
+.wait()
 ```
 
 #### Watch a resource
@@ -242,7 +243,7 @@ The task can be cancelled any time to stop the watch.
 
 ```swift
 let task: SwiftkubeClientTask = client.pods.watch(in: .allNamespaces) { (event, pod) in
-    print("\(event): \(pod)")
+  print("\(event): \(pod)")
 }
 
 task.cancel()
@@ -252,12 +253,12 @@ You can also pass `ListOptions` to filter, i.e. select the required objects:
 
 ```swift
 let options = [
-    .labelSelector(.eq(["app": "nginx"])),
-    .labelSelector(.exists(["env"]))
+  .labelSelector(.eq(["app": "nginx"])),
+  .labelSelector(.exists(["env"]))
 ]
 
 let task = client.pods.watch(in: .default, options: options) { (event, pod) in
-    print("\(event): \(pod)")
+  print("\(event): \(pod)")
 }
 ```
 
@@ -269,13 +270,13 @@ Passing `RetryStrategy.never` disables any reconnection attempts.
 
 ```swift
 let strategy = RetryStrategy(
-    policy: .maxAttemtps(20),
-    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
-    initialDelay = 5.0,
-    jitter = 0.2
+  policy: .maxAttemtps(20),
+  backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+  initialDelay = 5.0,
+  jitter = 0.2
 )
 let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in
-    print(pod)
+  print(pod)
 }
 ```
 
@@ -286,15 +287,15 @@ If you require more control or stateful logic, then you can implement the `Resou
 
 ```swift
 class MyDelegate: ResourceWatcherDelegate {
-   typealias Resource = core.v1.Pod
+  typealias Resource = core.v1.Pod
    
-    func onEvent(event: EventType, resource: core.v1.Pod) {
-      // handle events
-    }
+  func onEvent(event: EventType, resource: core.v1.Pod) {
+    // handle events
+  }
 
-    func onError(error: SwiftkubeClientError) {
-	  // handle errors
-    }
+  func onError(error: SwiftkubeClientError) {
+    // handle errors
+  }
 }
 
 let task = client.pods.watch(in: .default, delegate: MyDelegate())
@@ -309,7 +310,7 @@ The `follow` API resembles the `watch`. The difference being the closure/delegat
 
 ```swift
 let task = client.pods.follow(in: .default, name: "nginx", container: "app") { (line) in
-    print(line)
+  print(line)
 }
 
 // The task can be cancelled later to stop following logs
@@ -351,27 +352,27 @@ try client.clusterScoped(for: rbac.v1beta1.ClusterRole.self).list().wait()
 
 Often when working with Kubernetes the concrete type of the resource is not known or not relevant, e.g. when creating resources from a YAML manifest file. Other times the type or kind of the resource must be derived at runtime given its string representation.
 
-Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized with a `GroupVersionKind` type:
+Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized with a `GroupVersionResource` type:
 
 ```swift
-guard let gvk = try? GroupVersionKind(for: "deployment") else {
+guard let gvr = try? GroupVersionResource(for: "deployment") else {
    // handle this
 }
 
 // Get by name
-let resource: AnyKubernetesAPIResource = try client.for(gvk: gvk)
+let resource: AnyKubernetesAPIResource = try client.for(gvr: gvr)
     .get(in: .default , name: "nginx")
     .wait()
 
 // List all
-let resources: AnyKubernetesAPIResourceList = try client.for(gvk: gvk)
+let resources: AnyKubernetesAPIResourceList = try client.for(gvr: gvr)
     .list(in: .allNamespaces)
     .wait()
 ```
 
-#### GroupVersionKind
+#### GroupVersionKind & GroupVersionResource
 
-A `GroupVersionKind` can be initialized from:
+A `GroupVersionKind` & `GroupVersionResource` can be initialized from:
 
 - `KubernetesAPIResource` instance
 - `KubernetesAPIResource` type
@@ -383,11 +384,12 @@ A `GroupVersionKind` can be initialized from:
 ```swift
 let deployment = ..
 let gvk = GroupVersionKind(of: deployment)
+let gvr = GroupVersionResource(of: deployment)
 let gvk = GroupVersionKind(of: apps.v1.Deployment.self)
-let gvk = GroupVersionKind(rawValue: "apps/v1/Deployment")
-let gvk = GroupVersionKind(for: "deployment")
-let gvk = GroupVersionKind(for: "deployments")
-let gvk = GroupVersionKind(for: "deploy")
+let gvr = GroupVersionResource(for: "configmaps")
+let gvk = GroupVersionKind(for: "cm")
+let gvr = GroupVersionResource(for: "cm")
+// etc.
 ```
 
 ## Metrics
@@ -430,7 +432,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.10.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.11.0"),
 ```
 
 then include it as a dependency in your target:
