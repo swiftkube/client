@@ -245,6 +245,21 @@ public extension GenericKubernetesClient where Resource: ScalableResource {
 	}
 }
 
+// MARK: - GenericKubernetesClient - logs
+
+internal extension GenericKubernetesClient {
+	func logs(in namespace: NamespaceSelector, name: String, container: String?) throws -> EventLoopFuture<String> {
+		do {
+			let eventLoop = httpClient.eventLoopGroup.next()
+			let request = try makeRequest().in(namespace).toLogs(pod: name, container: container).subResource(.log).build()
+
+			return dispatchText(request: request, eventLoop: eventLoop)
+		} catch {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+		}
+	}
+}
+
 // MARK: - GenericKubernetesClient + StatusHavingResource
 
 public extension GenericKubernetesClient where Resource: StatusHavingResource {
@@ -305,6 +320,18 @@ internal extension GenericKubernetesClient {
 			}
 	}
 
+	func dispatchText(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<String> {
+		let startTime = DispatchTime.now().uptimeNanoseconds
+
+		return httpClient.execute(request: request, logger: logger)
+			.always { (result: Result<HTTPClient.Response, Error>) in
+				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
+			}
+			.flatMap { response in
+				self.handleText(response, eventLoop: eventLoop)
+			}
+	}
+
 	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
 		let startTime = DispatchTime.now().uptimeNanoseconds
 
@@ -319,6 +346,16 @@ internal extension GenericKubernetesClient {
 
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
+			guard case let ResourceOrStatus.resource(resource) = result else {
+				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
+			}
+
+			return eventLoop.makeSucceededFuture(resource)
+		}
+	}
+
+	func handleText(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<String> {
+		handleResourceOrStatusText(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<String>) -> EventLoopFuture<String> in
 			guard case let ResourceOrStatus.resource(resource) = result else {
 				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
 			}
@@ -351,6 +388,24 @@ internal extension GenericKubernetesClient {
 		} else {
 			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding \(T.self)"))
 		}
+	}
+
+	func handleResourceOrStatusText(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<String>> {
+		guard let byteBuffer = response.body else {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
+		}
+
+		let data = Data(buffer: byteBuffer)
+
+		guard let logs = String(data: data, encoding: .utf8) else {
+			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding string"))
+		}
+
+		if response.status.code >= 400 {
+			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding string"))
+		}
+
+		return eventLoop.makeSucceededFuture(.resource(logs))
 	}
 }
 

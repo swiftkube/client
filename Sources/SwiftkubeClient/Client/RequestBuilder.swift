@@ -79,6 +79,7 @@ internal protocol MethodStep {
 	func toPost() -> PostStep
 	func toPut() -> PutStep
 	func toDelete() -> DeleteStep
+	func toLogs(pod: String, container: String?) -> GetStep
 }
 
 // MARK: - GetStep
@@ -138,7 +139,7 @@ internal class RequestBuilder {
 		}
 	}
 
-	var hasPayload: Bool = false
+	var hasPayload = false
 
 	var resourceName: String?
 	var requestBody: RequestBody? {
@@ -153,7 +154,7 @@ internal class RequestBuilder {
 	var listOptions: [ListOption]?
 	var readOptions: [ReadOption]?
 	var deleteOptions: meta.v1.DeleteOptions?
-	var watchFlag: Bool = false
+	var watchFlag = false
 
 	init(config: KubernetesClientConfig, gvr: GroupVersionResource) {
 		self.config = config
@@ -218,6 +219,14 @@ extension RequestBuilder: MethodStep {
 	/// Set request method to  GET and notice the pod and container to follow for the pending request
 	/// - Returns:The builder instance as GetStep
 	func toFollow(pod: String, container: String?) -> GetStep {
+		method = .GET
+		resourceName = pod
+		containerName = container
+		subResourceType = .log
+		return self as GetStep
+	}
+
+	func toLogs(pod: String, container: String?) -> GetStep {
 		method = .GET
 		resourceName = pod
 		containerName = container
