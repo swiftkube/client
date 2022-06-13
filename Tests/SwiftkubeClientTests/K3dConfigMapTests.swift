@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import Logging
 import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
@@ -86,7 +87,7 @@ final class K3dConfigMapTests: K3dTestCase {
 
 	func testWatch() {
 		let expectedRecords = expectation(description: "Expected Records")
-		let watcher = Watcher(excpectation: expectedRecords, expectedCount: 5)
+		let watcher = Watcher(logger: K3dConfigMapTests.logger, expectation: expectedRecords, expectedCount: 5)
 
 		let task = try? K3dTestCase.client.configMaps.watch(in: .namespace("cm3"), delegate: watcher)
 
@@ -95,7 +96,7 @@ final class K3dConfigMapTests: K3dTestCase {
 		_ = try? K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1").wait()
 		_ = try? K3dTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"])).wait()
 
-		wait(for: [watcher.excpectedRecords], timeout: 5)
+		wait(for: [watcher.expectedRecords], timeout: 30)
 		task?.cancel()
 
 		assertEqual(watcher.records, [
@@ -121,24 +122,26 @@ final class K3dConfigMapTests: K3dTestCase {
 			let resource: String
 		}
 
-		let excpectedRecords: XCTestExpectation
+		let logger: Logger
+		let expectedRecords: XCTestExpectation
 		var expectedCount: Int
 		var records: [Record] = []
 
-		init(excpectation: XCTestExpectation, expectedCount: Int) {
-			self.excpectedRecords = excpectation
+		init(logger: Logger, expectation: XCTestExpectation, expectedCount: Int) {
+			self.logger = logger
+			self.expectedRecords = expectation
 			self.expectedCount = expectedCount
 		}
 
 		func onEvent(event: EventType, resource: core.v1.ConfigMap) {
 			records.append(Record(eventType: event, resource: resource.name!))
 			if records.count == expectedCount {
-				excpectedRecords.fulfill()
+				expectedRecords.fulfill()
 			}
 		}
 
 		func onError(error: SwiftkubeClientError) {
-			// NOOP
+			logger.warning("Error encountered: \(error)")
 		}
 	}
 }

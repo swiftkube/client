@@ -14,16 +14,19 @@
 // limitations under the License.
 //
 
+import Logging
 import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
 open class K3dTestCase: XCTestCase {
 
+	static var logger: Logger!
 	static var client: KubernetesClient!
 
 	open override class func setUp() {
-		client = KubernetesClient()!
+		logger = Logger(label: "swiftkubeclient-test")
+		client = KubernetesClient(logger: logger)!
 	}
 
 	open override class func tearDown() {
