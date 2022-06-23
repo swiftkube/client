@@ -42,7 +42,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	internal let config: KubernetesClientConfig
 	internal let logger: Logger
 	internal let jsonDecoder: JSONDecoder
-
+	
 	/// Create a new instance of the generic client.
 	///
 	/// The `GroupVersionKind` of this client instance will be inferred by the generic constraint.
@@ -58,7 +58,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.init(httpClient: httpClient, config: config, gvr: GroupVersionResource(of: Resource.self)!, jsonDecoder: jsonDecoder, logger: logger)
 	}
-
+	
 	/// Create a new instance of the generic client for the given `GroupVersionKind`.
 	///
 	/// - Parameters:
@@ -92,13 +92,13 @@ public extension GenericKubernetesClient {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toGet().resource(withName: name).with(options: options).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
+	
 	/// Creates an API resource in the given namespace.
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
@@ -112,13 +112,13 @@ public extension GenericKubernetesClient {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toPost().body(resource).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
+	
 	/// Replaces, i.e. updates, an API resource with the given instance in the given namespace.
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
@@ -132,13 +132,13 @@ public extension GenericKubernetesClient {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toPut().resource(withName: resource.name).body(.resource(payload: resource)).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
+	
 	/// Replaces, i.e. updates, an API resource with the given instance in the given namespace.
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
@@ -152,13 +152,13 @@ public extension GenericKubernetesClient {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toDelete().resource(withName: name).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
+	
 	/// Deletes all API resources in the given namespace.
 	///
 	/// If the namespace is not specified then the default namespace defined in the `KubernetesClientConfig` will be used instead.
@@ -170,7 +170,7 @@ public extension GenericKubernetesClient {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toDelete().build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
@@ -195,7 +195,7 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toGet().with(options: options).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
@@ -218,13 +218,13 @@ public extension GenericKubernetesClient where Resource: ScalableResource {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toGet().resource(withName: name).subResource(.scale).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
+	
 	/// Replaces the resource's scale in the given namespace.
 	///
 	/// - Parameters:
@@ -237,7 +237,7 @@ public extension GenericKubernetesClient where Resource: ScalableResource {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toPut().resource(withName: name).body(.subResource(type: .scale, payload: scale)).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
@@ -275,13 +275,13 @@ public extension GenericKubernetesClient where Resource: StatusHavingResource {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toGet().resource(withName: name).subResource(.status).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
 		}
 	}
-
+	
 	/// Replaces the resource's status in the given namespace.
 	///
 	/// - Parameters:
@@ -294,7 +294,7 @@ public extension GenericKubernetesClient where Resource: StatusHavingResource {
 		do {
 			let eventLoop = httpClient.eventLoopGroup.next()
 			let request = try makeRequest().in(namespace).toPut().resource(withName: name).body(.subResource(type: .status, payload: resource)).build()
-
+			
 			return dispatch(request: request, eventLoop: eventLoop)
 		} catch {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
@@ -303,14 +303,14 @@ public extension GenericKubernetesClient where Resource: StatusHavingResource {
 }
 
 internal extension GenericKubernetesClient {
-
+	
 	func makeRequest() -> NamespaceStep {
 		RequestBuilder(config: config, gvr: gvr)
 	}
-
+	
 	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		let startTime = DispatchTime.now().uptimeNanoseconds
-
+		
 		return httpClient.execute(request: request, logger: logger)
 			.always { (result: Result<HTTPClient.Response, Error>) in
 				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
@@ -334,7 +334,7 @@ internal extension GenericKubernetesClient {
 
 	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
 		let startTime = DispatchTime.now().uptimeNanoseconds
-
+		
 		return httpClient.execute(request: request, logger: logger)
 			.always { (result: Result<HTTPClient.Response, Error>) in
 				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
@@ -343,13 +343,13 @@ internal extension GenericKubernetesClient {
 				self.handleResourceOrStatus(response, eventLoop: eventLoop)
 			}
 	}
-
+	
 	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
 		handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
 			guard case let ResourceOrStatus.resource(resource) = result else {
 				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
 			}
-
+			
 			return eventLoop.makeSucceededFuture(resource)
 		}
 	}
@@ -368,7 +368,7 @@ internal extension GenericKubernetesClient {
 		guard let byteBuffer = response.body else {
 			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
 		}
-
+		
 		let data = Data(buffer: byteBuffer)
 		jsonDecoder.userInfo[CodingUserInfoKey.apiVersion] = gvr.apiVersion
 		jsonDecoder.userInfo[CodingUserInfoKey.resources] = gvr.resource
@@ -380,7 +380,7 @@ internal extension GenericKubernetesClient {
 			}
 			return eventLoop.makeFailedFuture(SwiftkubeClientError.requestError(status))
 		}
-
+		
 		if let resource = try? jsonDecoder.decode(T.self, from: data) {
 			return eventLoop.makeSucceededFuture(.resource(resource))
 		} else if let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) {
@@ -454,18 +454,18 @@ public extension GenericKubernetesClient {
 		let request = try makeRequest().in(namespace).toWatch().with(options: options).build()
 		let watcher = ResourceWatcher(decoder: jsonDecoder, delegate: delegate)
 		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
-
+		
 		let task = SwiftkubeClientTask(
 			client: httpClient,
 			request: request,
 			streamingDelegate: clientDelegate,
 			logger: logger
 		)
-
+		
 		task.schedule(in: TimeAmount.zero)
 		return task
 	}
-
+	
 	/// Follows the logs of the specified container.
 	///
 	/// Following the logs of a container opens a persistent connection to the API server. The connection is represented by a `HTTPClient.Task` instance, that acts
@@ -508,15 +508,43 @@ public extension GenericKubernetesClient {
 		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container).build()
 		let watcher = LogWatcher(delegate: delegate)
 		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
-
+		
 		let task = SwiftkubeClientTask(
 			client: httpClient,
 			request: request,
 			streamingDelegate: clientDelegate,
 			logger: logger
 		)
-
+		
 		task.schedule(in: TimeAmount.zero)
 		return task
 	}
+	
+	func suspend(
+	in namespace: NamespaceSelector,
+	   name: String) throws -> EventLoopFuture<Resource> {
+			  do {
+				  let eventLoop = httpClient.eventLoopGroup.next()
+				  let request = try makeRequest().in(namespace).toPatch().resource(withName: name).setBooleanPatchRFC6902(value: true, "/spec/suspend").build()
+				  
+
+				  return dispatch(request: request, eventLoop: eventLoop)
+			  } catch {
+				  return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			  }
+	   }
+
+	func unsuspend(
+		in namespace: NamespaceSelector,
+		name: String) throws -> EventLoopFuture<Resource> {
+			   do {
+				   let eventLoop = httpClient.eventLoopGroup.next()
+				   let request = try makeRequest().in(namespace).toPatch().resource(withName: name).setBooleanPatchRFC6902(value: false, "/spec/suspend").build()
+				   
+
+				   return dispatch(request: request, eventLoop: eventLoop)
+			   } catch {
+				   return httpClient.eventLoopGroup.next().makeFailedFuture(error)
+			   }
+		}
 }

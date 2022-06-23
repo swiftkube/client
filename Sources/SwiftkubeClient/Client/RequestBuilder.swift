@@ -78,6 +78,7 @@ internal protocol MethodStep {
 	func toFollow(pod: String, container: String?) -> GetStep
 	func toPost() -> PostStep
 	func toPut() -> PutStep
+	func toPatch() -> PatchStep
 	func toDelete() -> DeleteStep
 	func toLogs(pod: String, container: String?) -> GetStep
 }
@@ -104,6 +105,14 @@ internal protocol PostStep {
 internal protocol PutStep {
 	func resource(withName name: String?) -> PutStep
 	func body(_ body: RequestBody) -> PutStep
+	func build() throws -> HTTPClient.Request
+}
+
+// MARK: - PatchStep
+
+internal protocol PatchStep {
+	func resource(withName name: String?) -> PatchStep
+	func setBooleanPatchRFC6902(value v: Bool, _ path: String) -> PatchStep
 	func build() throws -> HTTPClient.Request
 }
 
@@ -147,6 +156,7 @@ internal class RequestBuilder {
 			subResourceType = requestBody?.type
 		}
 	}
+	var patchBody: replaceBooleanRFC6902?
 
 	var subResourceType: ResourceType?
 
@@ -199,6 +209,13 @@ extension RequestBuilder: MethodStep {
 	func toPut() -> PutStep {
 		method = .PUT
 		return self as PutStep
+	}
+	
+	/// Set request method to  PATCH for the pending request
+	/// - Returns:The builder instance as PatchStep
+	func toPatch() -> PatchStep {
+		method = .PATCH
+		return self as PatchStep
 	}
 
 	/// Set request method to  DELETE for the pending request
@@ -303,6 +320,35 @@ extension RequestBuilder: PutStep {
 	func body(_ body: RequestBody) -> PutStep {
 		requestBody = body
 		return self as PutStep
+	}
+}
+
+struct replaceBooleanRFC6902: Codable {
+	var op: String{
+		return "replace"
+	}
+	let path: String
+	let value: Bool
+}
+
+// MARK: PatchStep
+
+extension RequestBuilder: PatchStep {
+
+	/// Set the name of the resource for the pending request
+	/// - Parameter name: The name of the resource
+	/// - Returns: The builder instance as PatchStep
+	func resource(withName name: String?) -> PatchStep {
+		resourceName = name
+		return self as PatchStep
+	}
+	
+	/// Set the body payload for the pending request
+	/// - Parameter resource: The `KubernetesAPIResource` payload
+	/// - Returns: The builder instance as PatchStep
+	func setBooleanPatchRFC6902(value v: Bool, _ path: String) -> PatchStep {
+		patchBody = replaceBooleanRFC6902(path: path, value: v)
+		return self as PatchStep
 	}
 }
 
@@ -423,6 +469,11 @@ internal extension RequestBuilder {
 
 		if let options = deleteOptions {
 			let data = try encoder.encode(options)
+			return .data(data)
+		}
+		
+		if let patchBody = patchBody {
+			let data = try encoder.encode([patchBody])
 			return .data(data)
 		}
 
