@@ -454,6 +454,9 @@ internal extension RequestBuilder {
 		if let authorizationHeader = authentication?.authorizationHeader() {
 			headers.append(("Authorization", authorizationHeader))
 		}
+		if method == .PATCH {
+			headers.append(("Content-Type", "application/json-patch+json"))
+		}
 
 		return HTTPHeaders(headers)
 	}
