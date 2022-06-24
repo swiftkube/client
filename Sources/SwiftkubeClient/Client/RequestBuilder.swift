@@ -324,9 +324,7 @@ extension RequestBuilder: PutStep {
 }
 
 struct replaceBooleanRFC6902: Codable {
-	var op: String{
-		return "replace"
-	}
+	var op: String = "replace"
 	let path: String
 	let value: Bool
 }
