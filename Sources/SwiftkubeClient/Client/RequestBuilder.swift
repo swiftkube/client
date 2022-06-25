@@ -156,6 +156,7 @@ internal class RequestBuilder {
 			subResourceType = requestBody?.type
 		}
 	}
+
 	var patchBody: replaceBooleanRFC6902?
 
 	var subResourceType: ResourceType?
@@ -210,7 +211,7 @@ extension RequestBuilder: MethodStep {
 		method = .PUT
 		return self as PutStep
 	}
-	
+
 	/// Set request method to  PATCH for the pending request
 	/// - Returns:The builder instance as PatchStep
 	func toPatch() -> PatchStep {
@@ -323,13 +324,15 @@ extension RequestBuilder: PutStep {
 	}
 }
 
+// MARK: - replaceBooleanRFC6902
+
 struct replaceBooleanRFC6902: Codable {
 	var op: String = "replace"
 	let path: String
 	let value: Bool
 }
 
-// MARK: PatchStep
+// MARK: - RequestBuilder + PatchStep
 
 extension RequestBuilder: PatchStep {
 
@@ -340,7 +343,7 @@ extension RequestBuilder: PatchStep {
 		resourceName = name
 		return self as PatchStep
 	}
-	
+
 	/// Set the body payload for the pending request
 	/// - Parameter resource: The `KubernetesAPIResource` payload
 	/// - Returns: The builder instance as PatchStep
@@ -350,7 +353,7 @@ extension RequestBuilder: PatchStep {
 	}
 }
 
-// MARK: DeleteStep
+// MARK: - RequestBuilder + DeleteStep
 
 extension RequestBuilder: DeleteStep {
 
@@ -472,7 +475,7 @@ internal extension RequestBuilder {
 			let data = try encoder.encode(options)
 			return .data(data)
 		}
-		
+
 		if let patchBody = patchBody {
 			let data = try encoder.encode([patchBody])
 			return .data(data)

@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Thomas Horrobin
+// Copyright 2020 Swiftkube Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,12 +24,13 @@ public extension NamespacedGenericKubernetesClient where Resource == batch.v1bet
 		in namespace: NamespaceSelector,
 		name: String
 	) throws -> EventLoopFuture<Resource> {
-		return try super.suspend(in: namespace, name: name)
+		try super.suspend(in: namespace, name: name)
 	}
+
 	func unsuspend(
 		in namespace: NamespaceSelector,
 		name: String
 	) throws -> EventLoopFuture<Resource> {
-		return try super.unsuspend(in: namespace, name: name)
+		try super.unsuspend(in: namespace, name: name)
 	}
 }
