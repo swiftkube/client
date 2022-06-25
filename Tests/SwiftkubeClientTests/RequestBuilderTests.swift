@@ -244,7 +244,6 @@ final class RequestBuilderTests: XCTestCase {
 	func testPatchCronjobScheduleInNamespace() {
 		gvr = GroupVersionResource(of: batch.v1.CronJob.self)!
 		let builder = RequestBuilder(config: config, gvr: gvr)
-//		let cronjob = batch.v1.CronJob(metadata: meta.v1.ObjectMeta(name: "cronjob123"), spec: nil, status: nil)
 		let request = try? builder.in(.default).toPatch().resource(withName: "cronjob123").setBooleanPatchRFC6902(value: true, "/spec/suspend").build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/apis/batch/v1/namespaces/default/cronjobs/cronjob123")!)

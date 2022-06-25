@@ -345,10 +345,11 @@ extension RequestBuilder: PatchStep {
 	}
 
 	/// Set the body payload for the pending request
-	/// - Parameter resource: The `KubernetesAPIResource` payload
+	/// - Parameter value: The value that will replace the current value
+	/// - Parameter path: The path to the value to be changed
 	/// - Returns: The builder instance as PatchStep
-	func setBooleanPatchRFC6902(value v: Bool, _ path: String) -> PatchStep {
-		patchBody = replaceBooleanRFC6902(path: path, value: v)
+	func setBooleanPatchRFC6902(value: Bool, _ path: String) -> PatchStep {
+		patchBody = replaceBooleanRFC6902(path: path, value: value)
 		return self as PatchStep
 	}
 }
