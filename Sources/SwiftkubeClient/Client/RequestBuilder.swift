@@ -155,6 +155,7 @@ internal class RequestBuilder {
 	var readOptions: [ReadOption]?
 	var deleteOptions: meta.v1.DeleteOptions?
 	var watchFlag = false
+	var followFlag = false
 
 	init(config: KubernetesClientConfig, gvr: GroupVersionResource) {
 		self.config = config
@@ -223,6 +224,7 @@ extension RequestBuilder: MethodStep {
 		resourceName = pod
 		containerName = container
 		subResourceType = .log
+		followFlag = true
 		return self as GetStep
 	}
 
@@ -362,7 +364,7 @@ internal extension RequestBuilder {
 			add(queryItem: URLQueryItem(name: "watch", value: "true"))
 		}
 
-		if subResourceType == .log {
+		if followFlag {
 			add(queryItem: URLQueryItem(name: "follow", value: "true"))
 		}
 

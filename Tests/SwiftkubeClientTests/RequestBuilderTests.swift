@@ -79,6 +79,22 @@ final class RequestBuilderTests: XCTestCase {
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?follow=true&container=container")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
+	
+	func testLogsInNamespace() {
+		let builder = RequestBuilder(config: config, gvr: gvr)
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil).build()
+
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log")!)
+		XCTAssertEqual(request?.method, HTTPMethod.GET)
+	}
+	
+	func testLogsWithContainerInNamespace() {
+		let builder = RequestBuilder(config: config, gvr: gvr)
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: "container").build()
+
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?container=container")!)
+		XCTAssertEqual(request?.method, HTTPMethod.GET)
+	}
 
 	func testGetWithListOptions_Eq() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
