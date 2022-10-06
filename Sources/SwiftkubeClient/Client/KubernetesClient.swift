@@ -92,9 +92,11 @@ public class KubernetesClient {
 	/// - Parameters:
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
+    ///    - timeout: HTTP Client timeout
 	public convenience init?(
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
-		logger: Logger? = nil
+		logger: Logger? = nil,
+        timeout: HTTPClient.Configuration.Timeout? = nil
 	) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
 
@@ -106,7 +108,7 @@ public class KubernetesClient {
 			return nil
 		}
 
-		self.init(config: config, provider: provider, logger: logger)
+        self.init(config: config, provider: provider, logger: logger, timeout: timeout)
 	}
 
 	/// Create a new instance of the Kubernetes client.
@@ -115,10 +117,12 @@ public class KubernetesClient {
 	///    - fromURL: The url to load the configuration from for this client instance. It can be a local file or remote URL.
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
+    ///    - timeout: HTTP Client timeout
 	public convenience init?(
 		fromURL url: URL,
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
-		logger: Logger? = nil
+		logger: Logger? = nil,
+        timeout: HTTPClient.Configuration.Timeout? = nil
 	) {
 		let logger = logger ?? KubernetesClient.loggingDisabled
 
@@ -128,7 +132,7 @@ public class KubernetesClient {
 			return nil
 		}
 
-		self.init(config: config, provider: provider, logger: logger)
+		self.init(config: config, provider: provider, logger: logger, timeout: timeout)
 	}
 
 	/// Create a new instance of the Kubernetes client.
@@ -137,10 +141,12 @@ public class KubernetesClient {
 	///    - config: The configuration for this client instance.
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
+    ///    - timeout: HTTP Client timeout
 	public init(
 		config: KubernetesClientConfig,
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
-		logger: Logger? = nil
+		logger: Logger? = nil,
+        timeout: HTTPClient.Configuration.Timeout? = nil
 	) {
 		self.config = config
 		self.logger = logger ?? KubernetesClient.loggingDisabled
@@ -159,7 +165,7 @@ public class KubernetesClient {
 			configuration: HTTPClient.Configuration(
 				tlsConfiguration: tlsConfiguration,
 				redirectConfiguration: .follow(max: 10, allowCycles: false),
-				timeout: .init(connect: .seconds(1))
+				timeout: timeout ?? .init(connect: .seconds(1))
 			)
 		)
 	}
