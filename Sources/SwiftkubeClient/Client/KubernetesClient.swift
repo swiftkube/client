@@ -38,8 +38,6 @@ import SwiftkubeModel
 /// ```
 public class KubernetesClient {
 
-	internal static let loggingDisabled = Logger(label: "SKC-do-not-log", factory: { _ in SwiftLogNoOpLogHandler() })
-
 	/// The client's configuration object.
 	public let config: KubernetesClientConfig
 	internal let httpClient: HTTPClient
@@ -96,12 +94,10 @@ public class KubernetesClient {
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
 	) {
-		let logger = logger ?? KubernetesClient.loggingDisabled
+		let logger = logger ?? SwiftkubeClient.loggingDisabled
 
 		guard
-			let config =
-			(try? LocalKubeConfigLoader().load(logger: logger)) ??
-			(try? ServiceAccountConfigLoader().load(logger: logger))
+			let config = KubernetesClientConfig.initialize(logger: logger)
 		else {
 			return nil
 		}
@@ -112,7 +108,7 @@ public class KubernetesClient {
 	/// Create a new instance of the Kubernetes client.
 	///
 	/// - Parameters:
-	///    - fromURL: The url to load the configuration from for this client instance. It can be a local file or remote URL.
+	///    - url: The url to load the configuration from for this client instance. It can be a local file or remote URL.
 	///    - provider: Specify how `EventLoopGroup` will be created.
 	///    - logger: The logger to use for this client.
 	public convenience init?(
@@ -120,10 +116,10 @@ public class KubernetesClient {
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
 	) {
-		let logger = logger ?? KubernetesClient.loggingDisabled
+		let logger = logger ?? SwiftkubeClient.loggingDisabled
 
 		guard
-			let config = try? URLConfigLoader(url: url).load(logger: logger)
+			let config = KubernetesClientConfig.create(fromUrl: url, logger: logger)
 		else {
 			return nil
 		}
@@ -143,7 +139,7 @@ public class KubernetesClient {
 		logger: Logger? = nil
 	) {
 		self.config = config
-		self.logger = logger ?? KubernetesClient.loggingDisabled
+		self.logger = logger ?? SwiftkubeClient.loggingDisabled
 
 		var tlsConfiguration = TLSConfiguration.makeClientConfiguration()
 		tlsConfiguration.minimumTLSVersion = .tlsv12
@@ -158,8 +154,8 @@ public class KubernetesClient {
 			eventLoopGroupProvider: provider,
 			configuration: HTTPClient.Configuration(
 				tlsConfiguration: tlsConfiguration,
-				redirectConfiguration: .follow(max: 10, allowCycles: false),
-				timeout: .init(connect: .seconds(1))
+				redirectConfiguration: config.redirectConfiguration,
+				timeout: config.timeout
 			)
 		)
 	}
@@ -187,7 +183,7 @@ public extension KubernetesClient {
 
 	/// Create a new generic client for the given `KubernetesAPIResource`.
 	///
-	/// - Parameter gvk: The `KubernetesAPIResource` type.
+	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `KubernetesAPIResource`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
@@ -207,7 +203,9 @@ public extension KubernetesClient {
 	///
 	/// The returned instance is typed-inferred by the generic constraint.
 	///
-	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
+	/// - Parameters:
+	///   - type: The `KubernetesAPIResource` type.
+	///   - gvr: The `GroupVersionResource` of the desired resource.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type, gvr: GroupVersionResource) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)

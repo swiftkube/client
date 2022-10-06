@@ -16,8 +16,18 @@
 
 import AsyncHTTPClient
 import Foundation
+import Logging
 import NIOHTTP1
 import SwiftkubeModel
+
+// MARK: - SwiftkubeClient
+
+public enum SwiftkubeClient {
+
+	public static let loggingDisabled = Logger(label: "SKC-do-not-log", factory: { _ in SwiftLogNoOpLogHandler() })
+}
+
+// MARK: - SwiftkubeClientError
 
 /// Represents SwiftkubeClient errors.
 public enum SwiftkubeClientError: Error {

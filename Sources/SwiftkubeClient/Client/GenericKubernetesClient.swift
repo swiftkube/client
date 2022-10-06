@@ -25,7 +25,7 @@ import SwiftkubeModel
 
 // MARK: - ResourceOrStatus
 
-/// Represens a response with a concrete `KubernetesAPIResource` or a `meta.v1.Status` object.
+/// Represents a response with a concrete `KubernetesAPIResource` or a `meta.v1.Status` object.
 public enum ResourceOrStatus<T> {
 	case resource(T)
 	case status(meta.v1.Status)
@@ -54,6 +54,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	/// - Parameters:
 	///   - httpClient: An instance of Async HTTPClient.
 	///   - config: The configuration for this client instance.
+	///   - jsonDecoder: An instance of JSONDecoder to use by this client.
 	///   - logger: The logger to use for this client.
 	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.init(httpClient: httpClient, config: config, gvr: GroupVersionResource(of: Resource.self)!, jsonDecoder: jsonDecoder, logger: logger)
@@ -62,16 +63,17 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	/// Create a new instance of the generic client for the given `GroupVersionKind`.
 	///
 	/// - Parameters:
-	///   - httpClient: An instance of Async HTTPClient.
-	///   - config: The configuration for this client instance.
+	///   - httpClient: An instance of AsyncHTTPClient.
+	///   - config: The configuration for this client.
 	///   - gvr: The `GroupVersionResource` of the target resource.
+	///   - jsonDecoder: An instance of JSONDecoder to use by this client.
 	///   - logger: The logger to use for this client.
 	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvr: GroupVersionResource, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
 		self.gvr = gvr
 		self.jsonDecoder = jsonDecoder
-		self.logger = logger ?? KubernetesClient.loggingDisabled
+		self.logger = logger ?? SwiftkubeClient.loggingDisabled
 	}
 }
 
@@ -86,6 +88,7 @@ public extension GenericKubernetesClient {
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the API resource to load.
+	///   - options: ReadOptions to apply to this request.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
 	func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
@@ -145,8 +148,8 @@ public extension GenericKubernetesClient {
 	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
-	///   - resource: A `KubernetesAPIResource` instance to update.
-	///
+	///   - name: The name of the resource object to delete.
+	///   - options: DeleteOptions to apply to this request.
 	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
 	func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) -> EventLoopFuture<ResourceOrStatus<Resource>> {
 		do {
@@ -495,7 +498,8 @@ public extension GenericKubernetesClient {
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
-	///   - watch: A `LogWatcherDelegate` instance, which is used as a callback for new log lines.
+	///   - retryStrategy: An instance of a RetryStrategy configuration to use.
+	///   - delegate: A `LogWatcherDelegate` instance, which is used as a callback for new log lines.
 	///
 	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connection to the API server.
 	func follow(
