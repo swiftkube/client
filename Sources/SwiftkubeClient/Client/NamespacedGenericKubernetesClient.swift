@@ -36,6 +36,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the API resource to load.
+	///   - options: A list of `ReadOptions` to apply to this request.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
 	func get(in namespace: NamespaceSelector? = nil, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
@@ -72,6 +73,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
+	///   - options: A list of `ReadOptions` to apply to this request.
+	///   - retryStrategy: A strategy to control the reconnect behaviour.
 	///   - eventHandler: A `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. The clients sends each
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
@@ -108,8 +111,11 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
-	///   - resourceWatch: A `ResourceWatch` instance, which is used for error and event callbacks. The clients sends each
-	/// event paired with the corresponding resource as a pair to the `eventHandler`. Errors are sent to the `errorHandler`.
+	///     - options: A list of `ReadOptions` to apply to this request.
+	///     - retryStrategy: A strategy to control the reconnect behaviour.
+	///     - delegate: An ResourceWatcherDelegate instance, which is used as a callback for new events.
+	///          The clients sends each event paired with the corresponding resource as a pair to the `eventHandler`.
+	///          Errors are sent to the `errorHandler`.
 	///
 	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
 	func watch<Delegate: ResourceWatcherDelegate>(
@@ -291,7 +297,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ScalableResou
 	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
-	///   - name: The name of the resoruce to update.
+	///   - name: The name of the resource to update.
+	///   - scale: An instance of a `autoscaling.v1.Scale` object to apply to the resource.
 	///   - resource: A `autoscaling.v1.Scale` instance to update.
 	///
 	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale`.

@@ -31,7 +31,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 
 	/// Loads an API resource by name.
 	///
-	/// - Parameter name: The name of the API resource to load.
+	/// - Parameters:
+	///     - name: The name of the API resource to load.
+	///     - options: A list of `ReadOptions` to apply to this request.
 	///
 	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name.
 	func get(name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
@@ -51,10 +53,13 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///	task.cancel()
 	/// ```
 	///
-	/// - Parameter eventHandler: A `ResourceWatch.EventHandler` instance, which is used as a callback for new events. The clients sends each
-	/// event paired with the corresponding resource as a pair to the `eventHandler`.
+	/// - Parameters:
+	///     - options: A list of `ReadOptions` to apply to this request.
+	///     - retryStrategy: A strategy to control the reconnect behaviour.
+	///     - eventHandler: A `ResourceWatchCallback.EventHandler` instance, which is used as a callback for new events.
+	///      The clients sends each event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
-	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
+	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connection to the API server.
 	func watch(
 		options: [ListOption]? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy(),
@@ -92,10 +97,14 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	/// let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in print(pod) }
 	/// ```
 	///
-	/// - Parameter eventHandler: A `ResourceWatch` instance, which is used as a callback for new events. The clients sends each
-	/// event paired with the corresponding resource as a pair to the `eventHandler`.   Errors are sent to the `errorHandler`.
+	/// - Parameters:
+	///     - options: A list of `ReadOptions` to apply to this request.
+	///     - retryStrategy: A strategy to control the reconnect behaviour.
+	///     - delegate: An ResourceWatcherDelegate instance, which is used as a callback for new events.
+	///          The clients sends each event paired with the corresponding resource as a pair to the `eventHandler`.
+	///          Errors are sent to the `errorHandler`.
 	///
-	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
+	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connection to the API server.
 	func watch<Delegate: ResourceWatcherDelegate>(
 		options: [ListOption]? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy(),
@@ -234,7 +243,8 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ScalableRe
 	/// Replaces, i.e. updates, an API resource's scale.
 	///
 	/// - Parameters:
-	///   - name: The name of the resoruce to update.
+	///   - name: The name of the resource to update.
+	///   - scale: An instance of a `autoscaling.v1.Scale` object to apply to the resource.
 	///   - resource: A `autoscaling.v1.Scale` instance to update.
 	///
 	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale`.

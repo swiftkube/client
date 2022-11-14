@@ -300,7 +300,7 @@ extension RequestBuilder: PutStep {
 	}
 
 	/// Set the body payload for the pending request
-	/// - Parameter resource: The `KubernetesAPIResource` payload
+	/// - Parameter body: The `KubernetesAPIResource` payload or a `KubernetesResource` subresource payload
 	/// - Returns: The builder instance as PostStep
 	func body(_ body: RequestBody) -> PutStep {
 		requestBody = body
