@@ -19,7 +19,7 @@ let package = Package(
 		.package(name: "async-http-client", url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.2.0")),
 		.package(name: "swift-log", url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.4.0")),
 		.package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0"),
-		.package(name: "Yams", url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "4.0.0")),
+		.package(name: "Yams", url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.0.0")),
 		.package(name: "swift-nio", url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.0.0"))
 	],
 	targets: [
