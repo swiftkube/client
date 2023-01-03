@@ -17,34 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - StorageV1Alpha1API
+// MARK: - AutoScalingV2API
 
-public protocol StorageV1Alpha1API {
+public protocol AutoScalingV2API {
 
-	var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1alpha1.CSIStorageCapacity> { get }
-	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttachment> { get }
+	var horizontalPodAutoscalers: NamespacedGenericKubernetesClient<autoscaling.v2.HorizontalPodAutoscaler> { get }
 }
 
-/// DSL for `storage.k8s.io.v1alpha1` API Group
+/// DSL for `autoscaling.v2` API Group
 public extension KubernetesClient {
 
-	class StorageV1Alpha1: StorageV1Alpha1API {
+	class AutoScalingV2: AutoScalingV2API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1alpha1.CSIStorageCapacity> {
-			client.namespaceScoped(for: storage.v1alpha1.CSIStorageCapacity.self)
-		}
-
-		public var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttachment> {
-			client.clusterScoped(for: storage.v1alpha1.VolumeAttachment.self)
+		public var horizontalPodAutoscalers: NamespacedGenericKubernetesClient<autoscaling.v2.HorizontalPodAutoscaler> {
+			client.namespaceScoped(for: autoscaling.v2.HorizontalPodAutoscaler.self)
 		}
 	}
 
-	var storageV1Alpha1: StorageV1Alpha1API {
-		StorageV1Alpha1(self)
+	var autoScalingV2: AutoScalingV2API {
+		AutoScalingV2(self)
 	}
 }

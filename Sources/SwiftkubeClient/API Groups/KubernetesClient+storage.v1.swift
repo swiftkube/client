@@ -23,6 +23,7 @@ public protocol StorageV1API {
 
 	var csiDrivers: ClusterScopedGenericKubernetesClient<storage.v1.CSIDriver> { get }
 	var csiNodes: ClusterScopedGenericKubernetesClient<storage.v1.CSINode> { get }
+	var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1.CSIStorageCapacity> { get }
 	var storageClasses: ClusterScopedGenericKubernetesClient<storage.v1.StorageClass> { get }
 	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1.VolumeAttachment> { get }
 }
@@ -43,6 +44,10 @@ public extension KubernetesClient {
 
 		public var csiNodes: ClusterScopedGenericKubernetesClient<storage.v1.CSINode> {
 			client.clusterScoped(for: storage.v1.CSINode.self)
+		}
+
+		public var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1.CSIStorageCapacity> {
+			client.namespaceScoped(for: storage.v1.CSIStorageCapacity.self)
 		}
 
 		public var storageClasses: ClusterScopedGenericKubernetesClient<storage.v1.StorageClass> {

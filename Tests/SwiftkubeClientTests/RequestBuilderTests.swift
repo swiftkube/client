@@ -32,7 +32,9 @@ final class RequestBuilderTests: XCTestCase {
 			namespace: "default",
 			authentication: .basicAuth(username: "test", password: "test"),
 			trustRoots: nil,
-			insecureSkipTLSVerify: false
+			insecureSkipTLSVerify: false,
+			timeout: .init(connect: .seconds(1), read: .seconds(5)),
+			redirectConfiguration: .disallow
 		)
 
 		gvr = GroupVersionResource(of: core.v1.Pod.self)!

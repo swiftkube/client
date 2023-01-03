@@ -19,7 +19,7 @@ jobs:
         run: swiftformat --lint Sources
 
   macOS:
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
@@ -35,10 +35,10 @@ jobs:
 
   iOS:
     name: Test iOS
-    runs-on: macOS-10.15
+    runs-on: macOS-latest
     strategy:
       matrix:
-        destination: ["platform=iOS Simulator,OS=14.4,name=iPhone 12 Pro"]
+        destination: ["platform=iOS Simulator,OS=16.0,name=iPhone 14 Pro"]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -68,7 +68,7 @@ jobs:
     - name: Setup Swift
       uses: fwal/setup-swift@v1
       with:
-        swift-version: "5.4"
+        swift-version: "5.5"
     - name: Build
       run: swift build
     - name: Test

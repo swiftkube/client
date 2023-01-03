@@ -1,4 +1,4 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.5
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
 	name: "SwiftkubeClient",
 	platforms: [
-		.macOS(.v10_13), .iOS(.v12), .tvOS(.v12), .watchOS(.v5),
+		.macOS(.v10_15), .iOS(.v14), .tvOS(.v14), .watchOS(.v7),
 	],
 	products: [
 		.library(
@@ -15,12 +15,12 @@ let package = Package(
 		),
 	],
 	dependencies: [
-		.package(name: "SwiftkubeModel", url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.5.0")),
-		.package(name: "async-http-client", url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.2.0")),
-		.package(name: "swift-log", url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.4.0")),
-		.package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0"),
-		.package(name: "Yams", url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "4.0.0")),
-		.package(name: "swift-nio", url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.0.0"))
+		.package(name: "SwiftkubeModel", url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.6.0")),
+		.package(name: "async-http-client", url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.13.1")),
+		.package(name: "swift-log", url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.4.4")),
+		.package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", .upToNextMajor(from: "2.3.3")),
+		.package(name: "Yams", url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.0.1")),
+		.package(name: "swift-nio", url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.46.0")),
 	],
 	targets: [
 		.target(
