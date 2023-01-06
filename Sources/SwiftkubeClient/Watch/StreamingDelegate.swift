@@ -54,7 +54,7 @@ internal class ClientStreamingDelegate: HTTPClientResponseDelegate {
 		logger.debug("Did receive response head: \(head.headers)")
 		if head.status.code >= 400 {
 			// TODO: Proper status handling
-			watcher.onError(error: .requestError(meta.v1.Status()))
+			watcher.onError(error: .statusError(meta.v1.Status()))
 		}
 
 		return task.eventLoop.makeSucceededFuture(())

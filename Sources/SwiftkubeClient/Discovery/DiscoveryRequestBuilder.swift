@@ -42,16 +42,22 @@ internal class DiscoveryRequestBuilder {
 		return self
 	}
 
-	func build() throws -> HTTPClient.Request {
+	func build() throws -> KubernetesRequest {
 		let method = HTTPMethod.GET
 		components?.path = path
 
-		guard let url = components?.url?.absoluteString else {
+		if (components?.url?.absoluteString) == nil {
 			throw SwiftkubeClientError.invalidURL
 		}
 
 		let headers = buildHeaders(withAuthentication: config.authentication)
-		return try HTTPClient.Request(url: url, method: method, headers: headers)
+		return KubernetesRequest(
+			url: (components?.url)!,
+			method: method,
+			headers: headers,
+			body: nil,
+			deleteOptions: nil
+		)
 	}
 
 	func buildHeaders(withAuthentication authentication: KubernetesClientAuthentication?) -> HTTPHeaders {

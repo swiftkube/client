@@ -39,31 +39,6 @@ internal enum ResourceType {
 	}
 }
 
-// MARK: - RequestBody
-
-internal enum RequestBody {
-	case resource(payload: KubernetesAPIResource)
-	case subResource(type: ResourceType, payload: KubernetesResource)
-
-	var type: ResourceType {
-		switch self {
-		case .resource:
-			return .root
-		case let .subResource(type: subType, payload: _):
-			return subType
-		}
-	}
-
-	var payload: KubernetesResource {
-		switch self {
-		case let .resource(payload: payload):
-			return payload
-		case let .subResource(type: _, payload: payload):
-			return payload
-		}
-	}
-}
-
 // MARK: - NamespaceStep
 
 internal protocol NamespaceStep {
@@ -89,14 +64,14 @@ internal protocol GetStep {
 	func subResource(_ subType: ResourceType) -> GetStep
 	func with(options: [ListOption]?) -> GetStep
 	func with(options: [ReadOption]?) -> GetStep
-	func build() throws -> HTTPClient.Request
+	func build() throws -> KubernetesRequest
 }
 
 // MARK: - PostStep
 
 internal protocol PostStep {
 	func body<Resource: KubernetesAPIResource>(_ resource: Resource) -> PostStep
-	func build() throws -> HTTPClient.Request
+	func build() throws -> KubernetesRequest
 }
 
 // MARK: - PutStep
@@ -104,7 +79,7 @@ internal protocol PostStep {
 internal protocol PutStep {
 	func resource(withName name: String?) -> PutStep
 	func body(_ body: RequestBody) -> PutStep
-	func build() throws -> HTTPClient.Request
+	func build() throws -> KubernetesRequest
 }
 
 // MARK: - DeleteStep
@@ -112,7 +87,7 @@ internal protocol PutStep {
 internal protocol DeleteStep {
 	func resource(withName name: String?) -> DeleteStep
 	func with(options: meta.v1.DeleteOptions?) -> DeleteStep
-	func build() throws -> HTTPClient.Request
+	func build() throws -> KubernetesRequest
 }
 
 // MARK: - RequestBuilder
@@ -331,7 +306,7 @@ extension RequestBuilder: DeleteStep {
 
 internal extension RequestBuilder {
 
-	func build() throws -> HTTPClient.Request {
+	func build() throws -> KubernetesRequest {
 		components?.path = urlPath(forNamespace: namespace, name: resourceName)
 
 		if let subResourceType = subResourceType {
@@ -372,14 +347,19 @@ internal extension RequestBuilder {
 			add(queryItem: URLQueryItem(name: "container", value: container))
 		}
 
-		guard let url = components?.url?.absoluteString else {
+		if (components?.url?.absoluteString) == nil {
 			throw SwiftkubeClientError.invalidURL
 		}
 
 		let headers = buildHeaders(withAuthentication: config.authentication)
-		let body = try buildBody()
 
-		return try HTTPClient.Request(url: url, method: method, headers: headers, body: body)
+		return KubernetesRequest(
+			url: (components?.url)!,
+			method: method,
+			headers: headers,
+			body: requestBody,
+			deleteOptions: deleteOptions
+		)
 	}
 
 	private func urlPath(forNamespace namespace: NamespaceSelector, name: String?) -> String {
@@ -412,28 +392,5 @@ internal extension RequestBuilder {
 		}
 
 		return HTTPHeaders(headers)
-	}
-
-	private func buildBody() throws -> HTTPClient.Body? {
-		let encoder = JSONEncoder()
-		encoder.dateEncodingStrategy = .iso8601
-
-		if let requestBody = requestBody {
-			let data = try requestBody.payload.encode(encoder: encoder)
-			return .data(data)
-		}
-
-		if let options = deleteOptions {
-			let data = try encoder.encode(options)
-			return .data(data)
-		}
-
-		return nil
-	}
-}
-
-private extension KubernetesResource {
-	func encode(encoder: JSONEncoder) throws -> Data {
-		try encoder.encode(self)
 	}
 }

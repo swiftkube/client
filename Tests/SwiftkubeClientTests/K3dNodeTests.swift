@@ -20,8 +20,8 @@ import XCTest
 
 final class K3dNodeTests: K3dTestCase {
 
-	func testListNodes() {
-		let nodes = try? K3dTestCase.client.nodes.list().wait()
+	func testListNodes() async {
+		let nodes = try? await K3dTestCase.client.nodes.list()
 		XCTAssertEqual(nodes?.items.count, 3)
 	}
 }

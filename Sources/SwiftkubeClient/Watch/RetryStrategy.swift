@@ -27,7 +27,7 @@ public struct RetryAttempt: Hashable {
 // MARK: - RetryStrategy
 
 /// A RetryStrategy defines how client requests should be retried when encountering non-recoverable errors.
-/// Basically it is a sequence of RetryAttemps generated according to a Policy and Backoff definition.
+/// Basically it is a sequence of RetryAttempts generated according to a Policy and Backoff definition.
 public struct RetryStrategy: Sequence {
 
 	public typealias Iterator = RetryAttemptIterator
@@ -142,14 +142,14 @@ public class RetryAttemptIterator: IteratorProtocol {
 		}
 
 		let nextDelay = strategy.backoff.computeNext(currentDelay: currentDelay)
-		let nextJittered = add(jitter: strategy.jitter, to: nextDelay)
+		let nextJitter = add(jitter: strategy.jitter, to: nextDelay)
 
 		defer {
 			currentAttempt += 1
 			currentDelay = nextDelay
 		}
 
-		return RetryAttempt(attempt: currentAttempt, delay: nextJittered)
+		return RetryAttempt(attempt: currentAttempt, delay: nextJitter)
 	}
 
 	private func add(jitter: Double, to delay: TimeInterval) -> TimeInterval {

@@ -35,9 +35,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///     - name: The name of the API resource to load.
 	///     - options: A list of `ReadOptions` to apply to this request.
 	///
-	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name.
-	func get(name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
-		super.get(in: .allNamespaces, name: name, options: options)
+	/// - Returns: The API resource specified by the given name.
+	func get(name: String, options: [ReadOption]? = nil) async throws -> Resource {
+		try await super.get(in: .allNamespaces, name: name, options: options)
 	}
 
 	/// Watches cluster-scoped resources.
@@ -89,8 +89,8 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
-	///    policy: .maxAttemtps(20),
-	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    policy: .maxAttempts(20),
+	///    backoff: .exponentialBackoff(maxDelay: 60, multiplier: 2.0),
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
@@ -123,9 +123,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ListableRe
 	///
 	/// - Parameter options: `ListOptions` instance to control the behaviour of the `List` operation.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
-	func list(options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
-		super.list(in: .allNamespaces, options: options)
+	/// - Returns: A `KubernetesAPIResourceList` of resources.
+	func list(options: [ListOption]? = nil) async throws -> Resource.List {
+		try await super.list(in: .allNamespaces, options: options)
 	}
 }
 
@@ -138,18 +138,18 @@ public extension ClusterScopedGenericKubernetesClient where Resource: CreatableR
 	///
 	/// - Parameter resource: A `KubernetesAPIResource` instance to create.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func create(_ resource: Resource) -> EventLoopFuture<Resource> {
-		super.create(in: .allNamespaces, resource)
+	/// - Returns: The created `KubernetesAPIResource`.
+	func create(_ resource: Resource) async throws -> Resource {
+		try await super.create(in: .allNamespaces, resource)
 	}
 
 	/// Creates an API resource.
 	///
 	/// - Parameter block: A closure block, which creates a `KubernetesAPIResource` instance to send to the server.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func create(_ block: () -> Resource) -> EventLoopFuture<Resource> {
-		super.create(in: .allNamespaces, block())
+	/// - Returns: The created `KubernetesAPIResource`.
+	func create(_ block: () -> Resource) async throws -> Resource {
+		try await super.create(in: .allNamespaces, block())
 	}
 }
 
@@ -162,9 +162,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Replaceabl
 	///
 	/// - Parameter resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
-	func update(_ resource: Resource) -> EventLoopFuture<Resource> {
-		super.update(in: .allNamespaces, resource)
+	/// - Returns: The updated `KubernetesAPIResource`.
+	func update(_ resource: Resource) async throws -> Resource {
+		try await super.update(in: .allNamespaces, resource)
 	}
 }
 
@@ -177,11 +177,11 @@ public extension ClusterScopedGenericKubernetesClient where Resource: DeletableR
 	///
 	/// - Parameters:
 	///   - name: The name of the resource.
-	///   - options: An instnace of `meta.v1.DeleteOptions` to control the behaviour of the `Delete` operation.
+	///   - options: An instance of `meta.v1.DeleteOptions` to control the behaviour of the `Delete` operation.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
-	func delete(name: String, options: meta.v1.DeleteOptions? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		super.delete(in: .allNamespaces, name: name, options: options)
+	/// - Returns: A `ResourceOrStatus` instance.
+	func delete(name: String, options: meta.v1.DeleteOptions? = nil) async throws {
+		try await super.delete(in: .allNamespaces, name: name, options: options)
 	}
 }
 
@@ -192,9 +192,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Collection
 
 	/// Deletes all API resources in the target collection.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
-	func deleteAll() -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		super.deleteAll(in: .allNamespaces)
+	/// - Returns: A `ResourceOrStatus` instance.
+	func deleteAll() async throws {
+		try await super.deleteAll(in: .allNamespaces)
 	}
 }
 
@@ -208,9 +208,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: StatusHavi
 	/// - Parameters:
 	///   - name: The name of the API resource to load.
 	///
-	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name.
-	func getStatus(name: String) throws -> EventLoopFuture<Resource> {
-		try super.getStatus(in: .allNamespaces, name: name)
+	/// - Returns: The API resource specified by the given name.
+	func getStatus(name: String) async throws -> Resource {
+		try await super.getStatus(in: .allNamespaces, name: name)
 	}
 
 	/// Replaces, i.e. updates, an API resource's status .
@@ -219,9 +219,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: StatusHavi
 	///   - name: The name of the resoruce to update.
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
-	func updateStatus(name: String, _ resource: Resource) throws -> EventLoopFuture<Resource> {
-		try super.updateStatus(in: .allNamespaces, name: name, resource)
+	/// - Returns: The updated `KubernetesAPIResource`.
+	func updateStatus(name: String, _ resource: Resource) async throws -> Resource {
+		try await super.updateStatus(in: .allNamespaces, name: name, resource)
 	}
 }
 
@@ -235,9 +235,9 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ScalableRe
 	/// - Parameters:
 	///   - name: The name of the API resource to load.
 	///
-	/// - Returns: An `EventLoopFuture` holding the `autoscaling.v1.Scale` of the resource specified by the given name.
-	func getScale(name: String) throws -> EventLoopFuture<autoscaling.v1.Scale> {
-		try super.getScale(in: .allNamespaces, name: name)
+	/// - Returns: The `autoscaling.v1.Scale` of the resource specified by the given name.
+	func getScale(name: String) async throws -> autoscaling.v1.Scale {
+		try await super.getScale(in: .allNamespaces, name: name)
 	}
 
 	/// Replaces, i.e. updates, an API resource's scale.
@@ -247,8 +247,8 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ScalableRe
 	///   - scale: An instance of a `autoscaling.v1.Scale` object to apply to the resource.
 	///   - resource: A `autoscaling.v1.Scale` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale`.
-	func updateScale(name: String, scale: autoscaling.v1.Scale) throws -> EventLoopFuture<autoscaling.v1.Scale> {
-		try super.updateScale(in: .allNamespaces, name: name, scale: scale)
+	/// - Returns: The updated `autoscaling.v1.Scale`.
+	func updateScale(name: String, scale: autoscaling.v1.Scale) async throws -> autoscaling.v1.Scale {
+		try await super.updateScale(in: .allNamespaces, name: name, scale: scale)
 	}
 }

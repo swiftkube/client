@@ -35,13 +35,13 @@ internal protocol SwiftkubeClientTaskDelegate {
 /// The task can be used to cancel the task execution.
 ///
 /// The task is executed indefinitely. Upon encountering non-transient errors this tasks reconnects to the
-/// Kubernetes API server, basicaly restarting the previous `watch` or `follow` call.
+/// Kubernetes API server, basically restarting the previous `watch` or `follow` call.
 ///
 /// The retry semantics are controlled via the passed `RetryStrategy` instance by the Kubernetes client.
 public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 
 	let client: HTTPClient
-	let request: HTTPClient.Request
+	let request: KubernetesRequest
 	let streamingDelegate: ClientStreamingDelegate
 	let promise: EventLoopPromise<Void>
 	let retriesSequence: RetryStrategy.Iterator
@@ -51,7 +51,7 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 
 	init(
 		client: HTTPClient,
-		request: HTTPClient.Request,
+		request: KubernetesRequest,
 		streamingDelegate: ClientStreamingDelegate,
 		logger: Logger,
 		retryStrategy: RetryStrategy = RetryStrategy()
@@ -62,7 +62,6 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 		self.promise = client.eventLoopGroup.next().makePromise()
 		self.retriesSequence = retryStrategy.makeIterator()
 		self.logger = logger
-
 		self.streamingDelegate.taskDelegate = self
 	}
 
@@ -73,7 +72,7 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 
 		logger.debug("Scheduling task for request: \(request)")
 		let scheduled = client.eventLoopGroup.next().scheduleTask(in: amount) { () -> HTTPClient.Task<Void> in
-			self.resetAndExecute()
+			try self.resetAndExecute()
 		}
 
 		scheduled.futureResult.whenComplete { (result: Result<HTTPClient.Task<Void>, Error>) in
@@ -86,9 +85,15 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 		}
 	}
 
-	private func resetAndExecute() -> HTTPClient.Task<Void> {
+	private func resetAndExecute() throws -> HTTPClient.Task<Void> {
 		streamingDelegate.reset()
-		return client.execute(request: request, delegate: streamingDelegate, logger: logger)
+		do {
+			let syncClientRequest = try request.asClientRequest()
+			return client.execute(request: syncClientRequest, delegate: streamingDelegate, logger: logger)
+		} catch {
+			promise.fail(error)
+			throw error
+		}
 	}
 
 	internal func onDidFinish(task: HTTPClient.Task<Void>) {

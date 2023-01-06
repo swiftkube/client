@@ -33,20 +33,22 @@ public enum SwiftkubeClient {
 public enum SwiftkubeClientError: Error {
 	/// Thrown when the client constructs an invalid URL, e.g. when a wrong config is used.
 	case invalidURL
-	/// Indicates a bad request made by the client, e.g. creating an object wihtout a name.
+	/// Indicates a bad request made by the client, e.g. creating an object without a name.
 	case badRequest(String)
 	/// Thrown when receiving an empty response when content is expected.
 	case emptyResponse
 	/// Indicates all response decoding errors.
 	case decodingError(String)
 	/// Thrown on all  errors returned from the Kubernetes API server.
-	case requestError(meta.v1.Status)
+	case statusError(meta.v1.Status)
+	/// Indicates all response decoding errors.
+	case unexpectedError(Any)
 	/// Thrown when the underlying HTTPClient reports an error.
 	case clientError(Error)
 	/// Thrown when a `SwiftkubeClientTask` encounters non-recoverable connection errors.
 	case taskError(Error)
 	/// Thrown when a `SwiftkubeClientTask` exhausts all retry attempts reconnecting to the API server.
-	case maxRetriesReached(request: HTTPClient.Request)
+	case maxRetriesReached(request: KubernetesRequest)
 
 	internal static func methodNotAllowed(_ method: HTTPMethod) -> SwiftkubeClientError {
 		let status = sk.status {
@@ -56,6 +58,6 @@ public enum SwiftkubeClientError: Error {
 			$0.message = "\(method) is not supported for this resource"
 		}
 
-		return SwiftkubeClientError.requestError(status)
+		return SwiftkubeClientError.statusError(status)
 	}
 }

@@ -15,6 +15,7 @@
 //
 
 import Logging
+import NIO
 import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
@@ -23,6 +24,7 @@ open class K3dTestCase: XCTestCase {
 
 	static var logger: Logger!
 	static var client: KubernetesClient!
+	static let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
 
 	open override class func setUp() {
 		logger = Logger(label: "swiftkubeclient-test")
@@ -35,31 +37,49 @@ open class K3dTestCase: XCTestCase {
 
 	@discardableResult
 	public static func createNamespace(_ name: String, labels: [String: String]? = nil) -> core.v1.Namespace? {
-		print("Creating namespace: \(name)")
+		do {
+			print("Creating namespace: \(name)")
+			let future = eventLoopGroup.next().makeFutureWithTask {
+				try await client.namespaces.create(core.v1.Namespace(metadata: meta.v1.ObjectMeta(labels: labels, name: name)))
+			}
 
-		return try? client.namespaces.create(core.v1.Namespace(metadata: meta.v1.ObjectMeta(labels: labels, name: name))).wait()
-	}
-
-	public static func deleteNamespace(_ name: String) {
-		print("Deleting namespace: \(name)")
-
-		_ = try? client.namespaces.delete(
-			name: name,
-			options: meta.v1.DeleteOptions(gracePeriodSeconds: 0, propagationPolicy: "Foreground")
-		)
-		.wait()
-
-		wait(timeout: .seconds(30)) {
-			print("Waiting for namespace \(name) to terminate")
-			let namespaces = try! client.namespaces.list().wait().items.map(\.name)
-			return !namespaces.contains(name)
+			let namespace = try future.wait()
+			return namespace
+		} catch let error {
+			print("Error creating namespace \(name): \(error)")
+			return nil
 		}
 	}
 
-	static func wait(timeout: DispatchTimeInterval, condition: () -> Bool) {
+	public static func deleteNamespace(_ name: String) {
+		do {
+			print("Deleting namespace: \(name)")
+
+			try _ = eventLoopGroup.next().makeFutureWithTask {
+				try? await client.namespaces.delete(
+					name: name,
+					options: meta.v1.DeleteOptions(gracePeriodSeconds: 0, propagationPolicy: "Foreground")
+				)
+			}.wait()
+
+			try wait(timeout: .seconds(30)) {
+				let deletedFuture = eventLoopGroup.next().makeFutureWithTask {
+					let namespaces = try! await client.namespaces.list().items.map(\.name)
+					return !namespaces.contains(name)
+				}
+
+				return try deletedFuture.wait()
+			}
+
+		} catch let error {
+			print("Error deleting namespace \(name): \(error)")
+		}
+	}
+
+	static func wait(timeout: DispatchTimeInterval, condition: () throws -> Bool) rethrows {
 		let start = DispatchTime.now()
 
-		while !condition() {
+		while !(try condition()) {
 			sleep(2)
 			let now = DispatchTime.now()
 			let diff = now.uptimeNanoseconds - start.uptimeNanoseconds

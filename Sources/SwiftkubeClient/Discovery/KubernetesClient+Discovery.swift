@@ -37,10 +37,10 @@ public struct Info: Codable {
 // MARK: - DiscoveryAPI
 
 public protocol DiscoveryAPI {
-	func serverVersion() -> EventLoopFuture<ResourceOrStatus<Info>>
-	func serverGroups() -> EventLoopFuture<ResourceOrStatus<meta.v1.APIGroupList>>
-	func serverResources() -> EventLoopFuture<ResourceOrStatus<[meta.v1.APIResourceList]>>
-	func serverResources(forGroupVersion groupVersion: String) -> EventLoopFuture<ResourceOrStatus<meta.v1.APIResourceList>>
+	func serverVersion() async throws -> Info
+	func serverGroups() async throws -> meta.v1.APIGroupList
+	func serverResources() async throws -> [meta.v1.APIResourceList]
+	func serverResources(forGroupVersion groupVersion: String) async throws -> meta.v1.APIResourceList
 }
 
 // MARK: - KubernetesClient
@@ -54,12 +54,12 @@ public extension KubernetesClient {
 
 // MARK: - DiscoveryClient
 
-internal class DiscoveryClient: DiscoveryAPI {
+internal class DiscoveryClient: DiscoveryAPI, RequestHandlerType {
 
-	private let httpClient: HTTPClient
-	private let config: KubernetesClientConfig
-	private let jsonDecoder: JSONDecoder
-	private let logger: Logger
+	internal let httpClient: HTTPClient
+	internal let config: KubernetesClientConfig
+	internal let jsonDecoder: JSONDecoder
+	internal let logger: Logger
 
 	init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger) {
 		self.httpClient = httpClient
@@ -68,138 +68,60 @@ internal class DiscoveryClient: DiscoveryAPI {
 		self.logger = logger
 	}
 
-	func serverVersion() -> EventLoopFuture<ResourceOrStatus<Info>> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().path("/version").build()
-
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+	func serverVersion() async throws -> Info {
+		let request = try makeRequest().path("/version").build()
+		return try await dispatch(request: request, expect: Info.self)
 	}
 
-	func serverGroups() -> EventLoopFuture<ResourceOrStatus<meta.v1.APIGroupList>> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let legacyAPIVersionsRequest = try makeRequest().path("/api").build()
-			let apiGroupListRequest = try makeRequest().path("/apis").build()
+	func serverGroups() async throws -> meta.v1.APIGroupList {
+		let legacyAPIVersionsRequest = try makeRequest().path("/api").build()
+		let apiGroupListRequest = try makeRequest().path("/apis").build()
 
-			let apiVersions: EventLoopFuture<ResourceOrStatus<meta.v1.APIVersions>> = dispatch(request: legacyAPIVersionsRequest, eventLoop: eventLoop)
-			let apiGroupList: EventLoopFuture<ResourceOrStatus<meta.v1.APIGroupList>> = dispatch(request: apiGroupListRequest, eventLoop: eventLoop)
+		let apiVersions = try await dispatch(request: legacyAPIVersionsRequest, expect: meta.v1.APIVersions.self)
+		let apiGroupList = try await dispatch(request: apiGroupListRequest, expect: meta.v1.APIGroupList.self)
 
-			let legacyAPIGroup = apiVersions.map { result -> ResourceOrStatus<meta.v1.APIGroup> in
-				switch result {
-				case let .resource(apiVersions):
-					let groupVersions = apiVersions.versions.map { version in
-						meta.v1.GroupVersionForDiscovery(groupVersion: version, version: version)
-					}
-					let apiGroup = meta.v1.APIGroup(name: "", preferredVersion: groupVersions.first, serverAddressByClientCIDRs: nil, versions: groupVersions)
-					return .resource(apiGroup)
-				case let .status(status):
-					return .status(status)
-				}
-			}
-
-			return legacyAPIGroup.and(apiGroupList).map { coreGroup, groupList -> ResourceOrStatus<meta.v1.APIGroupList> in
-				switch (coreGroup, groupList) {
-				case let (.resource(lhs), .resource(rhs)):
-					let allGroups = [lhs] + rhs.groups
-					return .resource(meta.v1.APIGroupList(groups: allGroups))
-				case let (.status(status), _):
-					return .status(status)
-				case let (_, .status(status)):
-					return .status(status)
-				}
-			}
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-
-	func serverResources() -> EventLoopFuture<ResourceOrStatus<[meta.v1.APIResourceList]>> {
-		let eventLoop = httpClient.eventLoopGroup.next()
-
-		return serverGroups()
-			.flatMap { [self] (groupList: ResourceOrStatus<meta.v1.APIGroupList>) -> EventLoopFuture<ResourceOrStatus<[meta.v1.APIResourceList]>> in
-				switch groupList {
-				case let .status(status):
-					return eventLoop.makeCompletedFuture(.success(.status(status)))
-				case let .resource(groupList):
-					let calls = groupList.groups
-						.flatMap { group in group.versions }
-						.map { serverResources(forGroupVersion: $0.groupVersion) }
-
-					let success: EventLoopFuture<[meta.v1.APIResourceList]> = eventLoop.makeCompletedFuture(.success([]))
-
-					let allResourceLists = success.fold(calls) { (acc, other: ResourceOrStatus<meta.v1.APIResourceList>) in
-						switch other {
-						case .status:
-							return eventLoop.makeCompletedFuture(.success(acc))
-						case let .resource(apiResourceList):
-							var merged = acc
-							merged.append(apiResourceList)
-							return eventLoop.makeCompletedFuture(.success(merged))
-						}
-					}
-
-					return allResourceLists.map { ResourceOrStatus.resource($0) }
-				}
-			}
-	}
-
-	func serverResources(forGroupVersion groupVersion: String) -> EventLoopFuture<ResourceOrStatus<meta.v1.APIResourceList>> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-
-			let path: String
-			if groupVersion == "v1" {
-				path = "/api/v1"
-			} else {
-				path = "/apis/\(groupVersion)"
-			}
-
-			let request = try makeRequest().path(path).build()
-
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
-	}
-
-	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
-		let startTime = DispatchTime.now().uptimeNanoseconds
-
-		return httpClient.execute(request: request, logger: logger)
-			.always { (result: Result<HTTPClient.Response, Error>) in
-				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
-			}
-			.flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
-	}
-
-	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
-		guard let byteBuffer = response.body else {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
+		let groupVersions = apiVersions.versions.map { version in
+			meta.v1.GroupVersionForDiscovery(groupVersion: version, version: version)
 		}
 
-		let data = Data(buffer: byteBuffer)
+		let legacyAPIGroup = meta.v1.APIGroup(
+			name: "",
+			preferredVersion: groupVersions.first,
+			serverAddressByClientCIDRs: nil,
+			versions: groupVersions
+		)
 
-		if response.status.code >= 400 {
-			guard let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) else {
-				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding meta.v1.Status"))
-			}
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.requestError(status))
+		let allGroups = [legacyAPIGroup] + apiGroupList.groups
+		return meta.v1.APIGroupList(groups: allGroups)
+	}
+
+	func serverResources() async throws -> [meta.v1.APIResourceList] {
+		let groupList = try await serverGroups()
+
+		var allResourceLists = [meta.v1.APIResourceList]()
+		for version in groupList.groups.flatMap(\.versions) {
+			let it = try await serverResources(forGroupVersion: version.groupVersion)
+			allResourceLists.append(it)
 		}
 
-		if let resource = try? jsonDecoder.decode(T.self, from: data) {
-			return eventLoop.makeSucceededFuture(.resource(resource))
-		} else if let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) {
-			return eventLoop.makeSucceededFuture(.status(status))
+		let merged = allResourceLists.reduce(into: [meta.v1.APIResourceList]()) { (acc, other: meta.v1.APIResourceList) in
+			acc.append(other)
+		}
+
+		return merged
+	}
+
+	func serverResources(forGroupVersion groupVersion: String) async throws -> meta.v1.APIResourceList {
+		let path: String
+		if groupVersion == "v1" {
+			path = "/api/v1"
 		} else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding \(T.self)"))
+			path = "/apis/\(groupVersion)"
 		}
+
+		let request = try makeRequest().path(path).build()
+
+		return try await dispatch(request: request, expect: meta.v1.APIResourceList.self)
 	}
 
 	func makeRequest() -> DiscoveryRequestBuilder {

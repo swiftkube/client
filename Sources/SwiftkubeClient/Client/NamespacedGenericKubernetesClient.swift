@@ -38,9 +38,9 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///   - name: The name of the API resource to load.
 	///   - options: A list of `ReadOptions` to apply to this request.
 	///
-	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
-	func get(in namespace: NamespaceSelector? = nil, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
-		super.get(in: namespace ?? .namespace(config.namespace), name: name, options: options)
+	/// - Returns: The API resource specified by the given name in the given namespace.
+	func get(in namespace: NamespaceSelector? = nil, name: String, options: [ReadOption]? = nil) async throws -> Resource {
+		try await super.get(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 
 	/// Watches the API resources in the given namespace.
@@ -63,8 +63,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
-	///    policy: .maxAttemtps(20),
-	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    policy: .maxAttempts(20),
+	///    backoff: .exponentialBackoff(maxDelay: 60, multiplier: 2.0),
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
@@ -78,7 +78,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///   - eventHandler: A `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. The clients sends each
 	/// event paired with the corresponding resource as a pair to the `eventHandler`.
 	///
-	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connetion to the API server.
+	/// - Returns: A cancellable `HTTPClient.Task` instance, representing a streaming connection to the API server.
 	func watch(
 		in namespace: NamespaceSelector? = nil,
 		options: [ListOption]? = nil,
@@ -101,8 +101,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
-	///    policy: .maxAttemtps(20),
-	///    backoff: .exponentiaBackoff(maxDelay: 60, multiplier: 2.0),
+	///    policy: .maxAttempts(20),
+	///    backoff: .exponentialBackoff(maxDelay: 60, multiplier: 2.0),
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
@@ -146,9 +146,9 @@ public extension NamespacedGenericKubernetesClient where Resource: ListableResou
 	///   - namespace: The namespace for this API request.
 	///   - options: `ListOptions` instance to control the behaviour of the `List` operation.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
-	func list(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
-		super.list(in: namespace ?? .namespace(config.namespace), options: options)
+	/// - Returns: A `KubernetesAPIResourceList` of resources.
+	func list(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil) async throws -> Resource.List {
+		try await super.list(in: namespace ?? .namespace(config.namespace), options: options)
 	}
 }
 
@@ -165,9 +165,9 @@ public extension NamespacedGenericKubernetesClient where Resource: CreatableReso
 	///   - namespace: The namespace for this API request.
 	///   - resource: A `KubernetesAPIResource` instance to create.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		super.create(in: namespace ?? .namespace(config.namespace), resource)
+	/// - Returns: The created `KubernetesAPIResource`.
+	func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) async throws -> Resource {
+		try await super.create(in: namespace ?? .namespace(config.namespace), resource)
 	}
 
 	/// Creates an API resource in the given namespace.
@@ -178,9 +178,9 @@ public extension NamespacedGenericKubernetesClient where Resource: CreatableReso
 	///   - namespace: The namespace for this API request.
 	///   - block: A closure block, which creates a `KubernetesAPIResource` instance to send to the server.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) -> EventLoopFuture<Resource> {
-		super.create(in: namespace ?? .namespace(config.namespace), block())
+	/// - Returns: The created `KubernetesAPIResource`.
+	func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) async throws -> Resource {
+		try await super.create(in: namespace ?? .namespace(config.namespace), block())
 	}
 }
 
@@ -197,9 +197,9 @@ public extension NamespacedGenericKubernetesClient where Resource: ReplaceableRe
 	///   - namespace: The namespace for this API request.
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
-	func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) -> EventLoopFuture<Resource> {
-		super.update(in: namespace ?? .namespace(config.namespace), resource)
+	/// - Returns: The updated `KubernetesAPIResource`.
+	func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) async throws -> Resource {
+		try await super.update(in: namespace ?? .namespace(config.namespace), resource)
 	}
 }
 
@@ -217,9 +217,9 @@ public extension NamespacedGenericKubernetesClient where Resource: DeletableReso
 	///   - name: The name of the resource.
 	///   - options: An instnace of `meta.v1.DeleteOptions` to control the behaviour of the `Delete` operation.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
-	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String, options: meta.v1.DeleteOptions? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		super.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
+	/// - Returns: A `ResourceOrStatus` instance.
+	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String, options: meta.v1.DeleteOptions? = nil) async throws {
+		try await super.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 }
 
@@ -234,9 +234,9 @@ public extension NamespacedGenericKubernetesClient where Resource: CollectionDel
 	///
 	/// - Parameter namespace: The namespace for this API request.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
-	func deleteAll(inNamespace namespace: NamespaceSelector? = nil) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		super.deleteAll(in: namespace ?? .namespace(config.namespace))
+	/// - Returns: A `ResourceOrStatus` instance.
+	func deleteAll(inNamespace namespace: NamespaceSelector? = nil) async throws {
+		try await super.deleteAll(in: namespace ?? .namespace(config.namespace))
 	}
 }
 
@@ -253,9 +253,9 @@ public extension NamespacedGenericKubernetesClient where Resource: StatusHavingR
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the API resource to load.
 	///
-	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
-	func getStatus(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<Resource> {
-		try super.getStatus(in: namespace ?? .namespace(config.namespace), name: name)
+	/// - Returns: The API resource specified by the given name in the given namespace.
+	func getStatus(in namespace: NamespaceSelector? = nil, name: String) async throws -> Resource {
+		try await super.getStatus(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	/// Replaces, i.e. updates, an API resource's status in the given namespace.
@@ -267,9 +267,9 @@ public extension NamespacedGenericKubernetesClient where Resource: StatusHavingR
 	///   - name: The name of the resoruce to update.
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
-	func updateStatus(in namespace: NamespaceSelector? = nil, name: String, _ resource: Resource) throws -> EventLoopFuture<Resource> {
-		try super.updateStatus(in: namespace ?? .namespace(config.namespace), name: name, resource)
+	/// - Returns: The updated `KubernetesAPIResource`.
+	func updateStatus(in namespace: NamespaceSelector? = nil, name: String, _ resource: Resource) async throws -> Resource {
+		try await super.updateStatus(in: namespace ?? .namespace(config.namespace), name: name, resource)
 	}
 }
 
@@ -286,9 +286,9 @@ public extension NamespacedGenericKubernetesClient where Resource: ScalableResou
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the API resource to load.
 	///
-	/// - Returns: An `EventLoopFuture` holding the `autoscaling.v1.Scale` of the resource specified by the given name in the given namespace.
-	func getScale(in namespace: NamespaceSelector? = nil, name: String) throws -> EventLoopFuture<autoscaling.v1.Scale> {
-		try super.getScale(in: namespace ?? .namespace(config.namespace), name: name)
+	/// - Returns: The `autoscaling.v1.Scale` of the resource specified by the given name in the given namespace.
+	func getScale(in namespace: NamespaceSelector? = nil, name: String) async throws -> autoscaling.v1.Scale {
+		try await super.getScale(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	/// Replaces, i.e. updates, an API resource's scale in the given namespace.
@@ -301,8 +301,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ScalableResou
 	///   - scale: An instance of a `autoscaling.v1.Scale` object to apply to the resource.
 	///   - resource: A `autoscaling.v1.Scale` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale`.
-	func updateScale(in namespace: NamespaceSelector? = nil, name: String, scale: autoscaling.v1.Scale) throws -> EventLoopFuture<autoscaling.v1.Scale> {
-		try super.updateScale(in: namespace ?? .namespace(config.namespace), name: name, scale: scale)
+	/// - Returns: The updated `autoscaling.v1.Scale`.
+	func updateScale(in namespace: NamespaceSelector? = nil, name: String, scale: autoscaling.v1.Scale) async throws -> autoscaling.v1.Scale {
+		try await super.updateScale(in: namespace ?? .namespace(config.namespace), name: name, scale: scale)
 	}
 }

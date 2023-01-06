@@ -23,14 +23,6 @@ import NIOHTTP1
 import NIOSSL
 import SwiftkubeModel
 
-// MARK: - ResourceOrStatus
-
-/// Represents a response with a concrete `KubernetesAPIResource` or a `meta.v1.Status` object.
-public enum ResourceOrStatus<T> {
-	case resource(T)
-	case status(meta.v1.Status)
-}
-
 // MARK: - GenericKubernetesClient
 
 /// A generic client implementation following the Kubernetes API style.
@@ -77,6 +69,23 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	}
 }
 
+// MARK: RequestHandlerType
+
+extension GenericKubernetesClient: RequestHandlerType {
+	func prepareDecoder(_ decoder: JSONDecoder) {
+		decoder.userInfo[CodingUserInfoKey.apiVersion] = gvr.apiVersion
+		decoder.userInfo[CodingUserInfoKey.resources] = gvr.resource
+	}
+}
+
+// MARK: - GenericKubernetesClient + MakeRequest
+
+internal extension GenericKubernetesClient {
+	func makeRequest() -> NamespaceStep {
+		RequestBuilder(config: config, gvr: gvr)
+	}
+}
+
 // MARK: - GenericKubernetesClient
 
 public extension GenericKubernetesClient {
@@ -90,16 +99,18 @@ public extension GenericKubernetesClient {
 	///   - name: The name of the API resource to load.
 	///   - options: ReadOptions to apply to this request.
 	///
-	/// - Returns: An `EventLoopFuture` holding the API resource specified by the given name in the given namespace.
-	func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toGet().resource(withName: name).with(options: options).build()
+	/// - Returns: The API resource specified by the given name in the given namespace.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func get(in namespace: NamespaceSelector, name: String, options: [ReadOption]? = nil) async throws -> Resource {
+		let request = try makeRequest()
+			.in(namespace)
+			.toGet()
+			.resource(withName: name)
+			.with(options: options)
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: Resource.self)
 	}
 
 	/// Creates an API resource in the given namespace.
@@ -110,16 +121,17 @@ public extension GenericKubernetesClient {
 	///   - namespace: The namespace for this API request.
 	///   - resource: A `KubernetesAPIResource` instance to create.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func create(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toPost().body(resource).build()
+	/// - Returns: The created `KubernetesAPIResource`.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func create(in namespace: NamespaceSelector, _ resource: Resource) async throws -> Resource {
+		let request = try makeRequest()
+			.in(namespace)
+			.toPost()
+			.body(resource)
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: Resource.self)
 	}
 
 	/// Replaces, i.e. updates, an API resource with the given instance in the given namespace.
@@ -130,16 +142,18 @@ public extension GenericKubernetesClient {
 	///   - namespace: The namespace for this API request.
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func update(in namespace: NamespaceSelector, _ resource: Resource) -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toPut().resource(withName: resource.name).body(.resource(payload: resource)).build()
+	/// - Returns: The created `KubernetesAPIResource`.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func update(in namespace: NamespaceSelector, _ resource: Resource) async throws -> Resource {
+		let request = try makeRequest()
+			.in(namespace)
+			.toPut()
+			.resource(withName: resource.name)
+			.body(.resource(payload: resource))
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: Resource.self)
 	}
 
 	/// Replaces, i.e. updates, an API resource with the given instance in the given namespace.
@@ -150,16 +164,15 @@ public extension GenericKubernetesClient {
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the resource object to delete.
 	///   - options: DeleteOptions to apply to this request.
-	/// - Returns: An `EventLoopFuture` holding the created `KubernetesAPIResource`.
-	func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toDelete().resource(withName: name).build()
+	/// - Returns: The created `KubernetesAPIResource`.
+	func delete(in namespace: NamespaceSelector, name: String, options: meta.v1.DeleteOptions?) async throws {
+		let request = try makeRequest()
+			.in(namespace)
+			.toDelete()
+			.resource(withName: name)
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		_ = try await dispatch(request: request, expect: meta.v1.Status.self)
 	}
 
 	/// Deletes all API resources in the given namespace.
@@ -168,16 +181,16 @@ public extension GenericKubernetesClient {
 	///
 	/// - Parameter namespace: The namespace for this API request.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `ResourceOrStatus` instance.
-	func deleteAll(in namespace: NamespaceSelector) -> EventLoopFuture<ResourceOrStatus<Resource>> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toDelete().build()
+	/// - Returns: A `ResourceOrStatus` instance.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func deleteAll(in namespace: NamespaceSelector) async throws {
+		let request = try makeRequest()
+			.in(namespace)
+			.toDelete()
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		_ = try await dispatch(request: request, expect: meta.v1.Status.self)
 	}
 }
 
@@ -193,16 +206,17 @@ public extension GenericKubernetesClient where Resource: ListableResource {
 	///   - namespace: The namespace for this API request.
 	///   - options: `ListOptions` instance to control the behaviour of the `List` operation.
 	///
-	/// - Returns: An `EventLoopFuture` holding a `KubernetesAPIResourceList` of resources.
-	func list(in namespace: NamespaceSelector, options: [ListOption]? = nil) -> EventLoopFuture<Resource.List> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toGet().with(options: options).build()
+	/// - Returns: A `KubernetesAPIResourceList` of resources.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func list(in namespace: NamespaceSelector, options: [ListOption]? = nil) async throws -> Resource.List {
+		let request = try makeRequest()
+			.in(namespace)
+			.toGet()
+			.with(options: options)
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: Resource.List.self)
 	}
 }
 
@@ -216,16 +230,18 @@ public extension GenericKubernetesClient where Resource: ScalableResource {
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the resource to load.
 	///
-	/// - Returns: An `EventLoopFuture` holding the `autoscaling.v1.Scale` for the desired resource .
-	func getScale(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<autoscaling.v1.Scale> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toGet().resource(withName: name).subResource(.scale).build()
+	/// - Returns: The `autoscaling.v1.Scale` for the desired resource.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func getScale(in namespace: NamespaceSelector, name: String) async throws -> autoscaling.v1.Scale {
+		let request = try makeRequest()
+			.in(namespace)
+			.toGet()
+			.resource(withName: name)
+			.subResource(.scale)
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: autoscaling.v1.Scale.self)
 	}
 
 	/// Replaces the resource's scale in the given namespace.
@@ -235,31 +251,43 @@ public extension GenericKubernetesClient where Resource: ScalableResource {
 	///   - name: The name of the resource to update.
 	///   - scale: An instance of `autoscaling.v1.Scale` to replace.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `autoscaling.v1.Scale` for the desired resource .
-	func updateScale(in namespace: NamespaceSelector, name: String, scale: autoscaling.v1.Scale) throws -> EventLoopFuture<autoscaling.v1.Scale> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toPut().resource(withName: name).body(.subResource(type: .scale, payload: scale)).build()
+	/// - Returns: The updated `autoscaling.v1.Scale` for the desired resource.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func updateScale(in namespace: NamespaceSelector, name: String, scale: autoscaling.v1.Scale) async throws -> autoscaling.v1.Scale {
+		let request = try makeRequest()
+			.in(namespace)
+			.toPut()
+			.resource(withName: name)
+			.body(.subResource(type: .scale, payload: scale))
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: autoscaling.v1.Scale.self)
 	}
 }
 
-// MARK: - GenericKubernetesClient - logs
+// MARK: - GenericKubernetesClient + Logs
 
 internal extension GenericKubernetesClient {
-	func logs(in namespace: NamespaceSelector, name: String, container: String?) throws -> EventLoopFuture<String> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toLogs(pod: name, container: container).subResource(.log).build()
 
-			return dispatchText(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+	/// Loads a container's logs once without streaming.
+	///
+	/// - Parameters:
+	///   - namespace: The namespace for this API request.
+	///   - name: The name of the pod.
+	///   - container: The name of the container.
+	///
+	/// - Returns: The container logs as a single String.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func logs(in namespace: NamespaceSelector, name: String, container: String?) async throws -> String {
+		let request = try makeRequest()
+			.in(namespace)
+			.toLogs(pod: name, container: container)
+			.subResource(.log)
+			.build()
+
+		return try await dispatch(request: request)
 	}
 }
 
@@ -273,16 +301,18 @@ public extension GenericKubernetesClient where Resource: StatusHavingResource {
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the resource to load.
 	///
-	/// - Returns: An `EventLoopFuture` holding the `KubernetesAPIResource`.
-	func getStatus(in namespace: NamespaceSelector, name: String) throws -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toGet().resource(withName: name).subResource(.status).build()
+	/// - Returns: The `KubernetesAPIResource`.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func getStatus(in namespace: NamespaceSelector, name: String) async throws -> Resource {
+		let request = try makeRequest()
+			.in(namespace)
+			.toGet()
+			.resource(withName: name)
+			.subResource(.status)
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: Resource.self)
 	}
 
 	/// Replaces the resource's status in the given namespace.
@@ -292,125 +322,22 @@ public extension GenericKubernetesClient where Resource: StatusHavingResource {
 	///   - name: The name of the resource to update.
 	///   - resource: A `KubernetesAPIResource` instance to update.
 	///
-	/// - Returns: An `EventLoopFuture` holding the updated `KubernetesAPIResource`.
-	func updateStatus(in namespace: NamespaceSelector, name: String, _ resource: Resource) throws -> EventLoopFuture<Resource> {
-		do {
-			let eventLoop = httpClient.eventLoopGroup.next()
-			let request = try makeRequest().in(namespace).toPut().resource(withName: name).body(.subResource(type: .status, payload: resource)).build()
+	/// - Returns: The updated `KubernetesAPIResource`.
+	/// - Throws: An error of type `SwiftkubeClientError`. If `meta.v1.Status` is returned, e.g. Bad Request or Nor Found,
+	/// then a `SwiftkubeClientError.decodingError` is thrown.
+	func updateStatus(in namespace: NamespaceSelector, name: String, _ resource: Resource) async throws -> Resource {
+		let request = try makeRequest()
+			.in(namespace)
+			.toPut()
+			.resource(withName: name)
+			.body(.subResource(type: .status, payload: resource))
+			.build()
 
-			return dispatch(request: request, eventLoop: eventLoop)
-		} catch {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-		}
+		return try await dispatch(request: request, expect: Resource.self)
 	}
 }
 
-internal extension GenericKubernetesClient {
-
-	func makeRequest() -> NamespaceStep {
-		RequestBuilder(config: config, gvr: gvr)
-	}
-
-	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<T> {
-		let startTime = DispatchTime.now().uptimeNanoseconds
-
-		return httpClient.execute(request: request, logger: logger)
-			.always { (result: Result<HTTPClient.Response, Error>) in
-				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
-			}
-			.flatMap { response in
-				self.handle(response, eventLoop: eventLoop)
-			}
-	}
-
-	func dispatchText(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<String> {
-		let startTime = DispatchTime.now().uptimeNanoseconds
-
-		return httpClient.execute(request: request, logger: logger)
-			.always { (result: Result<HTTPClient.Response, Error>) in
-				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
-			}
-			.flatMap { response in
-				self.handleText(response, eventLoop: eventLoop)
-			}
-	}
-
-	func dispatch<T: Decodable>(request: HTTPClient.Request, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
-		let startTime = DispatchTime.now().uptimeNanoseconds
-
-		return httpClient.execute(request: request, logger: logger)
-			.always { (result: Result<HTTPClient.Response, Error>) in
-				KubernetesClient.updateMetrics(startTime: startTime, request: request, result: result)
-			}
-			.flatMap { response in
-				self.handleResourceOrStatus(response, eventLoop: eventLoop)
-			}
-	}
-
-	func handle<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<T> {
-		handleResourceOrStatus(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<T>) -> EventLoopFuture<T> in
-			guard case let ResourceOrStatus.resource(resource) = result else {
-				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
-			}
-
-			return eventLoop.makeSucceededFuture(resource)
-		}
-	}
-
-	func handleText(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<String> {
-		handleResourceOrStatusText(response, eventLoop: eventLoop).flatMap { (result: ResourceOrStatus<String>) -> EventLoopFuture<String> in
-			guard case let ResourceOrStatus.resource(resource) = result else {
-				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Expected resource type in response but got meta.v1.Status instead"))
-			}
-
-			return eventLoop.makeSucceededFuture(resource)
-		}
-	}
-
-	func handleResourceOrStatus<T: Decodable>(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<T>> {
-		guard let byteBuffer = response.body else {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
-		}
-
-		let data = Data(buffer: byteBuffer)
-		jsonDecoder.userInfo[CodingUserInfoKey.apiVersion] = gvr.apiVersion
-		jsonDecoder.userInfo[CodingUserInfoKey.resources] = gvr.resource
-
-		// TODO: Improve this
-		if response.status.code >= 400 {
-			guard let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) else {
-				return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding meta.v1.Status"))
-			}
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.requestError(status))
-		}
-
-		if let resource = try? jsonDecoder.decode(T.self, from: data) {
-			return eventLoop.makeSucceededFuture(.resource(resource))
-		} else if let status = try? jsonDecoder.decode(meta.v1.Status.self, from: data) {
-			return eventLoop.makeSucceededFuture(.status(status))
-		} else {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding \(T.self)"))
-		}
-	}
-
-	func handleResourceOrStatusText(_ response: HTTPClient.Response, eventLoop: EventLoop) -> EventLoopFuture<ResourceOrStatus<String>> {
-		guard let byteBuffer = response.body else {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.emptyResponse)
-		}
-
-		let data = Data(buffer: byteBuffer)
-
-		guard let logs = String(data: data, encoding: .utf8) else {
-			return httpClient.eventLoopGroup.next().makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding string"))
-		}
-
-		if response.status.code >= 400 {
-			return eventLoop.makeFailedFuture(SwiftkubeClientError.decodingError("Error decoding string"))
-		}
-
-		return eventLoop.makeSucceededFuture(.resource(logs))
-	}
-}
+// MARK: - GenericKubernetesClient + Watch & Follow
 
 public extension GenericKubernetesClient {
 
@@ -445,9 +372,9 @@ public extension GenericKubernetesClient {
 	///   - options: `ListOption` to filter/select the returned objects.
 	///   - retryStrategy: A strategy to control the reconnect behaviour.
 	///   - delegate: A `ResourceWatcherDelegate` instance, which is used for callbacks for new events. The client sends each
-	/// event paired with the corresponding resource as a pair to the delegate's `onNext(event:)` fucntion and errors to its `onError(error:)`.
+	/// event paired with the corresponding resource as a pair to the delegate's `onNext(event:)` function and errors to its `onError(error:)`.
 	///
-	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connetion to the API server.
+	/// - Returns: A cancellable `SwiftkubeClientTask` instance, representing a streaming connection to the API server.
 	func watch<Delegate: ResourceWatcherDelegate>(
 		in namespace: NamespaceSelector,
 		options: [ListOption]? = nil,

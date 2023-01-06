@@ -25,15 +25,15 @@ import SwiftkubeModel
 
 // MARK: - KubernetesClient
 
-/// Kubernetes client class. Provies API for interaction with the Kubernetes master server.
+/// Kubernetes client class. Provides API for interaction with the Kubernetes master server.
 ///
-/// This implementation is based on SwiftNIO and the AysncHTTPClient, i.e. API calls return `EventLoopFuture`s.
+/// This implementation is based on SwiftNIO and the AsyncHTTPClient.
 ///
 /// Example:
 ///
 /// ```swift
 /// let client = try KubernetesClient()
-/// let deployments = try client.appsV1.deployments.list(in:.allNamespaces).wait()
+/// let deployments = try await client.appsV1.deployments.list(in:.allNamespaces)
 /// deployments.forEach { print($0) }
 /// ```
 public class KubernetesClient {
@@ -162,14 +162,19 @@ public class KubernetesClient {
 
 	/// Shuts down the client gracefully.
 	///
-	/// This function uses a completion instead of an EventLoopFuture, because the underlying event loop will be closed by the time a EventLoopFuture
-	/// calls back. Instead the callback is executed on a DispatchQueue.
+	/// This function uses a completion instead of an EventLoopFuture, because the underlying event loop will be closed
+	/// by the time a EventLoopFuture calls back. Instead the callback is executed on a DispatchQueue.
 	///
 	/// - Parameters:
 	///   - queue: The DispatchQueue for the callback upon completion.
 	///   - callback: The callback indicating any errors encountered during shutdown.
 	public func shutdown(queue: DispatchQueue, _ callback: @escaping (Error?) -> Void) {
 		httpClient.shutdown(queue: queue, callback)
+	}
+
+	/// Shuts down the client asynchronously.
+	public func shutdown() async throws {
+		try await httpClient.shutdown()
 	}
 
 	/// Shuts down the client synchronously.
@@ -194,9 +199,20 @@ public extension KubernetesClient {
 	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
 	///
 	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
-	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
+	/// - Returns A new `GenericKubernetesClient` for the given resource's `GroupVersionResource`.
 	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
 		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
+	}
+
+	/// Create a new unstructured client for the given `GroupVersionResource`.
+	///
+	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
+	///
+	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
+	/// - Returns A new `GenericKubernetesClient` for the given resource's `GroupVersionResource`. This client decodes
+	/// kubernetes objects as a `UnstructuredResource`.
+	func unstructuredFor(gvr: GroupVersionResource) -> GenericKubernetesClient<UnstructuredResource> {
+		GenericKubernetesClient<UnstructuredResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new generic client for the given `GroupVersionResource`.
