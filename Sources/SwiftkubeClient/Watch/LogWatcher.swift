@@ -46,14 +46,26 @@ final internal class LogWatcher: Watcher {
 
 // MARK: - LogWatcherDelegate
 
+/// A protocol for `ResourceWatcher` delegates, that are used for following pod's logs via
+/// ``GenericKubernetesClient/follow(in:name:container:retryStrategy:delegate:)``.
 public protocol LogWatcherDelegate {
 
+	/// Called upon receiving a new log line.
+	///
+	/// - Parameters:
+	///   - line: A new log line.
 	func onNext(line: String)
+
+	/// Called when an error occured in the `LogWatcher`.
+	///
+	/// - Parameters:
+	///   - error: An instance of ``SwiftkubeClientError`` describing the error.
 	func onError(error: SwiftkubeClientError)
 }
 
 // MARK: - LogWatcherCallback
 
+/// A callback-based ``LogWatcherDelegate`` implementation.
 open class LogWatcherCallback: LogWatcherDelegate {
 
 	public typealias ErrorHandler = (SwiftkubeClientError) -> Void

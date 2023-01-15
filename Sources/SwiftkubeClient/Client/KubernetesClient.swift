@@ -88,7 +88,7 @@ public class KubernetesClient {
 	/// Returns `nil` if a configuration can't be found.
 	///
 	/// - Parameters:
-	///    - provider: Specify how `EventLoopGroup` will be created.
+	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
 	///    - logger: The logger to use for this client.
 	public convenience init?(
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
@@ -109,7 +109,7 @@ public class KubernetesClient {
 	///
 	/// - Parameters:
 	///    - url: The url to load the configuration from for this client instance. It can be a local file or remote URL.
-	///    - provider: Specify how `EventLoopGroup` will be created.
+	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
 	///    - logger: The logger to use for this client.
 	public convenience init?(
 		fromURL url: URL,
@@ -131,7 +131,7 @@ public class KubernetesClient {
 	///
 	/// - Parameters:
 	///    - config: The configuration for this client instance.
-	///    - provider: Specify how `EventLoopGroup` will be created.
+	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
 	///    - logger: The logger to use for this client.
 	public init(
 		config: KubernetesClientConfig,
@@ -163,10 +163,10 @@ public class KubernetesClient {
 	/// Shuts down the client gracefully.
 	///
 	/// This function uses a completion instead of an EventLoopFuture, because the underlying event loop will be closed
-	/// by the time a EventLoopFuture calls back. Instead the callback is executed on a DispatchQueue.
+	/// by the time a EventLoopFuture calls back. Instead the callback is executed on a ``DispatchQueue``.
 	///
 	/// - Parameters:
-	///   - queue: The DispatchQueue for the callback upon completion.
+	///   - queue: The ``DispatchQueue`` for the callback upon completion.
 	///   - callback: The callback indicating any errors encountered during shutdown.
 	public func shutdown(queue: DispatchQueue, _ callback: @escaping (Error?) -> Void) {
 		httpClient.shutdown(queue: queue, callback)
@@ -186,7 +186,7 @@ public class KubernetesClient {
 /// Convenience functions to construct a client instance scoped at cluster or namespace level.
 public extension KubernetesClient {
 
-	/// Create a new generic client for the given `KubernetesAPIResource`.
+	/// Create a new generic client for the given ``KubernetesAPIResource``.
 	///
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `KubernetesAPIResource`.
@@ -194,34 +194,35 @@ public extension KubernetesClient {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
-	/// Create a new generic client for the given `GroupVersionResource`.
+	/// Create a new generic client for the given ``GroupVersionResource``.
 	///
-	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
+	/// The returned instance is type-erased, i.e. returns the wrapper type ``AnyKubernetesAPIResource``.
 	///
-	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
-	/// - Returns A new `GenericKubernetesClient` for the given resource's `GroupVersionResource`.
+	/// - Parameter gvr: The ``GroupVersionResourcea`` of the desired resource.
+	/// - Returns A new ``GenericKubernetesClient`` for the given resource's ``GroupVersionResource`` which returns all resources wrapped in
+	/// ``AnyKubernetesAPIResource`` envelope.
 	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
 		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
-	/// Create a new unstructured client for the given `GroupVersionResource`.
+	/// Create a new unstructured client for the given ``GroupVersionResource``.
 	///
-	/// The returned instance is type-erased, i.e. returns the wrapper type `AnyKubernetesAPIResource`.
+	/// The returned resource is unstructured, i.e. of the ``UnstructuredResource`` type.
 	///
-	/// - Parameter gvr: The `GroupVersionResource` of the desired resource.
-	/// - Returns A new `GenericKubernetesClient` for the given resource's `GroupVersionResource`. This client decodes
-	/// kubernetes objects as a `UnstructuredResource`.
+	/// - Parameter gvr: The ``GroupVersionResource`` of the desired resource.
+	/// - Returns A new ``GenericKubernetesClient`` for the given resource's ``GroupVersionResource``. This client decodes
+	/// kubernetes objects as ``UnstructuredResource``s.
 	func unstructuredFor(gvr: GroupVersionResource) -> GenericKubernetesClient<UnstructuredResource> {
 		GenericKubernetesClient<UnstructuredResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
-	/// Create a new generic client for the given `GroupVersionResource`.
+	/// Create a new generic client for the given ``GroupVersionResource``.
 	///
 	/// The returned instance is typed-inferred by the generic constraint.
 	///
 	/// - Parameters:
-	///   - type: The `KubernetesAPIResource` type.
-	///   - gvr: The `GroupVersionResource` of the desired resource.
+	///   - type: The ``KubernetesAPIResource`` type.
+	///   - gvr: The ``GroupVersionResource`` of the desired resource.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type, gvr: GroupVersionResource) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
@@ -230,15 +231,15 @@ public extension KubernetesClient {
 	/// Create a new `cluster-scoped` client for the given cluster-scoped resoruce type.
 	///
 	/// - Parameter type: The `KubernetesAPIResource` type.
-	/// - Returns A new `ClusterScopedGenericKubernetesClient` for the given resource type.
+	/// - Returns A new ``ClusterScopedGenericKubernetesClient`` for the given resource type.
 	func clusterScoped<R: KubernetesAPIResource & ClusterScopedResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
 		ClusterScopedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new `namespace-scoped` client for the given namespace-scoped resoruce type.
 	///
-	/// - Parameter type: The `KubernetesAPIResource` type.
-	/// - Returns A new `NamespacedGenericKubernetesClient` for the given resource type.
+	/// - Parameter type: The ``KubernetesAPIResource`` type.
+	/// - Returns A new ``NamespacedGenericKubernetesClient`` for the given resource type.
 	func namespaceScoped<R: KubernetesAPIResource & NamespacedResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
 		NamespacedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
@@ -247,87 +248,87 @@ public extension KubernetesClient {
 /// Scoped client DSL for the `core` API Group
 public extension KubernetesClient {
 
-	/// Constructs a namespace-scoped client for `core.v1.Binding` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.Binding`` resources.
 	var bindings: NamespacedGenericKubernetesClient<core.v1.Binding> {
 		namespaceScoped(for: core.v1.Binding.self)
 	}
 
-	/// Constructs a cluster-scoped client for `core.v1.ComponentStatus` resources.
+	/// Constructs a cluster-scoped client for ``core.v1.ComponentStatus`` resources.
 	var componentStatuses: ClusterScopedGenericKubernetesClient<core.v1.ComponentStatus> {
 		clusterScoped(for: core.v1.ComponentStatus.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.ConfigMap` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.ConfigMap`` resources.
 	var configMaps: NamespacedGenericKubernetesClient<core.v1.ConfigMap> {
 		namespaceScoped(for: core.v1.ConfigMap.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.Endpoints` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.Endpoints`` resources.
 	var endpoints: NamespacedGenericKubernetesClient<core.v1.Endpoints> {
 		namespaceScoped(for: core.v1.Endpoints.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.Event` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.Event`` resources.
 	var events: NamespacedGenericKubernetesClient<core.v1.Event> {
 		namespaceScoped(for: core.v1.Event.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.LimitRange` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.LimitRange`` resources.
 	var limitRanges: NamespacedGenericKubernetesClient<core.v1.LimitRange> {
 		namespaceScoped(for: core.v1.LimitRange.self)
 	}
 
-	/// Constructs a cluster-scoped client for `core.v1.Namespace` resources.
+	/// Constructs a cluster-scoped client for ``core.v1.Namespace`` resources.
 	var namespaces: ClusterScopedGenericKubernetesClient<core.v1.Namespace> {
 		clusterScoped(for: core.v1.Namespace.self)
 	}
 
-	/// Constructs a cluster-scoped client for `core.v1.Node` resources.
+	/// Constructs a cluster-scoped client for ``core.v1.Node`` resources.
 	var nodes: ClusterScopedGenericKubernetesClient<core.v1.Node> {
 		clusterScoped(for: core.v1.Node.self)
 	}
 
-	/// Constructs a cluster-scoped client for `core.v1.PersistentVolume` resources.
+	/// Constructs a cluster-scoped client for ``core.v1.PersistentVolume`` resources.
 	var persistentVolumes: ClusterScopedGenericKubernetesClient<core.v1.PersistentVolume> {
 		clusterScoped(for: core.v1.PersistentVolume.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.PersistentVolumeClaim` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.PersistentVolumeClaim`` resources.
 	var persistentVolumeClaims: NamespacedGenericKubernetesClient<core.v1.PersistentVolumeClaim> {
 		namespaceScoped(for: core.v1.PersistentVolumeClaim.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.Pod` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.Pod`` resources.
 	var pods: NamespacedGenericKubernetesClient<core.v1.Pod> {
 		namespaceScoped(for: core.v1.Pod.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.PodTemplate` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.PodTemplate`` resources.
 	var podTemplates: NamespacedGenericKubernetesClient<core.v1.PodTemplate> {
 		namespaceScoped(for: core.v1.PodTemplate.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.ReplicationController` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.ReplicationController`` resources.
 	var replicationControllers: NamespacedGenericKubernetesClient<core.v1.ReplicationController> {
 		namespaceScoped(for: core.v1.ReplicationController.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.ResourceQuota` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.ResourceQuota`` resources.
 	var resourceQuotas: NamespacedGenericKubernetesClient<core.v1.ResourceQuota> {
 		namespaceScoped(for: core.v1.ResourceQuota.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.Secret` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.Secret`` resources.
 	var secrets: NamespacedGenericKubernetesClient<core.v1.Secret> {
 		namespaceScoped(for: core.v1.Secret.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.Service` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.Service`` resources.
 	var services: NamespacedGenericKubernetesClient<core.v1.Service> {
 		namespaceScoped(for: core.v1.Service.self)
 	}
 
-	/// Constructs a namespace-scoped client for `core.v1.ServiceAccount` resources.
+	/// Constructs a namespace-scoped client for ``core.v1.ServiceAccount`` resources.
 	var serviceAccounts: NamespacedGenericKubernetesClient<core.v1.ServiceAccount> {
 		namespaceScoped(for: core.v1.ServiceAccount.self)
 	}

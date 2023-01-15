@@ -23,12 +23,19 @@ import SwiftkubeModel
 
 // MARK: - NamespaceSelector
 
+/// A namespace selector enumeration for use in namespaced client requests.
 public enum NamespaceSelector: Hashable {
+	/// Selects a namespace by name.
 	case namespace(String)
+	/// Selects the `default` namespace.
 	case `default`
+	/// Selects the `kube-public` namespace.
 	case `public`
+	/// Selects the `kube-system` namespace.
 	case system
+	/// Selects the `kube-node-lease` namespace.
 	case nodeLease
+	/// Selects all namespaces.
 	case allNamespaces
 
 	internal func namespaceName() -> String {
@@ -51,11 +58,23 @@ public enum NamespaceSelector: Hashable {
 
 // MARK: - LabelSelectorRequirement
 
+/// Represents requirements fot label selectors, for example in ``ListOption/labelSelector(_:)``.
+///
+/// The kubernetes API supports two types of selectors: equality-based and set-based:
+/// - Equality- or inequality-based requirements allow filtering by label keys and values.
+/// - Set-based label requirements allow filtering keys according to a set of values.
+///
+/// A label selector can be made of multiple requirements. In the case of multiple requirements, all must be satisfied.
 public enum LabelSelectorRequirement: Hashable {
+	/// Filters by matching label keys and values.
 	case eq([String: String])
+	/// Filters by non-matching label keys and values.
 	case neq([String: String])
+	/// Label values for the given key are contained in the given set.
 	case `in`([String: [String]])
+	/// Label values for the given key are not contained in the given set.
 	case notIn([String: [String]])
+	/// A label must exist.
 	case exists([String])
 
 	internal var value: String {
@@ -76,8 +95,13 @@ public enum LabelSelectorRequirement: Hashable {
 
 // MARK: - FieldSelectorRequirement
 
+/// Represents requirements fot label selectors, for example in ``ListOption/fieldSelector(_:)``.
+///
+/// Field selectors let you select Kubernetes resources based on the value of one or more resource fields.
 public enum FieldSelectorRequirement: Hashable {
+	/// Filters by matching field keys and values.
 	case eq([String: String])
+	/// Filters by non-matching field keys and values.
 	case neq([String: String])
 
 	internal var value: String {

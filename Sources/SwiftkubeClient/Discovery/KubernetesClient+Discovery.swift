@@ -22,6 +22,7 @@ import SwiftkubeModel
 
 // MARK: - Info
 
+/// Holds information about the kubernetes API server version when calling ``DiscoveryAPI/serverVersion()``.
 public struct Info: Codable {
 	public let major: String
 	public let minor: String
@@ -36,10 +37,30 @@ public struct Info: Codable {
 
 // MARK: - DiscoveryAPI
 
+/// Exposed discovery API of the internal discovery client.
 public protocol DiscoveryAPI {
+
+	/// Loads ``Info`` about the kubernetes API server.
+	///
+	/// - Returns: A ``Info`` instance.
 	func serverVersion() async throws -> Info
+
+	/// Loads a ``meta.v1.APIGroupList`` describing the available API Groups.
+	///
+	/// - Returns: A ``meta.v1.APIGroupList`` instance.
 	func serverGroups() async throws -> meta.v1.APIGroupList
+
+	/// Loads a list of ``meta.v1.APIResourceList`` resources describing the available API Resources.
+	///
+	/// - Returns: A list of ``meta.v1.APIResourceList`` resources.
 	func serverResources() async throws -> [meta.v1.APIResourceList]
+
+	/// Loads ``meta.v1.APIResourceList`` describing the available resources for the given  version.
+	///
+	/// - Parameters:
+	///   - groupVesion: The version of the API group
+	///
+	/// - Returns:A ``meta.v1.APIResourceList`` instance.
 	func serverResources(forGroupVersion groupVersion: String) async throws -> meta.v1.APIResourceList
 }
 
@@ -47,6 +68,7 @@ public protocol DiscoveryAPI {
 
 public extension KubernetesClient {
 
+	/// Constructs a client fot ``DiscoveryAPI``.
 	var discoveryClient: DiscoveryAPI {
 		DiscoveryClient(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}

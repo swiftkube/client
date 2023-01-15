@@ -22,8 +22,7 @@ import SwiftkubeModel
 
 // MARK: - SwiftkubeClientTaskDelegate
 
-/// An internal delegate type for passing `HTTPClientResponseDelegate`'s lifecycle events to the
-/// `SwiftkubeClientTask` instance.
+/// An internal delegate type for passing ``HTTPClientResponseDelegate``'s lifecycle events to the ``SwiftkubeClientTask`` instance.
 internal protocol SwiftkubeClientTaskDelegate {
 	func onError(error: SwiftkubeClientError)
 	func onDidFinish(task: HTTPClient.Task<Void>)
@@ -31,13 +30,16 @@ internal protocol SwiftkubeClientTaskDelegate {
 
 // MARK: - SwiftkubeClientTask
 
-/// A Client task, which is created by the SwiftkubeClient in the context of `watch` of `follow` API requests.
+/// A Client task, which is created by the SwiftkubeClient in the context of ``GenericKubernetesClient/watch(in:options:retryStrategy:using:)``
+/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:delegate:)`` API requests.
+///
 /// The task can be used to cancel the task execution.
 ///
 /// The task is executed indefinitely. Upon encountering non-transient errors this tasks reconnects to the
-/// Kubernetes API server, basically restarting the previous `watch` or `follow` call.
+/// Kubernetes API server, basically restarting the previous ``GenericKubernetesClient/watch(in:options:retryStrategy:using:)``
+/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:delegate:)`` call.
 ///
-/// The retry semantics are controlled via the passed `RetryStrategy` instance by the Kubernetes client.
+/// The retry semantics are controlled via the passed ``RetryStrategy`` instance by the Kubernetes client.
 public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 
 	let client: HTTPClient
@@ -131,10 +133,10 @@ public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
 
 	/// Waits indefinitely for the execution of this task.
 	///
-	/// The underlying `EventLoopFuture` resolves either in a success upon a canceling the task,
-	/// or it errors if all retry attempts are exhausted according to the `RetryStrategy`.
+	/// The underlying ``EventLoopFuture`` resolves either in a success upon a canceling the task,
+	/// or it errors if all retry attempts are exhausted according to the ``RetryStrategy``.
 	///
-	/// - throws: The error value of the `EventLoopFuture` if it errors.
+	/// - throws: The error value of the ``EventLoopFuture`` if it errors.
 	public func wait() throws {
 		try promise.futureResult.wait()
 	}

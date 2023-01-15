@@ -22,12 +22,18 @@ import SwiftkubeModel
 
 // MARK: - KubernetesRequest
 
+/// Represents a request against Kubernetes API Server
 public struct KubernetesRequest {
 
+	/// API URL for this request.
 	let url: URL
+	/// The ``HTTPMethod`` for this request.
 	let method: HTTPMethod
+	/// The ``HTTPHeaders`` for this request.
 	let headers: HTTPHeaders
+	/// Optioanl ``RequestBody`` for this request.
 	let body: RequestBody?
+	/// Optional ``meta.v1.DeleteOptions`` in case of a `DELETE` request.
 	let deleteOptions: meta.v1.DeleteOptions?
 
 	internal func asClientRequest() throws -> HTTPClient.Request {

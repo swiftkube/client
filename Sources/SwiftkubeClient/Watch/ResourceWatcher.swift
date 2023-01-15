@@ -20,6 +20,7 @@ import SwiftkubeModel
 
 // MARK: - EventType
 
+/// Possible kubernetes event types.
 public enum EventType: String, RawRepresentable, Equatable {
 	case added = "ADDED"
 	case modified = "MODIFIED"
@@ -29,10 +30,22 @@ public enum EventType: String, RawRepresentable, Equatable {
 
 // MARK: - ResourceWatcherDelegate
 
+/// A protocol for `ResourceWatcher` delegates, that are used for watiching kubernetes resources, e.g. via
+/// ``GenericKubernetesClient/watch(in:options:retryStrategy:using:)``
 public protocol ResourceWatcherDelegate {
 	associatedtype Resource: KubernetesAPIResource
 
+	/// Called upon receiving a new kuberentes event for some resource.
+	///
+	/// - Parameters:
+	///   - event: The ``EventType`` of the received event.
+	///   - resource: The associated resource for this received event.
 	func onEvent(event: EventType, resource: Resource)
+
+	/// Called when an error occured in the `ResourceWatcher`.
+	///
+	/// - Parameters:
+	///   - error: An instance of ``SwiftkubeClientError`` describing the error.
 	func onError(error: SwiftkubeClientError)
 }
 
@@ -90,6 +103,7 @@ final internal class ResourceWatcher<Delegate: ResourceWatcherDelegate>: Watcher
 
 // MARK: - ResourceWatcherCallback
 
+/// A callback-based ``ResourceWatcherDelegate`` implementation.
 final public class ResourceWatcherCallback<Resource: KubernetesAPIResource>: ResourceWatcherDelegate {
 
 	public typealias ErrorHandler = (SwiftkubeClientError) -> Void

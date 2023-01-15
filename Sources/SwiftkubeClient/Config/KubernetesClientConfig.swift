@@ -22,14 +22,22 @@ import Yams
 
 // MARK: - KubernetesClientConfig
 
+/// Configuration object for the ``KubernetesClient``
 public struct KubernetesClientConfig {
 
+	/// The URL for the kuberentes API server.
 	public let masterURL: URL
+	/// The namespace for the current client context.
 	public let namespace: String
+	/// The ``KubernetesClientAuthentication`` scheme.
 	public let authentication: KubernetesClientAuthentication
+	/// NIOSSL trust store sources fot the client.
 	public let trustRoots: NIOSSLTrustRoots?
+	/// Skips TLS verification for all API requests.
 	public let insecureSkipTLSVerify: Bool
+	/// The default timeout configuration for the underlying `HTTPClient`.
 	public let timeout: HTTPClient.Configuration.Timeout
+	/// The default redirect configuration for the underlying `HTTPCLient`.
 	public let redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
 
 	public init(

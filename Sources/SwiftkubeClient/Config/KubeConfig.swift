@@ -18,6 +18,8 @@ import Foundation
 
 // MARK: - KubeConfig
 
+/// Represents a kube-config struct, i.e. `$HOME/.kube/config`
+///
 /// Where possible, json tags match the cli argument names.
 /// Top level config objects and all values required for proper functioning are not "omitempty".  Any truly optional piece of config is allowed to be omitted.
 /// Config holds the information needed to build connect to remote kubernetes clusters as a given user

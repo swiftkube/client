@@ -20,8 +20,11 @@ import NIOSSL
 
 /// Supported client authentication schemes.
 public enum KubernetesClientAuthentication {
+	/// Basic Authentincation via username/password.
 	case basicAuth(username: String, password: String)
+	/// Bearer token authentication scheme via a valid API token.
 	case bearer(token: String)
+	/// Certificate-based authenticaiton scheme with valid client certificate-key pair.
 	case x509(clientCertificate: NIOSSLCertificate, clientKey: NIOSSLPrivateKey)
 
 	internal func authorizationHeader() -> String? {

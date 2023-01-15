@@ -57,7 +57,7 @@ public struct RetryStrategy: Sequence {
 		}
 	}
 
-	/// Defined the backoff behaviour between each retry attempt.
+	/// Defines the backoff behaviour between each retry attempt.
 	public enum Backoff {
 		/// No backoff.
 		case none
