@@ -1,11 +1,11 @@
-<p align="center">
+<p style="text-align: center;">
 	<img src="./SwiftkubeClient.png">
 </p>
 
-<p align="center">
-	<img src="https://img.shields.io/badge/Swift-5.2-orange.svg" />
-	<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.20.9-blue.svg" alt="Kubernetes 1.20.9"/>
+<p style="text-align: center;">
+	<img src="https://img.shields.io/badge/Swift-5.5-orange.svg" />
+	<a href="https://v1-24.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/">
+		<img src="https://img.shields.io/badge/Kubernetes-1.24.8-blue.svg" alt="Kubernetes 1.24.8"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -33,9 +33,10 @@
 
 ## Overview
 
-Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
+Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based 
+on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.22.7
+- [x] Covers all Kubernetes API Groups in v1.24.8
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -61,21 +62,24 @@ Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a 
 
 ## Compatibility Matrix
 
-|                        | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 | 1.20.9 | 1.22.7 |
-|------------------------|---------|------------------|--------|--------|--------|
-| SwiftkubeClient 0.6.x  | -       | ✓                | -      | -      | -      |
-| SwiftkubeClient 0.7.x  | -       | -                | ✓      | -      | -      |
-| SwiftkubeClient 0.8.x  | -       | -                | ✓      | -      | -      |
-| SwiftkubeClient 0.9.x  | -       | -                | ✓      | -      | -      |
-| SwiftkubeClient 0.10.x | -       | -                | -      | ✓      | -      |
-| SwiftkubeClient 0.11.x | -       | -                | -      | -      | ✓      |
+|                        | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 | 1.20.9 | 1.22.7 | 1.24.8 |
+|------------------------|---------|------------------|--------|--------|--------|--------|
+| SwiftkubeClient 0.6.x  | -       | ✓                | -      | -      | -      | -      |
+| SwiftkubeClient 0.7.x  | -       | -                | ✓      | -      | -      | -      |
+| SwiftkubeClient 0.8.x  | -       | -                | ✓      | -      | -      | -      |
+| SwiftkubeClient 0.9.x  | -       | -                | ✓      | -      | -      | -      |
+| SwiftkubeClient 0.10.x | -       | -                | -      | ✓      | -      | -      |
+| SwiftkubeClient 0.11.x | -       | -                | -      | -      | ✓      | -      |
+| SwiftkubeClient 0.12.x | -       | -                | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
-- `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the client and Kubernetes have in common will work.
+- `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
+- client and Kubernetes have in common will work.
 
 ## Examples
 
-Concrete examples for using the `Swiftkube` tooling reside in the [Swiftkube:Examples](https://github.com/swiftkube/examples) repository.
+Concrete examples for using the `Swiftkube` tooling reside in the[Swiftkube:Examples](https://github.com/swiftkube/examples) 
+repository.
 
 ## Usage
 
@@ -89,26 +93,31 @@ To create a client just import `SwiftkubeClient` and init an instance.
  let client = try KubernetesClient()
  ```
 
-You should shut down the `KubernetesClient` instance, which in turn shuts down the underlying `HTTPClient`. Thus you shouldn't call `client.syncShutdown()` before all requests have finished. Alternatively, you can close the client asynchronously by providing a `DispatchQueue` for the completion callback.
+You should shut down the `KubernetesClient` instance when you're done using it, which in turn shuts down the underlying
+`HTTPClient`. Thus, you shouldn't call `client.syncShutdown()` before all requests have finished. You can also shut down
+the client asynchronously in an async/await context or by providing a `DispatchQueue` for the completion callback.
 
 ```swift
 // when finished close the client
  try client.syncShutdown()
  
-// or asynchronously
+// async/await
+try await client.shutdown()
+
+// DispatchQueue
 let queue: DispatchQueue = ...
 client.shutdown(queue: queue) { (error: Error?) in 
     print(error)
 }
 ```
 
-
 ### Configuring the client
 
 The client tries to resolve a `kube config` automatically from different sources in the following order:
 
 - Kube config file in the user's `$HOME/.kube/config` directory 
-- `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
+- `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, 
+- if it's running in Kubernetes.
 
 Alternatively it can be configured manually, for example:
 
@@ -124,7 +133,9 @@ let config = KubernetesClientConfig(
    namespace: "default",
    authentication: authentication,
    trustRoots: NIOSSLTrustRoots.certificates(caCert),
-   insecureSkipTLSVerify: false
+   insecureSkipTLSVerify: false,
+   timeout: HTTPClient.Configuration.Timeout.init(connect: .seconds(1), read: .seconds(10)),
+   redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration.follow(max: 5, allowCycles: false)
 )
 
 let client = KubernetesClient(config: config)
@@ -142,22 +153,20 @@ The following authentication schemes are supported:
 
 `SwiftkubeClient` defines convenience API to work with Kubernetes resources. Using this DSL is the same for all resources.
 
-> The examples use the blocking `wait()` for brevity. API calls return `EventLoopFutures` that can be composed and acted upon in an asynchronous way.
+The client exposes asynchronous functions using the new Swift concurrency model.
 
-> Currently only a subset of all API groups are accessible via the DSL. See [Advanced usage](#advanced-usage) for mor details.
-  
 #### List resources 
 
 ```swift
-let namespaces = try client.namespaces.list().wait()
-let deployments = try client.appsV1.deployments.list(in: .allNamespaces).wait()
-let roles = try client.rbacV1.roles.list(in: .namespace("ns")).wait()
+let namespaces = try await client.namespaces.list()
+let deployments = try await client.appsV1.deployments.list(in: .allNamespaces)
+let roles = try await client.rbacV1.roles.list(in: .namespace("ns"))
 ```
 
 You can filter the listed resources or limit the returned list size via the `ListOptions`:
 
 ```swift
-let deployments = try client.appsV1.deployments.list(in: .allNamespaces, options: [
+let deployments = try await client.appsV1.deployments.list(in: .allNamespaces, options: [
   .labelSelector(.eq(["app": "nginx"])),
   .labelSelector(.notIn(["env": ["dev", "staging"]])),
   .labelSelector(.exists(["app", "env"])),
@@ -165,33 +174,33 @@ let deployments = try client.appsV1.deployments.list(in: .allNamespaces, options
   .resourceVersion("9001"),
   .limit(20),
   .timeoutSeconds(10)
-]).wait()
+])
 ```
 
 #### Get a resource 
 
 ```swift
-let namespace = try client.namespaces.get(name: "ns").wait()
-let deployment = try client.appsV1.deployments.get(in: .namespace("ns"), name: "nginx").wait()
-let roles = try client.rbacV1.roles.get(in: .namespace("ns"), name: "role").wait()
+let namespace = try await client.namespaces.get(name: "ns")
+let deployment = try await client.appsV1.deployments.get(in: .namespace("ns"), name: "nginx")
+let roles = try await client.rbacV1.roles.get(in: .namespace("ns"), name: "role")
 ```
 
 You can also provide the following `ReadOptions`:
 
 ```swift
-let deployments = try client.appsV1.deployments.get(in: .allNamespaces, options: [
+let deployments = try await client.appsV1.deployments.get(in: .allNamespaces, options: [
   .pretty(true),
   .exact(false),
   .export(true)
-]).wait()
+])
 ```
 
 #### Delete a resource
 
 ```swift
-try.client.namespaces.delete(name: "ns").wait()
-try client.appsV1.deployments.delete(in: .namespace("ns"), name: "nginx").wait()
-try client.rbacV1.roles.delete(in: .namespace("ns"), name: "role").wait()
+try await client.namespaces.delete(name: "ns")
+try await client.appsV1.deployments.delete(in: .namespace("ns"), name: "nginx")
+try await client.rbacV1.roles.delete(in: .namespace("ns"), name: "role")
 ```
 
 You can pass an instance of `meta.v1.DeleteOptions` to control the behaviour of the delete operation:
@@ -201,7 +210,7 @@ let deletOptions = meta.v1.DeleteOptions(
   gracePeriodSeconds: 10,
   propagationPolicy: "Foreground"
 )
-try client.pods.delete(in: .namespace("ns"), name: "nginx", options: deleteOptions).wait()
+try await client.pods.delete(in: .namespace("ns"), name: "nginx", options: deleteOptions)
 ```
 
 #### Create and update a resource
@@ -213,12 +222,11 @@ Resources can be created/updated directly or via the convenience builders define
 let configMap = core.v1.ConfigMap(
   metadata: meta.v1.Metadata(name: "test"),
   data: ["foo": "bar"]
-}
-try cm = try client.configMaps.create(inNamespace: .default, configMap).wait()
-
+)
+try cm = try await client.configMaps.create(inNamespace: .default, configMap)
 
 // Or inline via a builder
-let pod = try client.pods.create(inNamespace: .default) {
+let pod = try await client.pods.create(inNamespace: .default) {
    sk.pod {
      $0.metadata = sk.metadata(name: "nginx")
      $0.spec = sk.podSpec {
@@ -230,14 +238,14 @@ let pod = try client.pods.create(inNamespace: .default) {
      }
    }
 }
-.wait()
 ```
 
 #### Watch a resource
 
 You can watch for Kubernetes events about specific objects via the `watch` API.  
 
-Watching resources opens a persistent connection to the API server. The connection is represented by a `SwiftkubeClientTask` instance, that acts as an active "subscription" to the events stream.
+Watching resources opens a persistent connection to the API server. The connection is represented by a `SwiftkubeClientTask` 
+instance, that acts as an active "subscription" to the events stream.
 
 The task can be cancelled any time to stop the watch.
 
@@ -262,9 +270,11 @@ let task = client.pods.watch(in: .default, options: options) { (event, pod) in
 }
 ```
 
-The client reconnects automatically and restarts the watch upon encountering non-recoverable errors. The reconnect behaviour can be controlled by passing an instance of `RetryStrategy`.
+The client reconnects automatically and restarts the watch upon encountering non-recoverable errors. The reconnect 
+behaviour can be controlled by passing an instance of `RetryStrategy`.
 
-The default strategy is 10 retry attempts with a fixed 5 seconds delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+The default strategy is 10 retry attempts with a fixed 5 seconds delay between each attempt. The initial delay is one
+second. A jitter of 0.2 seconds is applied.
 
 Passing `RetryStrategy.never` disables any reconnection attempts.
 
@@ -280,10 +290,11 @@ let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, po
 }
 ```
 
-To handle events you can pass a `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. The clients sends each event paired with the corresponding resource as a pair to this `eventHandler`.
+To handle events you can pass a `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. 
+The client sends each event paired with the corresponding resource as a pair to this `eventHandler`.
 
-If you require more control or stateful logic, then you can implement the `ResourceWatcherDelegate` protocol and pass it to the `watch` call:
-
+If you require more control or stateful logic, then you can implement the `ResourceWatcherDelegate` protocol and pass 
+it to the `watch` call:
 
 ```swift
 class MyDelegate: ResourceWatcherDelegate {
@@ -300,7 +311,6 @@ class MyDelegate: ResourceWatcherDelegate {
 
 let task = client.pods.watch(in: .default, delegate: MyDelegate())
 ```
-
 
 #### Follow logs
 
@@ -319,12 +329,13 @@ task.cancel()
 
 ### Discovery
 
-The client provides a discovery interface for the API server, which can be used to retrieve the server version, the API groups and the API resources for a specific group version
+The client provides a discovery interface for the API server, which can be used to retrieve the server version, the API 
+groups and the API resources for a specific group version.
 
 ```swift
-let version: ResourceOrStatus<Info> = try client.discovery.serverVersion().wait()
-let groups: ResourceOrStatus<meta.v1.APIGroupList> = try client.discovery.serverGroups().wait()
-let resources: ResourceOrStatus<meta.v1.APIResourceList> = try client.discovery.serverResources(forGroupVersion: "apps/v1").wait()
+let version: Info = try await client.discovery.serverVersion()
+let groups: meta.v1.APIGroupList = try await client.discovery.serverGroups()
+let resources: meta.v1.APIResourceList = try await client.discovery.serverResources(forGroupVersion: "apps/v1")
 ```
 
 ## Advanced usage
@@ -339,20 +350,15 @@ let url = URL(fileURLWithPath: "/path/to/manifest.yaml")
 let deployment = try apps.v1.Deployment.load(contentsOf: url)
 ```
 
-### API groups
-
-To access API groups not defined as a DSL, e.g. `rbac.v1beta1` a dedicated client can still be intantiated. A client can be either `namespace scoped` or `cluster scoped`:
-
-```swift
-try client.namespaceScoped(for: rbac.v1beta1.RoleBinding.self).list(in: .allNamespaces).wait()
-try client.clusterScoped(for: rbac.v1beta1.ClusterRole.self).list().wait()
-```
-
 ### Type-erased usage
 
-Often when working with Kubernetes the concrete type of the resource is not known or not relevant, e.g. when creating resources from a YAML manifest file. Other times the type or kind of the resource must be derived at runtime given its string representation.
+Often when working with Kubernetes the concrete type of the resource is not known or not relevant, e.g. when creating 
+resources from a YAML manifest file. Other times the type or kind of the resource must be derived at runtime given its 
+string representation.
 
-Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized with a `GroupVersionResource` type:
+Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding 
+List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized
+with a `GroupVersionResource` type:
 
 ```swift
 guard let gvr = try? GroupVersionResource(for: "deployment") else {
@@ -360,14 +366,10 @@ guard let gvr = try? GroupVersionResource(for: "deployment") else {
 }
 
 // Get by name
-let resource: AnyKubernetesAPIResource = try client.for(gvr: gvr)
-    .get(in: .default , name: "nginx")
-    .wait()
+let resource: AnyKubernetesAPIResource = try await client.for(gvr: gvr).get(in: .default , name: "nginx")
 
 // List all
-let resources: AnyKubernetesAPIResourceList = try client.for(gvr: gvr)
-    .list(in: .allNamespaces)
-    .wait()
+let resources: AnyKubernetesAPIResourceList = try await client.for(gvr: gvr).list(in: .allNamespaces)
 ```
 
 #### GroupVersionKind & GroupVersionResource
@@ -377,9 +379,9 @@ A `GroupVersionKind` & `GroupVersionResource` can be initialized from:
 - `KubernetesAPIResource` instance
 - `KubernetesAPIResource` type
 - Full API Group string
-- Lowecassed singular resource kind
-- Lowercased plural resource name
-- lowecased short resource name
+- Lower-cased singular resource kind
+- Lower-cased plural resource name
+- Lower-cased short resource name
 
 ```swift
 let deployment = ..
@@ -394,7 +396,8 @@ let gvr = GroupVersionResource(for: "cm")
 
 ## Metrics
 
-`KubernetesClient` uses [SwiftMetrics](https://github.com/apple/swift-metrics) to collect metric information about the requests count and latencies.
+`KubernetesClient` uses [SwiftMetrics](https://github.com/apple/swift-metrics) to collect metric information about the 
+requests count and latencies.
 
 The following metrics are gathered:
 
@@ -406,7 +409,8 @@ The following metrics are gathered:
 
 ### Collecting the metrics
 
-To collect the metrics you have to bootstrap a metrics backend in your application. For example you can collect the metrics to prometheus via `SwiftPrometheus`:
+To collect the metrics you have to bootstrap a metrics backend in your application. For example, you can collect the 
+metrics to prometheus via `SwiftPrometheus`:
 
 ```swift
 import Metrics
@@ -429,10 +433,10 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 
 ## Installation
 
-To use the `SwiftkubeModel` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
+To use the `SwiftkubeClient` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.11.0"),
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.12.0")
 ```
 
 then include it as a dependency in your target:
@@ -443,7 +447,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.10.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.12.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
