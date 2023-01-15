@@ -8,7 +8,7 @@ on:
 
 jobs:
   swiftformat-lint:
-      runs-on: ubuntu-18.04
+      runs-on: ubuntu-20.04
       steps:
       - uses: actions/checkout@v2
       - name: Install SwiftFormat
@@ -51,7 +51,7 @@ jobs:
         run: set -o pipefail && xcodebuild -scheme SwiftkubeClient -destination "${{ matrix.destination }}" clean build | xcpretty
 
   linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
@@ -61,7 +61,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
     - name: Create cluster
-      uses: AbsaOSS/k3d-action@v1.5.0
+      uses: AbsaOSS/k3d-action@v2
       with:
         cluster-name: "swiftkube"
         args: -c k3d/swiftkube.yaml
