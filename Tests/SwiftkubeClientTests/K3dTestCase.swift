@@ -39,7 +39,7 @@ open class K3dTestCase: XCTestCase {
 	public static func createNamespace(_ name: String, labels: [String: String]? = nil) -> core.v1.Namespace? {
 		do {
 			print("Creating namespace: \(name)")
-			let future = eventLoopGroup.next().makeFutureWithTask {
+			let future = eventLoopGroup.next().makeFutureWithTask { () -> core.v1.Namespace in
 				try await client.namespaces.create(core.v1.Namespace(metadata: meta.v1.ObjectMeta(labels: labels, name: name)))
 			}
 
@@ -55,7 +55,7 @@ open class K3dTestCase: XCTestCase {
 		do {
 			print("Deleting namespace: \(name)")
 
-			try _ = eventLoopGroup.next().makeFutureWithTask {
+			try eventLoopGroup.next().makeFutureWithTask { () -> Void in
 				try? await client.namespaces.delete(
 					name: name,
 					options: meta.v1.DeleteOptions(gracePeriodSeconds: 0, propagationPolicy: "Foreground")
@@ -63,7 +63,7 @@ open class K3dTestCase: XCTestCase {
 			}.wait()
 
 			try wait(timeout: .seconds(30)) {
-				let deletedFuture = eventLoopGroup.next().makeFutureWithTask {
+				let deletedFuture = eventLoopGroup.next().makeFutureWithTask { () -> Bool in
 					let namespaces = try! await client.namespaces.list().items.map(\.name)
 					return !namespaces.contains(name)
 				}
