@@ -3,14 +3,18 @@
 </p>
 
 <p style="text-align: center;">
-	<img src="https://img.shields.io/badge/Swift-5.5-orange.svg" />
+	<a href="https://swiftpackageindex.com/swiftkube/client">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dswift-versions"/>
+    </a>
+    <a href="https://swiftpackageindex.com/swiftkube/client">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
+    </a>
 	<a href="https://v1-24.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/">
 		<img src="https://img.shields.io/badge/Kubernetes-1.24.8-blue.svg" alt="Kubernetes 1.24.8"/>
 	</a>
 	<a href="https://swift.org/package-manager">
-		<img src="https://img.shields.io/badge/swiftpm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
+		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
 	</a>
-	<img src="https://img.shields.io/badge/platforms-mac+ios+linux-brightgreen.svg?style=flat" alt="macOS + iOS Linux" />
 	<a href="https://github.com/swiftkube/client/actions">
 		<img src="https://github.com/swiftkube/client/workflows/swiftkube-client-ci/badge.svg" alt="CI Status">
 	</a>
