@@ -30,7 +30,9 @@
   * [Configuring a client](#configuring-the-client)
   * [Client authentication](#client-authentication)
   * [Client DSL](#client-dsl)
-* [Advanced usage](#advanced-usage)
+  * [Loading from external sources](#loading-from-external-sources)
+  * [Type-erased usage](#type-erased-usage)
+  * [CRD Support](#crd-support)
 * [Metrics](#metrics)
 * [Installation](#installation)
 * [License](#license)
@@ -58,7 +60,7 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 - [x] Resource watch support
 - [x] Follow pod logs support
 - [x] Discovery API
-- [ ] CRD support
+- [x] CRD support
 - [ ] Controller/Informer support
 - [x] Swift Metrics
 - [ ] Complete documentation
@@ -66,15 +68,13 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 
 ## Compatibility Matrix
 
-|                        | <1.18.9 | 1.18.9 - 1.18.13 | 1.19.8 | 1.20.9 | 1.22.7 | 1.24.8 |
-|------------------------|---------|------------------|--------|--------|--------|--------|
-| SwiftkubeClient 0.6.x  | -       | ✓                | -      | -      | -      | -      |
-| SwiftkubeClient 0.7.x  | -       | -                | ✓      | -      | -      | -      |
-| SwiftkubeClient 0.8.x  | -       | -                | ✓      | -      | -      | -      |
-| SwiftkubeClient 0.9.x  | -       | -                | ✓      | -      | -      | -      |
-| SwiftkubeClient 0.10.x | -       | -                | -      | ✓      | -      | -      |
-| SwiftkubeClient 0.11.x | -       | -                | -      | -      | ✓      | -      |
-| SwiftkubeClient 0.12.x | -       | -                | -      | -      | -      | ✓      |
+|                   | 1.18.9 | 1.19.8 | 1.20.9 | 1.22.7 | 1.24.8 |
+|-------------------|--------|--------|--------|--------|--------|
+| `0.6.x`           | ✓      | -      | -      | -      | -      |
+| `0.7.x...0.9.x`   | -      | ✓      | -      | -      | -      |
+| `0.10.x`          | -      | -      | ✓      | -      | -      |
+| `0.11.x`          | -      | -      | -      | ✓      | -      |
+| `0.12.x...0.13.x` | -      | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
@@ -82,7 +82,7 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 
 ## Examples
 
-Concrete examples for using the `Swiftkube` tooling reside in the[Swiftkube:Examples](https://github.com/swiftkube/examples) 
+Concrete examples for using the `Swiftkube` tooling reside in the [Swiftkube:Examples](https://github.com/swiftkube/examples) 
 repository.
 
 ## Usage
@@ -251,14 +251,19 @@ You can watch for Kubernetes events about specific objects via the `watch` API.
 Watching resources opens a persistent connection to the API server. The connection is represented by a `SwiftkubeClientTask` 
 instance, that acts as an active "subscription" to the events stream.
 
-The task can be cancelled any time to stop the watch.
+The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an 
+``AsyncThrowingStream``, that starts yielding items immediately as they are received from the Kubernetes API server.
+
+> The async stream buffers its results if there are no active consumers. The ``AsyncThrowingStream.BufferingPolicy.unbounded``
+buffering policy is used, which should be taken into consideration.
 
 ```swift
-let task: SwiftkubeClientTask = client.pods.watch(in: .allNamespaces) { (event, pod) in
-  print("\(event): \(pod)")
-}
+let task: SwiftkubeClientTask = client.pods.watch(in: .allNamespaces)
+let stream = task.start()
 
-task.cancel()
+for try await event in stream {
+  print(event)
+}
 ```
 
 You can also pass `ListOptions` to filter, i.e. select the required objects:
@@ -269,13 +274,11 @@ let options = [
   .labelSelector(.exists(["env"]))
 ]
 
-let task = client.pods.watch(in: .default, options: options) { (event, pod) in
-  print("\(event): \(pod)")
-}
+let task = client.pods.watch(in: .default, options: options)
 ```
 
-The client reconnects automatically and restarts the watch upon encountering non-recoverable errors. The reconnect 
-behaviour can be controlled by passing an instance of `RetryStrategy`.
+The client reconnects automatically and restarts the watch upon encountering non-recoverable errors. The 
+reconnect-behaviour can be controlled by passing an instance of `RetryStrategy`.
 
 The default strategy is 10 retry attempts with a fixed 5 seconds delay between each attempt. The initial delay is one
 second. A jitter of 0.2 seconds is applied.
@@ -289,41 +292,29 @@ let strategy = RetryStrategy(
   initialDelay = 5.0,
   jitter = 0.2
 )
-let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in
-  print(pod)
+let task = client.pods.watch(in: .default, retryStrategy: strategy)
+
+for try await event in task.stream() {
+  print(event)
 }
 ```
 
-To handle events you can pass a `ResourceWatcherCallback.EventHandler` closure, which is used as a callback for new events. 
-The client sends each event paired with the corresponding resource as a pair to this `eventHandler`.
-
-If you require more control or stateful logic, then you can implement the `ResourceWatcherDelegate` protocol and pass 
-it to the `watch` call:
+The task must be cancelled when it is no longer needed:
 
 ```swift
-class MyDelegate: ResourceWatcherDelegate {
-  typealias Resource = core.v1.Pod
-   
-  func onEvent(event: EventType, resource: core.v1.Pod) {
-    // handle events
-  }
-
-  func onError(error: SwiftkubeClientError) {
-    // handle errors
-  }
-}
-
-let task = client.pods.watch(in: .default, delegate: MyDelegate())
+task.cancel()
 ```
 
 #### Follow logs
 
-The `follow` API resembles the `watch`. The difference being the closure/delegate signature:
+The `follow` API resembles the `watch`, but instead of events, it emits the log lines.
 
 :warning: The client does not reconnect on errors in `follow` mode.
 
 ```swift
-let task = client.pods.follow(in: .default, name: "nginx", container: "app") { (line) in
+let task = client.pods.follow(in: .default, name: "nginx", container: "app")
+
+for try await line in task.start() {
   print(line)
 }
 
@@ -342,8 +333,6 @@ let groups: meta.v1.APIGroupList = try await client.discovery.serverGroups()
 let resources: meta.v1.APIResourceList = try await client.discovery.serverResources(forGroupVersion: "apps/v1")
 ```
 
-## Advanced usage
-
 ### Loading from external sources
 
 A resource can be loaded from a file or a URL:
@@ -360,8 +349,8 @@ Often when working with Kubernetes the concrete type of the resource is not know
 resources from a YAML manifest file. Other times the type or kind of the resource must be derived at runtime given its 
 string representation.
 
-Leveraging `SwiftkubeModel`'s type-erased resource implementations `AnyKubernetesAPIResource` and its corresponding 
-List-Type `AnyKubernetesAPIResourceList` it is possible to have a generic client instance, which must be initialized
+Leveraging `SwiftkubeModel`'s type-erased resource implementations `UnstructuredResource` and its corresponding 
+List-Type `UnstructuredResourceList` it is possible to have a generic client instance, which must be initialized
 with a `GroupVersionResource` type:
 
 ```swift
@@ -370,10 +359,10 @@ guard let gvr = try? GroupVersionResource(for: "deployment") else {
 }
 
 // Get by name
-let resource: AnyKubernetesAPIResource = try await client.for(gvr: gvr).get(in: .default , name: "nginx")
+let resource: UnstructuredResource = try await client.for(gvr: gvr).get(in: .default , name: "nginx")
 
 // List all
-let resources: AnyKubernetesAPIResourceList = try await client.for(gvr: gvr).list(in: .allNamespaces)
+let resources: UnstructuredResourceList = try await client.for(gvr: gvr).list(in: .allNamespaces)
 ```
 
 #### GroupVersionKind & GroupVersionResource
@@ -398,6 +387,120 @@ let gvr = GroupVersionResource(for: "cm")
 // etc.
 ```
 
+### CRD Support
+
+`SwiftkubeClient` supports Custom Resource Definitions (CRDs) natively. For example, a CRD manifest can be loaded
+from a YAML file or created programmatically, and then created via the client DSL:
+
+```swift
+let crd = apiextensions.v1.CustomResourceDefinition.load(contentsOf: URL(filePath: "/path/to/crd.yaml"))
+try await client.apiExtensionsV1.customResourceDefinitions.create(crd)
+```
+
+The `KubernetesClient` can now be "extended", in order to manage the Custom Resources. One way would be to use the
+`UnstructuredResource` described in the previous section given some `GroupVersionResource`.
+
+However, the client can work with any object that implement the relevant marker protocols, which allows for custom types
+to be defined and used directly.
+
+Here is a complete example to clarify.
+
+Given the following CRD:
+
+```yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: crontabs.example.com
+spec:
+  group: example.com
+  names:
+    plural: crontabs
+    singular: crontab
+    kind: CronTab
+    shortNames:
+      - ct
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                cronSpec:
+                  type: string
+                image:
+                  type: string
+                replicas:
+                  type: integer
+```
+
+The marker protocols are:
+
+- `KubernetesAPIResource` marks the object as a Kubernetes resource that has a corresponding API endpoint
+- `NamespacedResource` & `ClusterScopedResource` to indicate whether the resource is namespaced or cluster-scoped
+- `ReadableResource` activates the `get`, `list` and `watch` API for the resource
+- `CreatableResource` activates the `create` API for the resource
+- `ReplaceableResource` activates the `update` API for the resource
+- `DeletableResource` activates the `delete` API for the resource
+- `CollectionDeletableResource` activate the `deleteAll` API for the resource
+- `ScalableResource` activates the `scale` API for the resource
+- `MetadataHavingResource` indicates, that the resource has a `metadata` field of type `meta.v1.ObjectMeta?`
+- `StatusHavingResource` indicate, that the resource has a `scale` field (w/o assuming its type)
+
+The following custom structs can be defined:
+
+```swift
+struct CronTab: KubernetesAPIResource, NamespacedResource, MetadataHavingResource, 
+        ReadableResource, CreatableResource, ListableResource {
+  typealias List = CronTabList
+  var apiVersion = "stable.example.com/v1"
+  var kind = "CronTab"
+  var metadata: meta.v1.ObjectMeta?
+  var spec: CronTabSpec
+}
+
+struct CronTabSpec: Codable {
+  var cronSpec: String
+  var image: String
+  var replicas: Int
+}
+
+struct CronTabList: KubernetesResourceList {
+  var apiVersion = "stable.example.com/v1"
+  var kind = "crontabs"
+  var items: [CronTab]
+}
+```
+
+Now, the new Custom Resource can be used like any other Kubernetes resource:
+
+```swift
+let gvr = GroupVersionResource(
+  group: "example.swiftkube.dev",
+  version: "v1",
+  resource: "cocktails"
+)
+
+let cocktailsClient = client.for(Cocktail.self, gvr: gvr)
+
+let cronTab = CronTab(
+  metadata: meta.v1.ObjectMeta(name: "gin-tonic"),
+  spec: CocktailSpec(
+    name: "Basic Gin Tonic",
+    ingredients: ["Gin", "Tonic"]
+  )
+)
+
+let new = try await cocktailsClient.create(in: .default, cronTab)
+let cronTabs: CronTabList = try await cocktailsClient.list(in: .allNamespaces)
+```
+
 ## Metrics
 
 `KubernetesClient` uses [SwiftMetrics](https://github.com/apple/swift-metrics) to collect metric information about the 
@@ -409,7 +512,6 @@ The following metrics are gathered:
 - `sk_http_request_errors_total(counter)`: the total number of requests made, that returned a http error.
 - `sk_request_errors_total(counter)`: the total number of requests that couldn't be dispatched due to non-http errors.
 - `sk_http_request_duration_seconds(timer)`: the complete request durations.
-
 
 ### Collecting the metrics
 

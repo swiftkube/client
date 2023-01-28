@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.13.0
+
+### New
+
+- Use structured concurrency instead of EventLoops for watching resources #25
+
+### Fixes
+
+- Fix client crash in `GenericKubernetesClient.prepareDecoder` due to decoder instance being shared #24
+ 
+### Breaking Changes
+
+- Drop AnyKubernetesAPIResource in favour of UnstructuredResource
+- The generic client for a given `GroupVersionResource` uses `UnstructuredResource` for unknown types:
+  - `KubernetesClient/``for``(gvr:) -> GenericKubernetesClient<AnyKubernetesAPIResource>` is replaced with:
+  - `KubernetesClient/``for``(gvr:) -> GenericKubernetesClient<UnstructuredResource>`
+- The `SwiftkubeClientTask` returned by the `watch` and `follow` API must be started explicitly
+- The `SwiftkubeClientTask` returns an `AsyncThrowingStream` instead of using a callback delegate 
+
 ## 0.12.0
 
 ### New
