@@ -20,7 +20,7 @@ import Metrics
 
 internal extension KubernetesClient {
 
-	static func updateSucessMetrics(startTime: UInt64, request: KubernetesRequest, response: HTTPClientResponse) {
+	static func updateSuccessMetrics(startTime: UInt64, request: KubernetesRequest, response: HTTPClientResponse) {
 		let method = request.method.rawValue
 		let path = request.url.path
 

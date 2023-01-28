@@ -188,21 +188,14 @@ public extension KubernetesClient {
 
 	/// Create a new generic client for the given ``KubernetesAPIResource``.
 	///
+	/// This assumes a known Kubernetes resource type, i.e. it constructs a ``GroupVersionResource`` for its
+	/// internal use from the `R.Type`. For unknown resource types, e.g. CRDs, you can use
+	/// ``KubernetesClient/for(_:gvr:)`` instead.
+	///
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `KubernetesAPIResource`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
-	}
-
-	/// Create a new generic client for the given ``GroupVersionResource``.
-	///
-	/// The returned instance is type-erased, i.e. returns the wrapper type ``AnyKubernetesAPIResource``.
-	///
-	/// - Parameter gvr: The ``GroupVersionResourcea`` of the desired resource.
-	/// - Returns A new ``GenericKubernetesClient`` for the given resource's ``GroupVersionResource`` which returns all resources wrapped in
-	/// ``AnyKubernetesAPIResource`` envelope.
-	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<AnyKubernetesAPIResource> {
-		GenericKubernetesClient<AnyKubernetesAPIResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new unstructured client for the given ``GroupVersionResource``.
@@ -212,18 +205,18 @@ public extension KubernetesClient {
 	/// - Parameter gvr: The ``GroupVersionResource`` of the desired resource.
 	/// - Returns A new ``GenericKubernetesClient`` for the given resource's ``GroupVersionResource``. This client decodes
 	/// kubernetes objects as ``UnstructuredResource``s.
-	func unstructuredFor(gvr: GroupVersionResource) -> GenericKubernetesClient<UnstructuredResource> {
+	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<UnstructuredResource> {
 		GenericKubernetesClient<UnstructuredResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
-	/// Create a new generic client for the given ``GroupVersionResource``.
+	/// Create a new generic client for the given a ``KubernetesAPIResource`` type and its ``GroupVersionResource``.
 	///
 	/// The returned instance is typed-inferred by the generic constraint.
 	///
 	/// - Parameters:
 	///   - type: The ``KubernetesAPIResource`` type.
 	///   - gvr: The ``GroupVersionResource`` of the desired resource.
-	/// - Returns A new `GenericKubernetesClient` for the given resource's `GenericKubernetesClient`.
+	/// - Returns A new `GenericKubernetesClient` for the given resource's `GroupVersionResource`.
 	func `for`<R: KubernetesAPIResource>(_ type: R.Type, gvr: GroupVersionResource) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}

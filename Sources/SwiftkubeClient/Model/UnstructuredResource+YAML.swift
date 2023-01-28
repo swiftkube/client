@@ -27,22 +27,22 @@ public extension KubernetesAPIResource {
 	}
 }
 
-public extension AnyKubernetesAPIResource {
+public extension UnstructuredResource {
 
-	static func load(yaml: String) throws -> [AnyKubernetesAPIResource] {
+	static func load(yaml: String) throws -> [UnstructuredResource] {
 		let decoder = YAMLDecoder()
 
-		// YAMS's `load_all` return a sequnence of `Any` and `compose_all` returns a sequence of `Node`
+		// YAMS's `load_all` return a sequence of `Any` and `compose_all` returns a sequence of `Node`
 		// hence the compose -> serialize -> decode workaround
 		// in order to get a list of type-erased `AnyKubernetesAPIResources`
 		return try Yams.compose_all(yaml: yaml)
-			.map { node -> AnyKubernetesAPIResource in
+			.map { node -> UnstructuredResource in
 				let resourceYAML = try Yams.serialize(node: node)
-				return try decoder.decode(AnyKubernetesAPIResource.self, from: resourceYAML)
+				return try decoder.decode(UnstructuredResource.self, from: resourceYAML)
 			}
 	}
 
-	static func load(contentsOf url: URL) throws -> [AnyKubernetesAPIResource] {
+	static func load(contentsOf url: URL) throws -> [UnstructuredResource] {
 		let yaml = try String(contentsOf: url)
 		return try load(yaml: yaml)
 	}

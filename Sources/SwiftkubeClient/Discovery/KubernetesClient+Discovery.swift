@@ -58,7 +58,7 @@ public protocol DiscoveryAPI {
 	/// Loads ``meta.v1.APIResourceList`` describing the available resources for the given  version.
 	///
 	/// - Parameters:
-	///   - groupVesion: The version of the API group
+	///   - groupVersion: The version of the API group
 	///
 	/// - Returns:A ``meta.v1.APIResourceList`` instance.
 	func serverResources(forGroupVersion groupVersion: String) async throws -> meta.v1.APIResourceList
