@@ -224,7 +224,7 @@ Resources can be created/updated directly or via the convenience builders define
 ```swift
 // Create a resource instance and post it
 let configMap = core.v1.ConfigMap(
-  metadata: meta.v1.Metadata(name: "test"),
+  metadata: meta.v1.ObjectMeta(name: "test"),
   data: ["foo": "bar"]
 )
 try cm = try await client.configMaps.create(inNamespace: .default, configMap)
