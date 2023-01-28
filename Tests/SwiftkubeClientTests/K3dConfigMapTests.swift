@@ -89,25 +89,43 @@ final class K3dConfigMapTests: K3dTestCase {
 	}
 
 	func testWatch() async {
-		let expectedRecords = expectation(description: "Expected Records")
-		let watcher = Watcher(logger: K3dConfigMapTests.logger, expectation: expectedRecords, expectedCount: 5)
+		let expectation = expectation(description: "ConfigMap Events")
 
-		let task = try? K3dTestCase.client.configMaps.watch(in: .namespace("cm3"), delegate: watcher)
+		let task = Task {
+			var records: [Record] = []
+			do {
+				let watchTask = try K3dTestCase.client.configMaps.watch(in: .namespace("cm3"))
+				for try await event in watchTask.start() {
+					let record = Record(eventType: event.type, resource: event.resource.metadata!.name!)
+					records.append(record)
+
+					if records.count == 5 {
+						expectation.fulfill()
+						break
+					}
+				}
+				return records
+			} catch {
+				return []
+			}
+		}
 
 		try? _ = await K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test1"))
 		try? _ = await K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test2"))
 		try? _ = await K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1")
 		try? _ = await K3dTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"]))
 
-		wait(for: [watcher.expectedRecords], timeout: 30)
-		task?.cancel()
+		wait(for: [expectation], timeout: 10)
 
-		assertEqual(watcher.records, [
-			Watcher.Record(eventType: .added, resource: "kube-root-ca.crt"),
-			Watcher.Record(eventType: .added, resource: "test1"),
-			Watcher.Record(eventType: .added, resource: "test2"),
-			Watcher.Record(eventType: .deleted, resource: "test1"),
-			Watcher.Record(eventType: .modified, resource: "test2"),
+		task.cancel()
+		let result = try? await task.result.get()
+
+		assertEqual(result, [
+			Record(eventType: .added, resource: "kube-root-ca.crt"),
+			Record(eventType: .added, resource: "test1"),
+			Record(eventType: .added, resource: "test2"),
+			Record(eventType: .deleted, resource: "test1"),
+			Record(eventType: .modified, resource: "test2"),
 		])
 	}
 
@@ -118,33 +136,8 @@ final class K3dConfigMapTests: K3dTestCase {
 		)
 	}
 
-	class Watcher: ResourceWatcherDelegate {
-
-		struct Record: Hashable {
-			let eventType: EventType
-			let resource: String
-		}
-
-		let logger: Logger
-		let expectedRecords: XCTestExpectation
-		var expectedCount: Int
-		var records: [Record] = []
-
-		init(logger: Logger, expectation: XCTestExpectation, expectedCount: Int) {
-			self.logger = logger
-			self.expectedRecords = expectation
-			self.expectedCount = expectedCount
-		}
-
-		func onEvent(event: EventType, resource: core.v1.ConfigMap) {
-			records.append(Record(eventType: event, resource: resource.name!))
-			if records.count == expectedCount {
-				expectedRecords.fulfill()
-			}
-		}
-
-		func onError(error: SwiftkubeClientError) {
-			logger.warning("Error encountered: \(error)")
-		}
+	struct Record: Hashable {
+		let eventType: EventType
+		let resource: String
 	}
 }

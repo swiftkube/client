@@ -25,20 +25,29 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 
 	/// Follows the logs of the specified container.
 	///
-	/// Following the logs of a container opens a persistent connection to the API server. The connection is represented by a ``SwiftkubeClientTask`` instance, that acts
-	/// as an active "subscription" to the logs stream. The task can be cancelled any time to stop the watch.
+	/// Following the logs of a container opens a persistent connection to the API server. The connection is represented
+	/// by a ``SwiftkubeClientTask`` instance, that acts as an active "subscription" to the logs stream.
 	///
-	/// If the namespace is not specified then the default namespace defined in the ``KubernetesClientConfig`` will be used instead.
+	/// The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an
+	/// ``AsyncThrowingStream``, that begins yielding log lines immediately as they are received from the Kubernetes API server.
+	///
+	/// The async stream buffers its results if there are no active consumers. The ``AsyncThrowingStream.BufferingPolicy.unbounded``
+	/// buffering policy is used, which should be taken into consideration.
+	///
+	/// The task can be cancelled by calling its ``SwiftkubeClientTask/cancel()`` function.
+	///
+	/// Example:
 	///
 	/// ```swift
-	/// let task: HTTPClient.Task<Void> = client.pods.follow(in: .namespace("default"), name: "nginx") { line in
-	///    print(line)
+	/// let task = try client.pods.follow(in: .namespace("default"), name: "nginx")
+	/// let stream = task.start()
+	/// for try await line in stream {
+	///   print(line)
 	///	}
-	///
-	///	task.cancel()
 	/// ```
 	///
-	/// The reconnect behaviour can be controlled by passing an instance of ``RetryStrategy``. Per default `follow` requests are not retried.
+	/// Per default `follow` requests are not retried. To enable and control reconnect behaviour pass an instance
+	/// of ``RetryStrategy``.
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
@@ -47,7 +56,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy) { line in print(line) }
+	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
@@ -55,23 +64,19 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
 	///   - retryStrategy: An instance of a ``RetryStrategy`` configuration to use.
-	///   - lineHandler: A ``LogWatcherCallback.LineHandler`` instance, which is used as a callback for new log lines.
 	///
-	/// - Returns: A cancellable ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
+	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
 	func follow(
 		in namespace: NamespaceSelector? = nil,
 		name: String,
 		container: String? = nil,
-		retryStrategy: RetryStrategy = RetryStrategy.never,
-		lineHandler: @escaping LogWatcherCallback.LineHandler
-	) throws -> SwiftkubeClientTask {
-		let delegate = LogWatcherCallback(onError: nil, onNext: lineHandler)
-		return try super.follow(
+		retryStrategy: RetryStrategy = RetryStrategy.never
+	) throws -> SwiftkubeClientTask<String> {
+		try super.follow(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
-			retryStrategy: retryStrategy,
-			delegate: delegate
+			retryStrategy: retryStrategy
 		)
 	}
 

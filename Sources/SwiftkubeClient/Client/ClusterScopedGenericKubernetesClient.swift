@@ -42,50 +42,33 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 
 	/// Watches cluster-scoped resources.
 	///
-	/// Watching resources opens a persistent connection to the API server. The connection is represented by a ``SwiftkubeClientTask`` instance, that acts
-	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
+	/// Watching resources opens a persistent connection to the API server. The connection is represented by a
+	/// ``SwiftkubeClientTask`` instance, that acts as an active "subscription" to the events stream.
+	///
+	/// The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an
+	/// ``AsyncThrowingStream``, that begins yielding events immediately as they are received from the Kubernetes API server.
+	///
+	/// The async stream buffers its results if there are no active consumers. The ``AsyncThrowingStream.BufferingPolicy.unbounded``
+	/// buffering policy is used, which should be taken into consideration.
+	///
+	/// The task can be cancelled by calling its ``SwiftkubeClientTask/cancel()`` function.
+	///
+	/// Example:
 	///
 	/// ```swift
-	/// let task: HTTPClient.Task<Void> = client.namespaces.watch() { (event, namespace) in
-	///    print("\(event): \(namespace)")
-	///	}
-	///
-	///	task.cancel()
+	/// let task = try client.nodes.watch(in: .default)
+	/// let stream = task.start()
+	/// for try await item in stream {
+	///   print(item)
+	/// }
 	/// ```
 	///
-	/// - Parameters:
-	///     - options: A list of ``ReadOptions`` to apply to this request.
-	///     - retryStrategy: A strategy to control the reconnect behaviour.
-	///     - eventHandler: A ``ResourceWatchCallback.EventHandler`` instance, which is used as a callback for new events.
-	///      The clients sends each event paired with the corresponding resource as a pair to the `eventHandler`.
+	/// The task is executed indefinitely. Upon encountering non-transient errors this tasks reconnects to the
+	/// Kubernetes API server, basically restarting the previous ``GenericKubernetesClient/watch(in:options:retryStrategy:)``
+	/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:)`` call.
 	///
-	/// - Returns: A cancellable ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
-	func watch(
-		options: [ListOption]? = nil,
-		retryStrategy: RetryStrategy = RetryStrategy(),
-		eventHandler: @escaping ResourceWatcherCallback<Resource>.EventHandler
-	) throws -> SwiftkubeClientTask {
-		let delegate = ResourceWatcherCallback<Resource>(onError: nil, onEvent: eventHandler)
-		return try watch(options: options, retryStrategy: retryStrategy, delegate: delegate)
-	}
-
-	/// Watches cluster-scoped resources.
-	///
-	/// Watching resources opens a persistent connection to the API server. The connection is represented by a ``SwiftkubeClientTask`` instance, that acts
-	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
-	///
-	/// ```swift
-	/// let task: HTTPClient.Task<Void> = client.namespaces.watch() { (event, namespace) in
-	///    print("\(event): \(namespace)")
-	///	}
-	///
-	///	task.cancel()
-	/// ```
-	///  The reconnect behaviour can be controlled by passing an instance of ``RetryStrategy``. The default is 10 retry attempts with a fixed 5 seconds
-	///  delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
-	///
-	/// The reconnect behaviour can be controlled by passing an instance of ``RetryStrategy``. The default is 10 retry attempts with a fixed 5 seconds
-	/// delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+	/// The reconnect behaviour can be controlled by passing an instance of ``RetryStrategy``. The default is 10 retry
+	/// attempts with a fixed 5 seconds delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
@@ -94,23 +77,20 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in print(pod) }
+	/// let task = try client.pods.watch(in: .default, retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
-	///     - options: A list of ``ReadOptions`` to apply to this request.
-	///     - retryStrategy: A strategy to control the reconnect behaviour.
-	///     - delegate: An ResourceWatcherDelegate instance, which is used as a callback for new events.
-	///          The clients sends each event paired with the corresponding resource as a pair to the `eventHandler`.
-	///          Errors are sent to the `errorHandler`.
+	///   - namespace: The namespace for this API request.
+	///   - options: ``ListOption`` to filter/select the returned objects.
+	///   - retryStrategy: A strategy to control the reconnect behaviour.
 	///
-	/// - Returns: A cancellable ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
-	func watch<Delegate: ResourceWatcherDelegate>(
+	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
+	func watch(
 		options: [ListOption]? = nil,
-		retryStrategy: RetryStrategy = RetryStrategy(),
-		delegate: Delegate
-	) throws -> SwiftkubeClientTask where Delegate.Resource == Resource {
-		try super.watch(in: .allNamespaces, options: options, retryStrategy: retryStrategy, using: delegate)
+		retryStrategy: RetryStrategy = RetryStrategy()
+	) throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
+		try super.watch(in: .allNamespaces, options: options, retryStrategy: retryStrategy)
 	}
 }
 

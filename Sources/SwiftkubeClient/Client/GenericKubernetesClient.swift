@@ -71,12 +71,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 // MARK: RequestHandlerType
 
-extension GenericKubernetesClient: RequestHandlerType {
-	func prepareDecoder(_ decoder: JSONDecoder) {
-		decoder.userInfo[CodingUserInfoKey.apiVersion] = gvr.apiVersion
-		decoder.userInfo[CodingUserInfoKey.resources] = gvr.resource
-	}
-}
+extension GenericKubernetesClient: RequestHandlerType {}
 
 // MARK: - GenericKubernetesClient + MakeRequest
 
@@ -325,19 +320,33 @@ public extension GenericKubernetesClient {
 
 	/// Watches the API resources in the given namespace.
 	///
-	/// Watching resources opens a persistent connection to the API server. The connection is represented by a ``SwiftkubeClientTask`` instance, that acts
-	/// as an active "subscription" to the events stream. The task can be cancelled any time to stop the watch.
+	/// Watching resources opens a persistent connection to the API server. The connection is represented by a
+	/// ``SwiftkubeClientTask`` instance, that acts as an active "subscription" to the events stream.
+	///
+	/// The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an
+	/// ``AsyncThrowingStream``, that begins yielding events immediately as they are received from the Kubernetes API server.
+	///
+	/// The async stream buffers its results if there are no active consumers. The ``AsyncThrowingStream.BufferingPolicy.unbounded``
+	/// buffering policy is used, which should be taken into consideration.
+	///
+	/// The task can be cancelled by calling its ``SwiftkubeClientTask/cancel()`` function.
+	///
+	/// Example:
 	///
 	/// ```swift
-	/// let task: SwiftkubeClientTask = client.pods.watch(in: .namespace("default")) { (event, pod) in
-	///    print("\(event): \(pod)")
-	///	}
-	///
-	///	task.cancel()
+	/// let task = try client.configMaps.watch(in: .default)
+	/// let stream = task.start()
+	/// for try await item in stream {
+	///   print(item)
+	/// }
 	/// ```
 	///
-	/// The reconnect behaviour can be controlled by passing an instance of  ``RetryStrategy``. The default is 10 retry attempts with a fixed 5 seconds
-	/// delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
+	/// The task is executed indefinitely. Upon encountering non-transient errors this tasks reconnects to the
+	/// Kubernetes API server, basically restarting the previous ``GenericKubernetesClient/watch(in:options:retryStrategy:)``
+	/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:)`` call.
+	///
+	/// The reconnect behaviour can be controlled by passing an instance of ``RetryStrategy``. The default is 10 retry
+	/// attempts with a fixed 5 seconds delay between each attempt. The initial delay is one second. A jitter of 0.2 seconds is applied.
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
@@ -346,53 +355,56 @@ public extension GenericKubernetesClient {
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = client.pods.watch(in: .default, retryStrategy: strategy) { (event, pod) in print(pod) }
+	/// let task = try client.pods.watch(in: .default, retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
 	///   - namespace: The namespace for this API request.
 	///   - options: ``ListOption`` to filter/select the returned objects.
 	///   - retryStrategy: A strategy to control the reconnect behaviour.
-	///   - delegate: A ``ResourceWatcherDelegate`` instance, which is used for callbacks for new events. The client sends each
-	/// event paired with the corresponding resource as a pair to the delegate's ``ResourceWatcherDelegate/onEvent(event:resource:)`` function
-	/// and errors to its ``ResourceWatcherDelegate/onError(error:)``.
 	///
-	/// - Returns: A cancellable ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
-	func watch<Delegate: ResourceWatcherDelegate>(
+	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
+	func watch(
 		in namespace: NamespaceSelector,
 		options: [ListOption]? = nil,
-		retryStrategy: RetryStrategy = RetryStrategy(),
-		using delegate: Delegate
-	) throws -> SwiftkubeClientTask {
+		retryStrategy: RetryStrategy = RetryStrategy()
+	) throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
 		let request = try makeRequest().in(namespace).toWatch().with(options: options).build()
-		let watcher = ResourceWatcher(decoder: jsonDecoder, delegate: delegate)
-		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
-		let task = SwiftkubeClientTask(
+		return SwiftkubeClientTask(
 			client: httpClient,
 			request: request,
-			streamingDelegate: clientDelegate,
+			streamer: ResourceEventStreamer(decoder: jsonDecoder),
+			retryStrategy: retryStrategy,
 			logger: logger
 		)
-
-		task.schedule(in: TimeAmount.zero)
-		return task
 	}
 
 	/// Follows the logs of the specified container.
 	///
-	/// Following the logs of a container opens a persistent connection to the API server. The connection is represented by a ``SwiftkubeClientTask`` instance, that acts
-	/// as an active "subscription" to the logs stream. The task can be cancelled any time to stop the watch.
+	/// Following the logs of a container opens a persistent connection to the API server. The connection is represented
+	/// by a ``SwiftkubeClientTask`` instance, that acts as an active "subscription" to the logs stream.
+	///
+	/// The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an
+	/// ``AsyncThrowingStream``, that begins yielding log lines immediately as they are received from the Kubernetes API server.
+	///
+	/// The async stream buffers its results if there are no active consumers. The ``AsyncThrowingStream.BufferingPolicy.unbounded``
+	/// buffering policy is used, which should be taken into consideration.
+	///
+	/// The task can be cancelled by calling its ``SwiftkubeClientTask/cancel()`` function.
+	///
+	/// Example:
 	///
 	/// ```swift
-	/// let task: HTTPClient.Task<Void> = client.pods.follow(in: .namespace("default"), name: "nginx") { line in
-	///    print(line)
+	/// let task = try client.pods.follow(in: .namespace("default"), name: "nginx")
+	/// let stream = task.start()
+	/// for try await line in stream {
+	///   print(line)
 	///	}
-	///
-	///	task.cancel()
 	/// ```
 	///
-	/// The reconnect behaviour can be controlled by passing an instance of ``RetryStrategy``. Per default `follow` requests are not retried.
+	/// Per default `follow` requests are not retried. To enable and control reconnect behaviour pass an instance
+	/// of ``RetryStrategy``.
 	///
 	/// ```swift
 	/// let strategy = RetryStrategy(
@@ -401,7 +413,7 @@ public extension GenericKubernetesClient {
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy) { line in print(line) }
+	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
@@ -409,28 +421,22 @@ public extension GenericKubernetesClient {
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
 	///   - retryStrategy: An instance of a ``RetryStrategy`` configuration to use.
-	///   - delegate: A ``LogWatcherDelegate`` instance, which is used as a callback for new log lines.
 	///
-	/// - Returns: A cancellable ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
+	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
 	func follow(
 		in namespace: NamespaceSelector,
 		name: String,
 		container: String?,
-		retryStrategy: RetryStrategy = RetryStrategy.never,
-		delegate: LogWatcherDelegate
-	) throws -> SwiftkubeClientTask {
+		retryStrategy: RetryStrategy = RetryStrategy.never
+	) throws -> SwiftkubeClientTask<String> {
 		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container).build()
-		let watcher = LogWatcher(delegate: delegate)
-		let clientDelegate = ClientStreamingDelegate(watcher: watcher, logger: logger)
 
-		let task = SwiftkubeClientTask(
+		return SwiftkubeClientTask(
 			client: httpClient,
 			request: request,
-			streamingDelegate: clientDelegate,
+			streamer: LineStreamer(),
+			retryStrategy: retryStrategy,
 			logger: logger
 		)
-
-		task.schedule(in: TimeAmount.zero)
-		return task
 	}
 }

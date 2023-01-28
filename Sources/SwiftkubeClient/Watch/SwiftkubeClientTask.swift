@@ -20,131 +20,141 @@ import Logging
 import NIO
 import SwiftkubeModel
 
-// MARK: - SwiftkubeClientTaskDelegate
-
-/// An internal delegate type for passing ``HTTPClientResponseDelegate``'s lifecycle events to the ``SwiftkubeClientTask`` instance.
-internal protocol SwiftkubeClientTaskDelegate {
-	func onError(error: SwiftkubeClientError)
-	func onDidFinish(task: HTTPClient.Task<Void>)
-}
-
 // MARK: - SwiftkubeClientTask
 
-/// A Client task, which is created by the SwiftkubeClient in the context of ``GenericKubernetesClient/watch(in:options:retryStrategy:using:)``
-/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:delegate:)`` API requests.
+/// A Client task, which is created by the SwiftkubeClient in the context of ``GenericKubernetesClient/watch(in:options:retryStrategy:)``
+/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:)`` API requests.
 ///
-/// The task can be used to cancel the task execution.
+/// The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an
+/// ``AsyncThrowingStream``, that starts yielding items immediately as they are received from the Kubernetes API server.
+///
+/// The async stream buffers its results if there are no active consumers. The ``AsyncThrowingStream.BufferingPolicy.unbounded``
+/// buffering policy is used, which should be taken into consideration.
+///
+/// The task can be cancelled by calling its ``SwiftkubeClientTask/cancel()`` function.
 ///
 /// The task is executed indefinitely. Upon encountering non-transient errors this tasks reconnects to the
-/// Kubernetes API server, basically restarting the previous ``GenericKubernetesClient/watch(in:options:retryStrategy:using:)``
-/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:delegate:)`` call.
+/// Kubernetes API server, basically restarting the previous ``GenericKubernetesClient/watch(in:options:retryStrategy:)``
+/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:)`` call.
 ///
 /// The retry semantics are controlled via the passed ``RetryStrategy`` instance by the Kubernetes client.
-public class SwiftkubeClientTask: SwiftkubeClientTaskDelegate {
+///
+/// Example:
+///
+/// ```swift
+/// let task = try client.configMaps.watch(in: .default)
+/// let stream = task.start()
+/// for try await item in stream {
+///   print(item)
+/// }
+/// ```
+public class SwiftkubeClientTask<Output> {
 
-	let client: HTTPClient
-	let request: KubernetesRequest
-	let streamingDelegate: ClientStreamingDelegate
-	let promise: EventLoopPromise<Void>
-	let retriesSequence: RetryStrategy.Iterator
-	let logger: Logger
-	var cancelled = false
-	var clientTask: HTTPClient.Task<Void>?
+	private let client: HTTPClient
+	private let request: KubernetesRequest
+	private let streamer: DataStreamer<Output>
+	private let logger: Logger
+	private let retriesSequence: RetryStrategy.Iterator
 
-	init(
+	private var currentTask: Task<Void, Error>?
+	private var cancelled: Bool = false
+
+	internal init(
 		client: HTTPClient,
 		request: KubernetesRequest,
-		streamingDelegate: ClientStreamingDelegate,
-		logger: Logger,
-		retryStrategy: RetryStrategy = RetryStrategy()
+		streamer: DataStreamer<Output>,
+		retryStrategy: RetryStrategy,
+		logger: Logger
 	) {
 		self.client = client
 		self.request = request
-		self.streamingDelegate = streamingDelegate
-		self.promise = client.eventLoopGroup.next().makePromise()
+		self.streamer = streamer
 		self.retriesSequence = retryStrategy.makeIterator()
 		self.logger = logger
-		self.streamingDelegate.taskDelegate = self
 	}
 
-	internal func schedule(in amount: TimeAmount) {
-		guard clientTask == nil else {
-			return
+	deinit {
+		doCancel()
+	}
+
+	/// Starts this task, which then begins to immediately emit data as an asynchronous stream.
+	///
+	/// Starting a cancelled task has no effect. If this this task has been cancelled, then an empty stream is returned.
+	///
+	/// - Returns: An instance of ``AsyncThrowingStream`` emitting items as they received from the API server.
+	public func start() -> AsyncThrowingStream<Output, Error> {
+		if cancelled {
+			return AsyncThrowingStream { nil }
 		}
 
-		logger.debug("Scheduling task for request: \(request)")
-		let scheduled = client.eventLoopGroup.next().scheduleTask(in: amount) { () -> HTTPClient.Task<Void> in
-			try self.resetAndExecute()
+		logger.debug("Staring task for request: \(request)")
+		return AsyncThrowingStream<Output, Error>(bufferingPolicy: .unbounded) { continuation in
+			currentTask?.cancel()
+			currentTask = makeTask(continuation: continuation)
 		}
+	}
 
-		scheduled.futureResult.whenComplete { (result: Result<HTTPClient.Task<Void>, Error>) in
-			switch result {
-			case let .success(task):
-				self.clientTask = task
-			case let .failure(error):
-				self.promise.fail(SwiftkubeClientError.taskError(error))
+	private func makeTask(continuation: AsyncThrowingStream<Output, Error>.Continuation) -> Task<Void, Error> {
+		Task {
+			while true {
+				guard !Task.isCancelled else {
+					logger.debug("Task for request: \(request) was cancelled")
+					continuation.finish()
+					break
+				}
+
+				do {
+					let asyncRequest = try request.asAsyncClientRequest()
+					let response = try await client.execute(asyncRequest, deadline: .distantFuture, logger: logger)
+					let stream = streamer.doStream(response: response, logger: logger)
+
+					for try await event in stream {
+						continuation.yield(event)
+
+						guard !Task.isCancelled else {
+							logger.debug("Task for request: \(request) was cancelled")
+							streamer.cancel()
+							continuation.finish()
+							break
+						}
+					}
+				} catch {
+					logger.debug("Error occurred while streaming data: \(error.localizedDescription)")
+				}
+
+				guard !Task.isCancelled else {
+					logger.debug("Task for request: \(request) was cancelled")
+					continuation.finish()
+					break
+				}
+
+				guard let nextAttempt = retriesSequence.next() else {
+					logger.debug("Max retries reached for request: \(request)")
+					continuation.finish(throwing: SwiftkubeClientError.maxRetriesReached(request: request))
+					break
+				}
+
+				let delaySeconds = nextAttempt.delay
+				logger.debug("Will retry request: \(request) in \(delaySeconds) seconds")
+				try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
+
+				guard !Task.isCancelled else {
+					logger.debug("Task for request: \(request) was cancelled")
+					continuation.finish()
+					break
+				}
 			}
 		}
 	}
 
-	private func resetAndExecute() throws -> HTTPClient.Task<Void> {
-		streamingDelegate.reset()
-		do {
-			let syncClientRequest = try request.asClientRequest()
-			return client.execute(request: syncClientRequest, delegate: streamingDelegate, logger: logger)
-		} catch {
-			promise.fail(error)
-			throw error
-		}
-	}
-
-	internal func onDidFinish(task: HTTPClient.Task<Void>) {
-		logger.debug("Task finished for request: \(request)")
-		reconnect()
-	}
-
-	internal func onError(error: SwiftkubeClientError) {
-		logger.debug("Error received: \(error) for request: \(request)")
-		reconnect()
-	}
-
-	private func reconnect() {
-		guard !cancelled else {
-			logger.debug("Task was cancelled for request: \(request)")
-			return
-		}
-
-		logger.debug("Reconnecting task for request: \(request)")
-		stopCurrentTask()
-
-		guard let nextAttempt = retriesSequence.next() else {
-			logger.info("Max retries reached for request: \(request)")
-			return promise.fail(SwiftkubeClientError.maxRetriesReached(request: request))
-		}
-
-		let delayMillis = nextAttempt.delay * 1000
-		schedule(in: TimeAmount.milliseconds(Int64(delayMillis)))
-	}
-
-	private func stopCurrentTask() {
-		clientTask?.cancel()
-		clientTask = nil
-	}
-
-	/// Waits indefinitely for the execution of this task.
-	///
-	/// The underlying ``EventLoopFuture`` resolves either in a success upon a canceling the task,
-	/// or it errors if all retry attempts are exhausted according to the ``RetryStrategy``.
-	///
-	/// - throws: The error value of the ``EventLoopFuture`` if it errors.
-	public func wait() throws {
-		try promise.futureResult.wait()
-	}
-
 	/// Cancels the task execution.
 	public func cancel() {
+		doCancel()
+	}
+
+	private func doCancel() {
 		cancelled = true
-		stopCurrentTask()
-		promise.succeed(())
+		currentTask?.cancel()
+		currentTask = nil
 	}
 }
