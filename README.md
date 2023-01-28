@@ -482,23 +482,24 @@ Now, the new Custom Resource can be used like any other Kubernetes resource:
 
 ```swift
 let gvr = GroupVersionResource(
-  group: "example.swiftkube.dev",
+  group: "stable.example.com",
   version: "v1",
-  resource: "cocktails"
+  resource: "crontabs"
 )
 
-let cocktailsClient = client.for(Cocktail.self, gvr: gvr)
+let cronTabClient = client.for(CronTab.self, gvr: gvr)
 
 let cronTab = CronTab(
-  metadata: meta.v1.ObjectMeta(name: "gin-tonic"),
-  spec: CocktailSpec(
-    name: "Basic Gin Tonic",
-    ingredients: ["Gin", "Tonic"]
+  metadata: meta.v1.ObjectMeta(name: "new-cron"),
+  spec: CronTabSpec(
+    cronSpec : "* * * * */5",
+    image: "some-cron-image",
+    replicas: 2
   )
 )
 
-let new = try await cocktailsClient.create(in: .default, cronTab)
-let cronTabs: CronTabList = try await cocktailsClient.list(in: .allNamespaces)
+let new = try await cronTabClient.create(in: .default, cronTab)
+let cronTabs: CronTabList = try await cronTabClient.list(in: .allNamespaces)
 ```
 
 ## Metrics
