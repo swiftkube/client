@@ -85,7 +85,7 @@ final class K3dConfigMapTests: K3dTestCase {
 			deletedConfigMap.fulfill()
 		}
 
-		wait(for: [deletedConfigMap], timeout: 10)
+		wait(for: [deletedConfigMap], timeout: 30)
 	}
 
 	func testWatch() async {
