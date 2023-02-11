@@ -75,6 +75,13 @@ internal extension RequestHandlerType {
 			}
 
 			guard let resource = try? jsonDecoder.decode(T.self, from: data) else {
+				// Deleting a core.v1.Service returns the deleted resource instead of the specified meta.v1.Status.
+				// Thus, we ignore the returned payload and return a dummy meta.v1.Status with the success status code
+				// in this case.
+				// https://github.com/swiftkube/client/issues/27
+				if T.self == meta.v1.Status.self {
+					return meta.v1.Status(code: Int32(response.status.code)) as! T
+				}
 				throw SwiftkubeClientError.decodingError("Couldn't decode response")
 			}
 
