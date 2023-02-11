@@ -10,7 +10,7 @@
       <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
     </a>
 	<a href="https://v1-24.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.24.8-blue.svg" alt="Kubernetes 1.24.8"/>
+		<img src="https://img.shields.io/badge/Kubernetes-1.24.10-blue.svg" alt="Kubernetes 1.24.10"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -42,7 +42,7 @@
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based 
 on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.24.8
+- [x] Covers all Kubernetes API Groups in v1.24.10
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -459,20 +459,20 @@ The following custom structs can be defined:
 struct CronTab: KubernetesAPIResource, NamespacedResource, MetadataHavingResource, 
         ReadableResource, CreatableResource, ListableResource {
   typealias List = CronTabList
-  var apiVersion = "stable.example.com/v1"
+  var apiVersion = "example.com/v1"
   var kind = "CronTab"
   var metadata: meta.v1.ObjectMeta?
   var spec: CronTabSpec
 }
 
-struct CronTabSpec: Codable {
+struct CronTabSpec: Codable, Hashable {
   var cronSpec: String
   var image: String
   var replicas: Int
 }
 
 struct CronTabList: KubernetesResourceList {
-  var apiVersion = "stable.example.com/v1"
+  var apiVersion = "example.com/v1"
   var kind = "crontabs"
   var items: [CronTab]
 }
@@ -482,7 +482,7 @@ Now, the new Custom Resource can be used like any other Kubernetes resource:
 
 ```swift
 let gvr = GroupVersionResource(
-  group: "stable.example.com",
+  group: "example.com",
   version: "v1",
   resource: "crontabs"
 )

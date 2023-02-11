@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.0
+
+### New
+
+- Update to Kubernetes model v1.24.10
+
+### Fixes
+
+- Fix decoding error when deleting a service #27
+
+### Breaking Changes
+
+- `SwiftkubeModel 0.8.0` makes all `KubernetesResources` Hashable #28 
+
 ## 0.13.0
 
 ### New
