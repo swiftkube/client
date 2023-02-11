@@ -51,7 +51,7 @@ internal class ResourceEventStreamer<Resource: KubernetesAPIResource>: DataStrea
 			}
 
 			guard
-				let jsonData = try? JSONSerialization.data(withJSONObject: event.object),
+				let jsonData = try? JSONSerialization.data(withJSONObject: event.object.properties),
 				let resource = try? self.decoder.decode(Resource.self, from: jsonData)
 			else {
 				continuation.finish(throwing: SwiftkubeClientError.decodingError("Error deserializing \(String(describing: Resource.self))"))

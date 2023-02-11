@@ -91,8 +91,8 @@ public struct KubernetesRequest {
 // MARK: - RequestBody
 
 internal enum RequestBody {
-	case resource(payload: KubernetesAPIResource)
-	case subResource(type: ResourceType, payload: KubernetesResource)
+	case resource(payload: any KubernetesAPIResource)
+	case subResource(type: ResourceType, payload: any KubernetesResource)
 
 	var type: ResourceType {
 		switch self {
@@ -103,7 +103,7 @@ internal enum RequestBody {
 		}
 	}
 
-	var payload: KubernetesResource {
+	var payload: any KubernetesResource {
 		switch self {
 		case let .resource(payload: payload):
 			return payload

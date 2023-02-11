@@ -34,7 +34,7 @@ final class K3dCRDTests: K3dTestCase {
 				apiextensions.v1.CustomResourceDefinitionVersion(
 					name: "v1",
 					schema: apiextensions.v1.CustomResourceValidation(
-						openAPIV3Schema: [
+						openAPIV3Schema: JSONObject(properties: [
 							"type": "object",
 							"x-kubernetes-preserve-unknown-fields": true,
 							"properties": [
@@ -54,7 +54,7 @@ final class K3dCRDTests: K3dTestCase {
 									]
 								]
 							]
-						]
+						])
 					),
 					served: true,
 					storage: true
@@ -82,7 +82,7 @@ final class K3dCRDTests: K3dTestCase {
 		var spec: CocktailSpec
 	}
 
-	struct CocktailSpec: Codable {
+	struct CocktailSpec: Codable, Hashable {
 		var name: String
 		var ingredients: [String]
 	}
