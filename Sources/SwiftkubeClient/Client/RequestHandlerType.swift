@@ -104,7 +104,7 @@ internal extension RequestHandlerType {
 
 			let byteBuffer: ByteBuffer
 			do {
-				byteBuffer = try await response.body.collect(upTo: expectedBytes ?? 1 * 1024 * 1024)
+				byteBuffer = try await response.body.collect(upTo: expectedBytes ?? 10 * 1024 * 1024)
 			} catch {
 				throw SwiftkubeClientError.clientError(error)
 			}
