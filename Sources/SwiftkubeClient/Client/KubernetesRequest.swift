@@ -41,7 +41,7 @@ public struct KubernetesRequest {
 			url: url,
 			method: method,
 			headers: headers,
-			body: try buildSyncBody()
+			body: buildSyncBody()
 		)
 	}
 
