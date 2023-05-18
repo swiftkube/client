@@ -27,10 +27,21 @@ public enum EventType: String, RawRepresentable, Equatable {
 	case error = "ERROR"
 }
 
+// MARK: - AnyWatchEvent
+
+protocol AnyWatchEvent {
+	var resourceVersion: String? { get }
+}
+
 // MARK: - WatchEvent
 
 /// Represents a Kubernetes event with a type and the resource it references.
-public struct WatchEvent<Resource: KubernetesAPIResource> {
+public struct WatchEvent<Resource: KubernetesAPIResource>: AnyWatchEvent {
+
 	public let type: EventType
 	public let resource: Resource
+
+	var resourceVersion: String? {
+		resource.metadata?.resourceVersion
+	}
 }

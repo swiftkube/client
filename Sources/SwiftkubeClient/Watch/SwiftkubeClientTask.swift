@@ -51,11 +51,13 @@ import SwiftkubeModel
 public class SwiftkubeClientTask<Output> {
 
 	private let client: HTTPClient
-	private let request: KubernetesRequest
+
 	private let streamer: DataStreamer<Output>
 	private let logger: Logger
 	private let retriesSequence: RetryStrategy.Iterator
 
+	private var request: KubernetesRequest
+	private var resourceVersion: String?
 	private var currentTask: Task<Void, Error>?
 	private var cancelled: Bool = false
 
@@ -71,6 +73,7 @@ public class SwiftkubeClientTask<Output> {
 		self.streamer = streamer
 		self.retriesSequence = retryStrategy.makeIterator()
 		self.logger = logger
+		self.resourceVersion = request.resourceVersion
 	}
 
 	deinit {
@@ -109,6 +112,10 @@ public class SwiftkubeClientTask<Output> {
 					let stream = streamer.doStream(response: response, logger: logger)
 
 					for try await event in stream {
+						if let watchEvent = event as? AnyWatchEvent {
+							self.request.resourceVersion = watchEvent.resourceVersion
+						}
+
 						continuation.yield(event)
 
 						guard !Task.isCancelled else {

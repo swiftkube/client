@@ -30,11 +30,23 @@ public struct KubernetesRequest {
 	/// The ``HTTPMethod`` for this request.
 	let method: HTTPMethod
 	/// The ``HTTPHeaders`` for this request.
-	let headers: HTTPHeaders
-	/// Optioanl ``RequestBody`` for this request.
+	var headers: HTTPHeaders
+	/// Optional ``RequestBody`` for this request.
 	let body: RequestBody?
 	/// Optional ``meta.v1.DeleteOptions`` in case of a `DELETE` request.
 	let deleteOptions: meta.v1.DeleteOptions?
+
+	internal var resourceVersion: String? {
+		get {
+			headers.first(name: "resourceVersion")
+		}
+		set {
+			headers.remove(name: "resourceVersion")
+			if newValue != nil {
+				headers.add(name: "resourceVersion", value: newValue!)
+			}
+		}
+	}
 
 	internal func asClientRequest() throws -> HTTPClient.Request {
 		try HTTPClient.Request(
