@@ -65,13 +65,13 @@ internal class DataStreamer<Output>: DataStreamerType {
 					var varBuffer = buffer
 					streamingBuffer.writeBuffer(&varBuffer)
 
-					let line = streamingBuffer.withUnsafeReadableBytes { raw in
-						raw.firstIndex(of: UInt8(0x0A))
+					let lines = streamingBuffer.withUnsafeReadableBytes { raw in
+						raw.lastIndex(of: UInt8(0x0A))
 					}
 
 					guard
-						let readableLine = line,
-						let data = streamingBuffer.readData(length: readableLine + 1)
+						let readableLines = lines,
+						let data = streamingBuffer.readData(length: readableLines + 1)
 					else {
 						return continuation.finish()
 					}
