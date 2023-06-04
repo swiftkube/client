@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - BatchV1Beta1API
+// MARK: - NetworkingV1Alpha1API
 
-public protocol BatchV1Beta1API {
+public protocol NetworkingV1Alpha1API {
 
-	var cronJobs: NamespacedGenericKubernetesClient<batch.v1beta1.CronJob> { get }
+	var clusterCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ClusterCIDR> { get }
 }
 
-/// DSL for `batch.v1beta1` API Group
+/// DSL for `networking.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class BatchV1Beta1: BatchV1Beta1API {
+	class NetworkingV1Alpha1: NetworkingV1Alpha1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var cronJobs: NamespacedGenericKubernetesClient<batch.v1beta1.CronJob> {
-			client.namespaceScoped(for: batch.v1beta1.CronJob.self)
+		public var clusterCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ClusterCIDR> {
+			client.clusterScoped(for: networking.v1alpha1.ClusterCIDR.self)
 		}
 	}
 
-	var batchV1Beta1: BatchV1Beta1API {
-		BatchV1Beta1(self)
+	var networkingV1Alpha1: NetworkingV1Alpha1API {
+		NetworkingV1Alpha1(self)
 	}
 }

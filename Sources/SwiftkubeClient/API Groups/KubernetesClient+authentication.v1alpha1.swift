@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - EventsV1Beta1API
+// MARK: - AuthenticationV1Alpha1API
 
-public protocol EventsV1Beta1API {
+public protocol AuthenticationV1Alpha1API {
 
-	var events: NamespacedGenericKubernetesClient<events.v1beta1.Event> { get }
+	var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1alpha1.SelfSubjectReview> { get }
 }
 
-/// DSL for `events.k8s.io.v1beta1` API Group
+/// DSL for `authentication.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class EventsV1Beta1: EventsV1Beta1API {
+	class AuthenticationV1Alpha1: AuthenticationV1Alpha1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var events: NamespacedGenericKubernetesClient<events.v1beta1.Event> {
-			client.namespaceScoped(for: SwiftkubeModel.events.v1beta1.Event.self)
+		public var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1alpha1.SelfSubjectReview> {
+			client.clusterScoped(for: authentication.v1alpha1.SelfSubjectReview.self)
 		}
 	}
 
-	var eventsV1Beta1: EventsV1Beta1API {
-		EventsV1Beta1(self)
+	var authenticationV1Alpha1: AuthenticationV1Alpha1API {
+		AuthenticationV1Alpha1(self)
 	}
 }

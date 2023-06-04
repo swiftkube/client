@@ -21,7 +21,7 @@ import SwiftkubeModel
 
 public protocol EventsV1API {
 
-	var events: NamespacedGenericKubernetesClient<events.v1.Event> { get }
+	var events: NamespacedGenericKubernetesClient<SwiftkubeModel.events.v1.Event> { get }
 }
 
 /// DSL for `events.k8s.io.v1` API Group
