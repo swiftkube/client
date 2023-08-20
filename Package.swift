@@ -15,11 +15,11 @@ let package = Package(
 		),
 	],
 	dependencies: [
-		.package(url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.11.0")),
+		.package(url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.12.0")),
 		.package(url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.18.0")),
-		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.5.2")),
-		.package(url: "https://github.com/apple/swift-metrics.git", .upToNextMajor(from: "2.4.0")),
-		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.0.5")),
+		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.5.3")),
+		.package(url: "https://github.com/apple/swift-metrics.git", .upToNextMajor(from: "2.4.1")),
+		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.0.6")),
 		.package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.54.0")),
 	],
 	targets: [

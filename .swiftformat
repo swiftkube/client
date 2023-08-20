@@ -62,5 +62,5 @@
 --wrapreturntype preserve
 --xcodeindentation disabled
 --yodaswap always
---disable anyObjectProtocol,blankLinesAtStartOfScope,emptyBraces,initCoderUnavailable,modifierOrder,redundanttype,spaceAroundBrackets,spaceAroundGenerics,spaceAroundParens,strongOutlets,strongifiedSelf,typeSugar,wrapAttributes,yodaConditions
+--disable anyObjectProtocol,blankLinesAtStartOfScope,emptyBraces,initCoderUnavailable,modifierOrder,redundantInternal,redundanttype,spaceAroundBrackets,spaceAroundGenerics,spaceAroundParens,strongOutlets,strongifiedSelf,typeSugar,wrapAttributes,yodaConditions
 --enable markTypes

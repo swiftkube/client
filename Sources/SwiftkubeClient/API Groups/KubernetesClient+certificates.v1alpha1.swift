@@ -17,34 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - NetworkingV1Alpha1API
+// MARK: - CertificatesV1Alpha1API
 
-public protocol NetworkingV1Alpha1API {
+public protocol CertificatesV1Alpha1API {
 
-	var clusterCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ClusterCIDR> { get }
-	var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> { get }
+	var clusterTrusubundles: ClusterScopedGenericKubernetesClient<certificates.v1alpha1.ClusterTrustBundle> { get }
 }
 
-/// DSL for `networking.k8s.io.v1alpha1` API Group
+/// DSL for `certificates.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class NetworkingV1Alpha1: NetworkingV1Alpha1API {
+	class CertificatesV1Alpha1: CertificatesV1Alpha1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var clusterCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ClusterCIDR> {
-			client.clusterScoped(for: networking.v1alpha1.ClusterCIDR.self)
-		}
-
-		public var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> {
-			client.clusterScoped(for: networking.v1alpha1.IPAddress.self)
+		public var clusterTrusubundles: ClusterScopedGenericKubernetesClient<certificates.v1alpha1.ClusterTrustBundle> {
+			client.clusterScoped(for: certificates.v1alpha1.ClusterTrustBundle.self)
 		}
 	}
 
-	var networkingV1Alpha1: NetworkingV1Alpha1API {
-		NetworkingV1Alpha1(self)
+	var certificatesV1Alpha1: CertificatesV1Alpha1API {
+		CertificatesV1Alpha1(self)
 	}
 }

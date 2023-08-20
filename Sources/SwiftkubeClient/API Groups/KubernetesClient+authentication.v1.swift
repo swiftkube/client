@@ -21,6 +21,7 @@ import SwiftkubeModel
 
 public protocol AuthenticationV1API {
 
+	var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1.SelfSubjectReview> { get }
 	var tokenRequests: NamespacedGenericKubernetesClient<authentication.v1.TokenRequest> { get }
 	var tokenReviews: ClusterScopedGenericKubernetesClient<authentication.v1.TokenReview> { get }
 }
@@ -33,6 +34,10 @@ public extension KubernetesClient {
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
+		}
+
+		public var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1.SelfSubjectReview> {
+			client.clusterScoped(for: authentication.v1.SelfSubjectReview.self)
 		}
 
 		public var tokenRequests: NamespacedGenericKubernetesClient<authentication.v1.TokenRequest> {
