@@ -70,12 +70,14 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		in namespace: NamespaceSelector? = nil,
 		name: String,
 		container: String? = nil,
+		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) throws -> SwiftkubeClientTask<String> {
 		try super.follow(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
+			timestamps: timestamps,
 			retryStrategy: retryStrategy
 		)
 	}
@@ -94,12 +96,16 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	func logs(
 		in namespace: NamespaceSelector? = nil,
 		name: String,
-		container: String? = nil
+		container: String? = nil,
+		previous: Bool = false,
+		timestamps: Bool = false
 	) async throws -> String {
 		try await super.logs(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
-			container: container
+			container: container,
+			previous: previous,
+			timestamps: timestamps
 		)
 	}
 }

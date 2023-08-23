@@ -259,10 +259,10 @@ internal extension GenericKubernetesClient {
 	///
 	/// - Returns: The container logs as a single String.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
-	func logs(in namespace: NamespaceSelector, name: String, container: String?) async throws -> String {
+	func logs(in namespace: NamespaceSelector, name: String, container: String?, previous: Bool = false, timestamps: Bool = false) async throws -> String {
 		let request = try makeRequest()
 			.in(namespace)
-			.toLogs(pod: name, container: container)
+			.toLogs(pod: name, container: container, previous: previous, timestamps: timestamps)
 			.subResource(.log)
 			.build()
 
@@ -427,9 +427,10 @@ public extension GenericKubernetesClient {
 		in namespace: NamespaceSelector,
 		name: String,
 		container: String?,
+		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) throws -> SwiftkubeClientTask<String> {
-		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container).build()
+		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container, timestamps: timestamps).build()
 
 		return SwiftkubeClientTask(
 			client: httpClient,
