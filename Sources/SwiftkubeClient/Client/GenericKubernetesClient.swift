@@ -156,6 +156,7 @@ public extension GenericKubernetesClient {
 			.in(namespace)
 			.toDelete()
 			.resource(withName: name)
+			.with(options: options)
 			.build()
 
 		_ = try await dispatch(request: request, expect: meta.v1.Status.self)
