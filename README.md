@@ -9,8 +9,8 @@
     <a href="https://swiftpackageindex.com/swiftkube/client">
       <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
     </a>
-	<a href="https://v1-26.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.26.4-blue.svg" alt="Kubernetes 1.26.4"/>
+	<a href="https://v1-28.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/">
+		<img src="https://img.shields.io/badge/Kubernetes-1.28.0-blue.svg" alt="Kubernetes 1.28.0"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -42,7 +42,7 @@
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based 
 on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.24.10
+- [x] Covers all Kubernetes API Groups in v1.28.0
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -68,15 +68,16 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 
 ## Compatibility Matrix
 
-|                   | 1.18.9 | 1.19.8 | 1.20.9 | 1.22.7 | 1.24.8 | 1.24.10 | 1.26.4 |
-|-------------------|--------|--------|--------|--------|--------|---------|--------|
-| `0.6.x`           | ✓      | -      | -      | -      | -      | -       | -      |
-| `0.7.x...0.9.x`   | -      | ✓      | -      | -      | -      | -       | -      |
-| `0.10.x`          | -      | -      | ✓      | -      | -      | -       | -      |
-| `0.11.x`          | -      | -      | -      | ✓      | -      | -       | -      |
-| `0.12.x...0.13.x` | -      | -      | -      | -      | ✓      | -       | -      |
-| `0.14.x`          | -      | -      | -      | -      | -      | ✓       | -      |
-| `0.15.x`          | -      | -      | -      | -      | -      | -       | ✓      |
+|                   | 1.18.9 | 1.19.8 | 1.20.9 | 1.22.7 | 1.24.8 | 1.24.10 | 1.26.4 | 1.28.0 |
+|-------------------|--------|--------|--------|--------|--------|---------|--------|--------|
+| `0.6.x`           | ✓      | -      | -      | -      | -      | -       | -      | -      |
+| `0.7.x...0.9.x`   | -      | ✓      | -      | -      | -      | -       | -      | -      |
+| `0.10.x`          | -      | -      | ✓      | -      | -      | -       | -      | -      |
+| `0.11.x`          | -      | -      | -      | ✓      | -      | -       | -      | -      |
+| `0.12.x...0.13.x` | -      | -      | -      | -      | ✓      | -       | -      | -      |
+| `0.14.x`          | -      | -      | -      | -      | -      | ✓       | -      | -      |
+| `0.15.x`          | -      | -      | -      | -      | -      | -       | ✓      | -      |
+| `0.16.x`          | -      | -      | -      | -      | -      | -       | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
@@ -545,7 +546,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeClient` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.15.0")
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.16.0")
 ```
 
 then include it as a dependency in your target:
@@ -556,7 +557,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.15.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.16.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [

@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.16.0
+
+### New
+
+- Update to Kubernetes model v1.28.0
+- Add support for exec kube config #29 by @portellaa
+
+### Fixes
+
+- Use DeleteOptions on delete resource #34 by @tallnato
+
+## 0.15.0
+
+### New
+
+- Update to Kubernetes model v1.26.4
+- Add support for `resourceVersion` in streaming task
+
+### Fixes
+
+- Set the default response body buffer size for requests returning String to 10MB #30 by @ewilken 
+- Fix streaming issues when watching resources with small payloads #31 
+
+### Breaking Changes
+
+- Drop support for Swift 5.5
+
 ## 0.14.0
 
 ### New
