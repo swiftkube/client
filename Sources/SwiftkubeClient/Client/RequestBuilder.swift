@@ -50,11 +50,11 @@ internal protocol NamespaceStep {
 internal protocol MethodStep {
 	func toGet() -> GetStep
 	func toWatch() -> GetStep
-	func toFollow(pod: String, container: String?) -> GetStep
+	func toFollow(pod: String, container: String?, timestamps: Bool) -> GetStep
 	func toPost() -> PostStep
 	func toPut() -> PutStep
 	func toDelete() -> DeleteStep
-	func toLogs(pod: String, container: String?) -> GetStep
+	func toLogs(pod: String, container: String?, previous: Bool, timestamps: Bool) -> GetStep
 }
 
 // MARK: - GetStep
@@ -131,6 +131,8 @@ internal class RequestBuilder {
 	var deleteOptions: meta.v1.DeleteOptions?
 	var watchFlag = false
 	var followFlag = false
+	var previousFlag = false
+	var timestampsFlag = false
 
 	init(config: KubernetesClientConfig, gvr: GroupVersionResource) {
 		self.config = config
@@ -194,20 +196,23 @@ extension RequestBuilder: MethodStep {
 
 	/// Set request method to  GET and notice the pod and container to follow for the pending request
 	/// - Returns:The builder instance as GetStep
-	func toFollow(pod: String, container: String?) -> GetStep {
+	func toFollow(pod: String, container: String?, timestamps: Bool = false) -> GetStep {
 		method = .GET
 		resourceName = pod
 		containerName = container
 		subResourceType = .log
 		followFlag = true
+		timestampsFlag = timestamps
 		return self as GetStep
 	}
 
-	func toLogs(pod: String, container: String?) -> GetStep {
+	func toLogs(pod: String, container: String?, previous: Bool = false, timestamps: Bool = false) -> GetStep {
 		method = .GET
 		resourceName = pod
 		containerName = container
 		subResourceType = .log
+		previousFlag = previous
+		timestampsFlag = timestamps
 		return self as GetStep
 	}
 }
@@ -341,6 +346,14 @@ internal extension RequestBuilder {
 
 		if followFlag {
 			add(queryItem: URLQueryItem(name: "follow", value: "true"))
+		}
+
+		if previousFlag {
+			add(queryItem: URLQueryItem(name: "previous", value: "true"))
+		}
+
+		if timestampsFlag {
+			add(queryItem: URLQueryItem(name: "timestamps", value: "true"))
 		}
 
 		if let container = containerName {

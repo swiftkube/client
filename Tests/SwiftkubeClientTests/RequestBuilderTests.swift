@@ -76,15 +76,23 @@ final class RequestBuilderTests: XCTestCase {
 
 	func testFollowInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container").build()
+		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container", timestamps: false).build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?follow=true&container=container")!)
+		XCTAssertEqual(request?.method, HTTPMethod.GET)
+	}
+
+		func testFollowWithTimestampsInNamespace() {
+		let builder = RequestBuilder(config: config, gvr: gvr)
+		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container", timestamps: true).build()
+
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?follow=true&timestamps=true&container=container")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 	
 	func testLogsInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil).build()
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: false, timestamps: false).build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
@@ -92,9 +100,25 @@ final class RequestBuilderTests: XCTestCase {
 	
 	func testLogsWithContainerInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toLogs(pod: "pod", container: "container").build()
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: "container", previous: false, timestamps: false).build()
 
 		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?container=container")!)
+		XCTAssertEqual(request?.method, HTTPMethod.GET)
+	}
+
+	func testLogsWithPreviousInNamespace() {
+		let builder = RequestBuilder(config: config, gvr: gvr)
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: true, timestamps: false).build()
+
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?previous=true")!)
+		XCTAssertEqual(request?.method, HTTPMethod.GET)
+	}
+
+	func testLogsWithTimestampsInNamespace() {
+		let builder = RequestBuilder(config: config, gvr: gvr)
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: false, timestamps: true).build()
+
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?timestamps=true")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 

@@ -257,13 +257,15 @@ internal extension GenericKubernetesClient {
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the pod.
 	///   - container: The name of the container.
+	///   - previous: Whether to request the logs of the previous instance of the container.
+	///   - timestamps: Whether to include timestamps on the log lines.
 	///
 	/// - Returns: The container logs as a single String.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
-	func logs(in namespace: NamespaceSelector, name: String, container: String?) async throws -> String {
+	func logs(in namespace: NamespaceSelector, name: String, container: String?, previous: Bool = false, timestamps: Bool = false) async throws -> String {
 		let request = try makeRequest()
 			.in(namespace)
-			.toLogs(pod: name, container: container)
+			.toLogs(pod: name, container: container, previous: previous, timestamps: timestamps)
 			.subResource(.log)
 			.build()
 
@@ -421,6 +423,7 @@ public extension GenericKubernetesClient {
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
+	///   - timestamps: Whether to include timestamps on the log lines.
 	///   - retryStrategy: An instance of a ``RetryStrategy`` configuration to use.
 	///
 	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
@@ -428,9 +431,10 @@ public extension GenericKubernetesClient {
 		in namespace: NamespaceSelector,
 		name: String,
 		container: String?,
+		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) throws -> SwiftkubeClientTask<String> {
-		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container).build()
+		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container, timestamps: timestamps).build()
 
 		return SwiftkubeClientTask(
 			client: httpClient,

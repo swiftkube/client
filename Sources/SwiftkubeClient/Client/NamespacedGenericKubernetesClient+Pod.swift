@@ -63,6 +63,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
+	///   - timestamps: Whether to include timestamps on the log lines.
 	///   - retryStrategy: An instance of a ``RetryStrategy`` configuration to use.
 	///
 	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
@@ -70,12 +71,14 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		in namespace: NamespaceSelector? = nil,
 		name: String,
 		container: String? = nil,
+		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) throws -> SwiftkubeClientTask<String> {
 		try super.follow(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
+			timestamps: timestamps,
 			retryStrategy: retryStrategy
 		)
 	}
@@ -88,18 +91,24 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///   - namespace: The namespace for this API request.
 	///   - name: The name of the pod.
 	///   - container: The name of the container.
+	///   - previous: Whether to request the logs of the previous instance of the container.
+	///   - timestamps: Whether to include timestamps on the log lines.
 	///
 	/// - Returns: The container logs as a single String.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func logs(
 		in namespace: NamespaceSelector? = nil,
 		name: String,
-		container: String? = nil
+		container: String? = nil,
+		previous: Bool = false,
+		timestamps: Bool = false
 	) async throws -> String {
 		try await super.logs(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
-			container: container
+			container: container,
+			previous: previous,
+			timestamps: timestamps
 		)
 	}
 }
