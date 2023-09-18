@@ -142,8 +142,13 @@ public class KubernetesClient {
 		self.logger = logger ?? SwiftkubeClient.loggingDisabled
 
 		var tlsConfiguration = TLSConfiguration.makeClientConfiguration()
-		tlsConfiguration.minimumTLSVersion = .tlsv12
-		tlsConfiguration.trustRoots = config.trustRoots
+
+		if config.insecureSkipTLSVerify {
+			tlsConfiguration.certificateVerification = .none
+		} else {
+			tlsConfiguration.minimumTLSVersion = .tlsv12
+			tlsConfiguration.trustRoots = config.trustRoots
+		}
 
 		if case let KubernetesClientAuthentication.x509(clientCertificate, clientKey) = config.authentication {
 			tlsConfiguration.certificateChain = [.certificate(clientCertificate)]
