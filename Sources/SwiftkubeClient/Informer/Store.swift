@@ -33,7 +33,7 @@ public typealias KeyFuntion<Item> = (Item) throws -> String
 /// behavior is simple storage.
 ///
 /// Reflector knows how to watch a server and update a Store.
-protocol Store<Item> {
+public protocol Store<Item> {
 
 	associatedtype Item
 

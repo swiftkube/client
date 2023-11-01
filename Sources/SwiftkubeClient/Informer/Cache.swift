@@ -81,11 +81,11 @@ public class Cache<Item>: Indexer {
 		pthread_mutexattr_destroy(&attr)
 	}
 
-	func add(_ item: Item) throws {
+	public func add(_ item: Item) throws {
 		try update(item)
 	}
 
-	func update(_ item: Item) throws {
+	public func update(_ item: Item) throws {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -95,7 +95,7 @@ public class Cache<Item>: Indexer {
 		try updateIndices(oldItem: oldItem, newItem: item, key: key)
 	}
 
-	func delete(_ item: Item) throws {
+	public func delete(_ item: Item) throws {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -107,21 +107,21 @@ public class Cache<Item>: Indexer {
 		}
 	}
 
-	func list() -> [Item] {
+	public func list() -> [Item] {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
 		return Array(items.values)
 	}
 
-	func listKeys() -> [String] {
+	public func listKeys() -> [String] {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
 		return Array(items.keys)
 	}
 
-	func get(_ item: Item) throws -> Item? {
+	public func get(_ item: Item) throws -> Item? {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -129,14 +129,14 @@ public class Cache<Item>: Indexer {
 		return get(byKey: key)
 	}
 
-	func get(byKey: String) -> Item? {
+	public func get(byKey: String) -> Item? {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
 		return items[byKey]
 	}
 
-	func replace(with newItems: [Item], resourceVersion: String) throws {
+	public func replace(with newItems: [Item], resourceVersion: String) throws {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -151,11 +151,11 @@ public class Cache<Item>: Indexer {
 		}
 	}
 
-	func resync() {
+	public func resync() {
 		// NOOP
 	}
 
-	func index(indexName: String, item: Item) throws -> [Item] {
+	public func index(indexName: String, item: Item) throws -> [Item] {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -180,7 +180,7 @@ public class Cache<Item>: Indexer {
 		}
 	}
 
-	func indexKeys(indexName: String, indexedValue: String) -> [String] {
+	public func indexKeys(indexName: String, indexedValue: String) -> [String] {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -193,7 +193,7 @@ public class Cache<Item>: Indexer {
 		return Array(set ?? [])
 	}
 
-	func byIndex(indexName: String, indexedValue: String) -> [Item] {
+	public func byIndex(indexName: String, indexedValue: String) -> [Item] {
 		pthread_mutex_lock(&mutex)
 		defer { pthread_mutex_unlock(&mutex) }
 
@@ -208,11 +208,11 @@ public class Cache<Item>: Indexer {
 		}
 	}
 
-	func getIndexers() -> [String: IndexFuntion<Item>] {
+	public func getIndexers() -> [String: IndexFuntion<Item>] {
 		indexers
 	}
 
-	func addIndexers(_ newIndexes: [String: IndexFuntion<Item>]) {
+	public func addIndexers(_ newIndexes: [String: IndexFuntion<Item>]) {
 		newIndexes.forEach { indexName, indexFuntion in
 			indices[indexName] = Index()
 			indexers[indexName] = indexFuntion

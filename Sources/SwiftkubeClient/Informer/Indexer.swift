@@ -35,7 +35,7 @@ public typealias Index = [String: Set<String>]
 ///  2. a name of an index, and
 ///  3. an "indexed value", which is produced by an IndexFunc and
 ///     can be a field value or any other string computed from the object.
-protocol Indexer: Store {
+public protocol Indexer<Item>: Store {
 
 	associatedtype Item
 
