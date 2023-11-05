@@ -23,7 +23,7 @@ import SwiftkubeModel
 // MARK: - SwiftkubeClientTask
 
 /// A Client task, which is created by the SwiftkubeClient in the context of ``GenericKubernetesClient/watch(in:options:retryStrategy:)``
-/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:)`` API requests.
+/// or ``GenericKubernetesClient/follow(in:name:container:timestamps:retryStrategy:)`` API requests.
 ///
 /// The task instance must be started explicitly via ``SwiftkubeClientTask/start()``, which returns an
 /// ``AsyncThrowingStream``, that starts yielding items immediately as they are received from the Kubernetes API server.
@@ -35,7 +35,7 @@ import SwiftkubeModel
 ///
 /// The task is executed indefinitely. Upon encountering non-transient errors this tasks reconnects to the
 /// Kubernetes API server, basically restarting the previous ``GenericKubernetesClient/watch(in:options:retryStrategy:)``
-/// or ``GenericKubernetesClient/follow(in:name:container:retryStrategy:)`` call.
+/// or ``GenericKubernetesClient/follow(in:name:container:timestamps:retryStrategy:)`` call.
 ///
 /// The retry semantics are controlled via the passed ``RetryStrategy`` instance by the Kubernetes client.
 ///
