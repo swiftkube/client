@@ -387,7 +387,7 @@ internal extension ExecCredential {
 		func run(_ command: String, _ arguments: [String]?) throws -> Data {
 			let task = Process()
 			task.executableURL = URL(fileURLWithPath: command)
-			task.arguments = arguments
+			arguments.flatMap { task.arguments = $0 }
 
 			let pipe = Pipe()
 			task.standardOutput = pipe
