@@ -315,10 +315,16 @@ extension RequestBuilder: DeleteStep {
 internal extension RequestBuilder {
 
 	func build() throws -> KubernetesRequest {
-		components?.path = urlPath(forNamespace: namespace, name: resourceName)
+		var temporaryComponents = components
+
+		temporaryComponents?.path += urlPath(forNamespace: namespace, name: resourceName)
 
 		if let subResourceType = subResourceType {
-			components?.path += subResourceType.path
+			temporaryComponents?.path += subResourceType.path
+		}
+
+		if let queryItems = components?.queryItems {
+			temporaryComponents?.queryItems = queryItems
 		}
 
 		if requestBody?.type == .root {
@@ -336,45 +342,45 @@ internal extension RequestBuilder {
 		}
 
 		if let readOptions = readOptions {
-			readOptions.collectQueryItems().forEach(add(queryItem:))
+			readOptions.collectQueryItems().forEach { add(queryItem: $0, to: &temporaryComponents) }
 		}
 
 		if let listOptions = listOptions {
-			listOptions.collectQueryItems().forEach(add(queryItem:))
+			listOptions.collectQueryItems().forEach { add(queryItem: $0, to: &temporaryComponents) }
 		}
 
 		if watchFlag {
-			add(queryItem: URLQueryItem(name: "watch", value: "true"))
+			add(queryItem: URLQueryItem(name: "watch", value: "true"), to: &temporaryComponents)
 		}
 
 		if followFlag {
-			add(queryItem: URLQueryItem(name: "follow", value: "true"))
+			add(queryItem: URLQueryItem(name: "follow", value: "true"), to: &temporaryComponents)
 		}
 
 		if previousFlag {
-			add(queryItem: URLQueryItem(name: "previous", value: "true"))
+			add(queryItem: URLQueryItem(name: "previous", value: "true"), to: &temporaryComponents)
 		}
 
 		if timestampsFlag {
-			add(queryItem: URLQueryItem(name: "timestamps", value: "true"))
+			add(queryItem: URLQueryItem(name: "timestamps", value: "true"), to: &temporaryComponents)
 		}
 
 		if let tailLinesFlag {
-			add(queryItem: URLQueryItem(name: "tailLines", value: String(tailLinesFlag)))
+			add(queryItem: URLQueryItem(name: "tailLines", value: String(tailLinesFlag)), to: &temporaryComponents)
 		}
 
 		if let container = containerName {
-			add(queryItem: URLQueryItem(name: "container", value: container))
+			add(queryItem: URLQueryItem(name: "container", value: container), to: &temporaryComponents)
 		}
 
-		if (components?.url?.absoluteString) == nil {
+		if (temporaryComponents?.url?.absoluteString) == nil {
 			throw SwiftkubeClientError.invalidURL
 		}
 
 		let headers = buildHeaders(withAuthentication: config.authentication)
 
 		return KubernetesRequest(
-			url: (components?.url)!,
+			url: (temporaryComponents?.url)!,
 			method: method,
 			headers: headers,
 			body: requestBody,
@@ -398,7 +404,7 @@ internal extension RequestBuilder {
 		return url
 	}
 
-	private func add(queryItem: URLQueryItem) {
+	private func add(queryItem: URLQueryItem, to components: inout URLComponents?) {
 		if components?.queryItems == nil {
 			components?.queryItems = []
 		}

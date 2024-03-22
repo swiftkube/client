@@ -28,7 +28,7 @@ final class RequestBuilderTests: XCTestCase {
 
 	override func setUp() {
 		config = KubernetesClientConfig(
-			masterURL: URL(string: "https://kubernetesmaster")!,
+			masterURL: URL(string: "https://kubernetes/master")!,
 			namespace: "default",
 			authentication: .basicAuth(username: "test", password: "test"),
 			trustRoots: nil,
@@ -44,12 +44,12 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		var request = try? builder.in(.default).toGet().build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 
 		request = try? builder.in(.system).toGet().build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
@@ -57,7 +57,7 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.allNamespaces).toGet().build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/pods")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/pods")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
@@ -65,60 +65,60 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		var request = try? builder.in(.default).toGet().resource(withName: "test").build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 
 		request = try? builder.in(.system).toGet().build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/test")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/test")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
 	func testFollowInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container", timestamps: false).build()
+		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container", timestamps: false, tailLines: nil).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?follow=true&container=container")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/pod/log?follow=true&container=container")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
 		func testFollowWithTimestampsInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container", timestamps: true).build()
+		let request = try? builder.in(.system).toFollow(pod: "pod", container: "container", timestamps: true, tailLines: nil).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?follow=true&timestamps=true&container=container")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/pod/log?follow=true&timestamps=true&container=container")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 	
 	func testLogsInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: false, timestamps: false).build()
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: false, timestamps: false, tailLines: nil).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/pod/log")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 	
 	func testLogsWithContainerInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toLogs(pod: "pod", container: "container", previous: false, timestamps: false).build()
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: "container", previous: false, timestamps: false, tailLines: nil).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?container=container")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/pod/log?container=container")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
 	func testLogsWithPreviousInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: true, timestamps: false).build()
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: true, timestamps: false, tailLines: nil).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?previous=true")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/pod/log?previous=true")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
 	func testLogsWithTimestampsInNamespace() {
 		let builder = RequestBuilder(config: config, gvr: gvr)
-		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: false, timestamps: true).build()
+		let request = try? builder.in(.system).toLogs(pod: "pod", container: nil, previous: false, timestamps: true, tailLines: nil).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/pod/log?timestamps=true")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/pod/log?timestamps=true")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
@@ -214,7 +214,7 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().resource(withName: "test").subResource(.status).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test/status")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test/status")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
@@ -222,7 +222,7 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.default).toGet().resource(withName: "test").subResource(.scale).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test/scale")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test/scale")!)
 		XCTAssertEqual(request?.method, HTTPMethod.GET)
 	}
 
@@ -230,12 +230,12 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		var request = try? builder.in(.default).toDelete().resource(withName: "test").build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test")!)
 		XCTAssertEqual(request?.method, HTTPMethod.DELETE)
 
 		request = try? builder.in(.system).toDelete().build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/kube-system/pods/test")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/kube-system/pods/test")!)
 		XCTAssertEqual(request?.method, HTTPMethod.DELETE)
 	}
 
@@ -243,7 +243,7 @@ final class RequestBuilderTests: XCTestCase {
 		let builder = RequestBuilder(config: config, gvr: gvr)
 		let request = try? builder.in(.allNamespaces).toDelete().build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/pods")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/pods")!)
 		XCTAssertEqual(request?.method, HTTPMethod.DELETE)
 	}
 
@@ -252,7 +252,7 @@ final class RequestBuilderTests: XCTestCase {
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPost().body(pod).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods")!)
 		XCTAssertEqual(request?.method, HTTPMethod.POST)
 	}
 
@@ -261,7 +261,7 @@ final class RequestBuilderTests: XCTestCase {
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPut().resource(withName: "test").body(.resource(payload: pod)).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test")!)
 		XCTAssertEqual(request?.method, HTTPMethod.PUT)
 	}
 
@@ -270,7 +270,7 @@ final class RequestBuilderTests: XCTestCase {
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPut().resource(withName: "test").body(.subResource(type: .status, payload: pod)).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test/status")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test/status")!)
 		XCTAssertEqual(request?.method, HTTPMethod.PUT)
 	}
 
@@ -279,7 +279,7 @@ final class RequestBuilderTests: XCTestCase {
 		let pod = sk.pod(name: "test")
 		let request = try? builder.in(.default).toPut().resource(withName: "test").body(.subResource(type: .scale, payload: pod)).build()
 
-		XCTAssertEqual(request?.url, URL(string: "https://kubernetesmaster/api/v1/namespaces/default/pods/test/scale")!)
+		XCTAssertEqual(request?.url, URL(string: "https://kubernetes/master/api/v1/namespaces/default/pods/test/scale")!)
 		XCTAssertEqual(request?.method, HTTPMethod.PUT)
 	}
 }
