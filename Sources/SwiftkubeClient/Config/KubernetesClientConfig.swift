@@ -39,6 +39,8 @@ public struct KubernetesClientConfig: Sendable {
 	public let timeout: HTTPClient.Configuration.Timeout
 	/// The default redirect configuration for the underlying `HTTPCLient`.
 	public let redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
+	/// Whether to request and decode gzipped responses from the API server.
+	public let gzip: Bool
 
 	public init(
 		masterURL: URL,
@@ -47,7 +49,8 @@ public struct KubernetesClientConfig: Sendable {
 		trustRoots: NIOSSLTrustRoots?,
 		insecureSkipTLSVerify: Bool,
 		timeout: HTTPClient.Configuration.Timeout,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
+		gzip: Bool = false
 	) {
 		self.masterURL = masterURL
 		self.namespace = namespace
@@ -56,6 +59,7 @@ public struct KubernetesClientConfig: Sendable {
 		self.insecureSkipTLSVerify = insecureSkipTLSVerify
 		self.timeout = timeout
 		self.redirectConfiguration = redirectConfiguration
+		self.gzip = gzip
 	}
 }
 
