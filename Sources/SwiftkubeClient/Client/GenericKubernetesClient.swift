@@ -259,13 +259,14 @@ internal extension GenericKubernetesClient {
 	///   - container: The name of the container.
 	///   - previous: Whether to request the logs of the previous instance of the container.
 	///   - timestamps: Whether to include timestamps on the log lines.
+	///   - tailLines: The number of log lines to load.
 	///
 	/// - Returns: The container logs as a single String.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
-	func logs(in namespace: NamespaceSelector, name: String, container: String?, previous: Bool = false, timestamps: Bool = false) async throws -> String {
+	func logs(in namespace: NamespaceSelector, name: String, container: String?, previous: Bool = false, timestamps: Bool = false, tailLines: Int? = nil) async throws -> String {
 		let request = try makeRequest()
 			.in(namespace)
-			.toLogs(pod: name, container: container, previous: previous, timestamps: timestamps)
+			.toLogs(pod: name, container: container, previous: previous, timestamps: timestamps, tailLines: tailLines)
 			.subResource(.log)
 			.build()
 
@@ -424,6 +425,7 @@ public extension GenericKubernetesClient {
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
 	///   - timestamps: Whether to include timestamps on the log lines.
+	///   - tailLines: The number of log lines to load.
 	///   - retryStrategy: An instance of a ``RetryStrategy`` configuration to use.
 	///
 	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
@@ -432,9 +434,10 @@ public extension GenericKubernetesClient {
 		name: String,
 		container: String?,
 		timestamps: Bool = false,
+		tailLines: Int? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) async throws -> SwiftkubeClientTask<String> {
-		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container, timestamps: timestamps).build()
+		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container, timestamps: timestamps, tailLines: tailLines).build()
 
 		return SwiftkubeClientTask(
 			client: httpClient,

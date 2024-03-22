@@ -64,6 +64,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///   - name: The name of the Pod.
 	///   - container: The name of the container.
 	///   - timestamps: Whether to include timestamps on the log lines.
+	///   - tailLines: The number of log lines to load.
 	///   - retryStrategy: An instance of a ``RetryStrategy`` configuration to use.
 	///
 	/// - Returns: A ``SwiftkubeClientTask`` instance, representing a streaming connection to the API server.
@@ -72,6 +73,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		name: String,
 		container: String? = nil,
 		timestamps: Bool = false,
+		tailLines: Int? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) async throws -> SwiftkubeClientTask<String> {
 		try await client.follow(
@@ -79,6 +81,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 			name: name,
 			container: container,
 			timestamps: timestamps,
+			tailLines: tailLines,
 			retryStrategy: retryStrategy
 		)
 	}
@@ -93,6 +96,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///   - container: The name of the container.
 	///   - previous: Whether to request the logs of the previous instance of the container.
 	///   - timestamps: Whether to include timestamps on the log lines.
+	///   - tailLines: The number of log lines to load.
 	///
 	/// - Returns: The container logs as a single String.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
@@ -101,14 +105,16 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		name: String,
 		container: String? = nil,
 		previous: Bool = false,
-		timestamps: Bool = false
+		timestamps: Bool = false,
+		tailLines: Int? = nil
 	) async throws -> String {
 		try await client.logs(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
 			previous: previous,
-			timestamps: timestamps
+			timestamps: timestamps,
+			tailLines: tailLines
 		)
 	}
 }

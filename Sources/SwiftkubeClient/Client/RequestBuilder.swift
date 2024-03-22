@@ -50,11 +50,11 @@ internal protocol NamespaceStep {
 internal protocol MethodStep {
 	func toGet() -> GetStep
 	func toWatch() -> GetStep
-	func toFollow(pod: String, container: String?, timestamps: Bool) -> GetStep
+	func toFollow(pod: String, container: String?, timestamps: Bool, tailLines: Int?) -> GetStep
 	func toPost() -> PostStep
 	func toPut() -> PutStep
 	func toDelete() -> DeleteStep
-	func toLogs(pod: String, container: String?, previous: Bool, timestamps: Bool) -> GetStep
+	func toLogs(pod: String, container: String?, previous: Bool, timestamps: Bool, tailLines: Int?) -> GetStep
 }
 
 // MARK: - GetStep
@@ -133,6 +133,7 @@ internal class RequestBuilder {
 	var followFlag = false
 	var previousFlag = false
 	var timestampsFlag = false
+	var tailLinesFlag: Int?
 
 	init(config: KubernetesClientConfig, gvr: GroupVersionResource) {
 		self.config = config
@@ -196,23 +197,25 @@ extension RequestBuilder: MethodStep {
 
 	/// Set request method to  GET and notice the pod and container to follow for the pending request
 	/// - Returns:The builder instance as GetStep
-	func toFollow(pod: String, container: String?, timestamps: Bool = false) -> GetStep {
+	func toFollow(pod: String, container: String?, timestamps: Bool = false, tailLines: Int? = nil) -> GetStep {
 		method = .GET
 		resourceName = pod
 		containerName = container
 		subResourceType = .log
 		followFlag = true
 		timestampsFlag = timestamps
+		tailLinesFlag = tailLines
 		return self as GetStep
 	}
 
-	func toLogs(pod: String, container: String?, previous: Bool = false, timestamps: Bool = false) -> GetStep {
+	func toLogs(pod: String, container: String?, previous: Bool = false, timestamps: Bool = false, tailLines: Int? = nil) -> GetStep {
 		method = .GET
 		resourceName = pod
 		containerName = container
 		subResourceType = .log
 		previousFlag = previous
 		timestampsFlag = timestamps
+		tailLinesFlag = tailLines
 		return self as GetStep
 	}
 }
@@ -354,6 +357,10 @@ internal extension RequestBuilder {
 
 		if timestampsFlag {
 			add(queryItem: URLQueryItem(name: "timestamps", value: "true"))
+		}
+
+		if let tailLinesFlag {
+			add(queryItem: URLQueryItem(name: "tailLines", value: String(tailLinesFlag)))
 		}
 
 		if let container = containerName {
