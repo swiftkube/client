@@ -186,7 +186,8 @@ public actor KubernetesClient {
 			configuration: HTTPClient.Configuration(
 				tlsConfiguration: tlsConfiguration,
 				redirectConfiguration: config.redirectConfiguration,
-				timeout: config.timeout
+				timeout: config.timeout,
+				decompression: config.gzip ? .enabled(limit: .none) : .disabled
 			)
 		)
 	}
