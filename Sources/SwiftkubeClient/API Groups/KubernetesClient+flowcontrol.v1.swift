@@ -17,34 +17,34 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - NetworkingV1Alpha1API
+// MARK: - FlowControlV1API
 
-public protocol NetworkingV1Alpha1API {
+public protocol FlowControlV1API {
 
-	var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> { get }
-	var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ServiceCIDR> { get }
+	var flowSchemas: ClusterScopedGenericKubernetesClient<flowcontrol.v1.FlowSchema> { get }
+	var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1.PriorityLevelConfiguration> { get }
 }
 
-/// DSL for `networking.k8s.io.v1alpha1` API Group
+/// DSL for `flowcontrol.apiserver.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class NetworkingV1Alpha1: NetworkingV1Alpha1API {
+	class FlowControlV1: FlowControlV1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> {
-			client.clusterScoped(for: networking.v1alpha1.IPAddress.self)
+		public var flowSchemas: ClusterScopedGenericKubernetesClient<flowcontrol.v1.FlowSchema> {
+			client.clusterScoped(for: flowcontrol.v1.FlowSchema.self)
 		}
 
-		public var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ServiceCIDR> {
-			client.clusterScoped(for: networking.v1alpha1.ServiceCIDR.self)
+		public var priorityLevelConfigurations: ClusterScopedGenericKubernetesClient<flowcontrol.v1.PriorityLevelConfiguration> {
+			client.clusterScoped(for: flowcontrol.v1.PriorityLevelConfiguration.self)
 		}
 	}
 
-	var networkingV1Alpha1: NetworkingV1Alpha1API {
-		NetworkingV1Alpha1(self)
+	var flowControlV1: FlowControlV1API {
+		FlowControlV1(self)
 	}
 }

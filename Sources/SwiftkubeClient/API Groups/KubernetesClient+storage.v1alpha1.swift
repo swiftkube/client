@@ -17,34 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - NetworkingV1Alpha1API
+// MARK: - StorageV1Alpha1API
 
-public protocol NetworkingV1Alpha1API {
+public protocol StorageV1Alpha1API {
 
-	var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> { get }
-	var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ServiceCIDR> { get }
+	var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttributesClass> { get }
 }
 
-/// DSL for `networking.k8s.io.v1alpha1` API Group
+/// DSL for `storage.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class NetworkingV1Alpha1: NetworkingV1Alpha1API {
+	class StorageV1Alpha1: StorageV1Alpha1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> {
-			client.clusterScoped(for: networking.v1alpha1.IPAddress.self)
-		}
-
-		public var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ServiceCIDR> {
-			client.clusterScoped(for: networking.v1alpha1.ServiceCIDR.self)
+		public var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttributesClass> {
+			client.clusterScoped(for: storage.v1alpha1.VolumeAttributesClass.self)
 		}
 	}
 
-	var networkingV1Alpha1: NetworkingV1Alpha1API {
-		NetworkingV1Alpha1(self)
+	var storageV1Alpha1: StorageV1Alpha1API {
+		StorageV1Alpha1(self)
 	}
 }

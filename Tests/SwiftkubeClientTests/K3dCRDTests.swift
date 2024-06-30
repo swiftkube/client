@@ -68,6 +68,7 @@ final class K3dCRDTests: K3dTestCase {
 
 		var apiVersion = "example.swiftkube.dev/v1"
 		var kind = "Cocktails"
+		var metadata: SwiftkubeModel.meta.v1.ListMeta?
 		var items: [K3dCRDTests.Cocktail]
 	}
 
