@@ -1,7 +1,8 @@
-apiVersion: k3d.io/v1alpha2
+apiVersion: k3d.io/v1alpha5
 kind: Simple
-name: swiftkube
-image: docker.io/rancher/k3s:v1.24.8-k3s1
+metadata:
+  name: swiftkube
+image: docker.io/rancher/k3s:v1.29.6-k3s1
 servers: 1
 agents: 2
 options:
@@ -10,5 +11,7 @@ options:
     timeout: "120s"
     disableLoadbalancer: true
   k3s:
-    extraServerArgs:
-      - --no-deploy=traefik,servicelb,metrics-server
+    extraArgs:
+      - arg: --disable=traefik,servicelb,metrics-server
+        nodeFilters:
+          - server:*
