@@ -51,11 +51,9 @@ internal extension RequestHandlerType {
 			let response = try await httpClient.execute(clientRequest, timeout: config.timeout.read ?? .seconds(30), logger: logger)
 			KubernetesClient.updateSuccessMetrics(startTime: startTime, request: request, response: response)
 
-			let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init)
-
 			let byteBuffer: ByteBuffer
 			do {
-				byteBuffer = try await response.body.collect(upTo: expectedBytes ?? 10 * 1024 * 1024)
+				byteBuffer = try await response.body.collect(upTo: 16 * 1024 * 1024)
 			} catch {
 				throw SwiftkubeClientError.clientError(error)
 			}
