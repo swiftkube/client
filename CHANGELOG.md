@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.18.0
+
+### New
+
+- Update to Kubernetes model v1.29.6
+- Update dependencies:
+  - Async HTTP Client 1.21.2
+  - Kubernetes 1.29.6
+  - SwiftkubeModel 0.14.0
+  - SwiftNIO 2.67.0
+  - SwiftLog 1.6.1
+  - SwiftMetrics 2.5.0
+  - Yams 5.1.2
+
+### Fixes
+
+- Set hard limit for maximum amount of bytes to collect in RequestHandler #40
+
+### Breaking Change
+
+- Raise minimum Swift version to 5.8
+  - This aligns supported Swift versions with rest of the ecosystem
+
+
+## 0.17.0
+
+### New
+
+- Update dependencies:
+  - Async HTTP Client 1.19.0
+  - Kubernetes 1.28.3
+  - SwiftkubeModel 0.13.0
+  - SwiftNIO 2.61.0
+
 ## 0.16.0
 
 ### New
