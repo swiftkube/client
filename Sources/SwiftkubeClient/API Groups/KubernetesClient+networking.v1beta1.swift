@@ -17,34 +17,34 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - NetworkingV1Alpha1API
+// MARK: - NetworkingV1Beta1API
 
-public protocol NetworkingV1Alpha1API {
+public protocol NetworkingV1Beta1API {
 
-	var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> { get }
-	var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ServiceCIDR> { get }
+	var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1beta1.IPAddress> { get }
+	var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1beta1.ServiceCIDR> { get }
 }
 
-/// DSL for `networking.k8s.io.v1alpha1` API Group
+/// DSL for `networking.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
-	class NetworkingV1Alpha1: NetworkingV1Alpha1API {
+	class NetworkingV1Beta1: NetworkingV1Beta1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1alpha1.IPAddress> {
-			client.clusterScoped(for: networking.v1alpha1.IPAddress.self)
+		public var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1beta1.IPAddress> {
+			client.clusterScoped(for: networking.v1beta1.IPAddress.self)
 		}
 
-		public var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1alpha1.ServiceCIDR> {
-			client.clusterScoped(for: networking.v1alpha1.ServiceCIDR.self)
+		public var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1beta1.ServiceCIDR> {
+			client.clusterScoped(for: networking.v1beta1.ServiceCIDR.self)
 		}
 	}
 
-	var networkingV1Alpha1: NetworkingV1Alpha1API {
-		NetworkingV1Alpha1(self)
+	var networkingV1Beta1: NetworkingV1Beta1API {
+		NetworkingV1Beta1(self)
 	}
 }

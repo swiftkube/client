@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - CertificatesV1Alpha1API
+// MARK: - CoordinationV1Alpha2API
 
-public protocol CertificatesV1Alpha1API {
+public protocol CoordinationV1Alpha2API {
 
-	var clusterTrustBundles: ClusterScopedGenericKubernetesClient<certificates.v1alpha1.ClusterTrustBundle> { get }
+	var leaseCandidates: NamespacedGenericKubernetesClient<coordination.v1alpha2.LeaseCandidate> { get }
 }
 
-/// DSL for `certificates.k8s.io.v1alpha1` API Group
+/// DSL for `coordination.k8s.io.v1alpha2` API Group
 public extension KubernetesClient {
 
-	class CertificatesV1Alpha1: CertificatesV1Alpha1API {
+	class CoordinationV1Alpha2: CoordinationV1Alpha2API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var clusterTrustBundles: ClusterScopedGenericKubernetesClient<certificates.v1alpha1.ClusterTrustBundle> {
-			client.clusterScoped(for: certificates.v1alpha1.ClusterTrustBundle.self)
+		public var leaseCandidates: NamespacedGenericKubernetesClient<coordination.v1alpha2.LeaseCandidate> {
+			client.namespaceScoped(for: coordination.v1alpha2.LeaseCandidate.self)
 		}
 	}
 
-	var certificatesV1Alpha1: CertificatesV1Alpha1API {
-		CertificatesV1Alpha1(self)
+	var coordinationV1Alpha2: CoordinationV1Alpha2API {
+		CoordinationV1Alpha2(self)
 	}
 }

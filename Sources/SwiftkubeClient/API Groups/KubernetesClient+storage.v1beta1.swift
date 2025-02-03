@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - AuthenticationV1Alpha1API
+// MARK: - StorageV1Beta1API
 
-public protocol AuthenticationV1Alpha1API {
+public protocol StorageV1Beta1API {
 
-	var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1alpha1.SelfSubjectReview> { get }
+	var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1beta1.VolumeAttributesClass> { get }
 }
 
-/// DSL for `authentication.k8s.io.v1alpha1` API Group
+/// DSL for `storage.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
-	class AuthenticationV1Alpha1: AuthenticationV1Alpha1API {
+	class StorageV1Beta1: StorageV1Beta1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1alpha1.SelfSubjectReview> {
-			client.clusterScoped(for: authentication.v1alpha1.SelfSubjectReview.self)
+		public var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1beta1.VolumeAttributesClass> {
+			client.clusterScoped(for: storage.v1beta1.VolumeAttributesClass.self)
 		}
 	}
 
-	var authenticationV1Alpha1: AuthenticationV1Alpha1API {
-		AuthenticationV1Alpha1(self)
+	var storageV1Beta1: StorageV1Beta1API {
+		StorageV1Beta1(self)
 	}
 }

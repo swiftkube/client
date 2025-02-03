@@ -22,6 +22,8 @@ import SwiftkubeModel
 public protocol AdmissionRegistrationV1API {
 
 	var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.MutatingWebhookConfiguration> { get }
+	var validatingAdmissionPolicies: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingAdmissionPolicy> { get }
+	var validatingAdmissionPolicyBindings: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingAdmissionPolicyBinding> { get }
 	var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingWebhookConfiguration> { get }
 }
 
@@ -37,6 +39,14 @@ public extension KubernetesClient {
 
 		public var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.MutatingWebhookConfiguration> {
 			client.clusterScoped(for: admissionregistration.v1.MutatingWebhookConfiguration.self)
+		}
+
+		public var validatingAdmissionPolicies: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingAdmissionPolicy> {
+			client.clusterScoped(for: admissionregistration.v1.ValidatingAdmissionPolicy.self)
+		}
+
+		public var validatingAdmissionPolicyBindings: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingAdmissionPolicyBinding> {
+			client.clusterScoped(for: admissionregistration.v1.ValidatingAdmissionPolicyBinding.self)
 		}
 
 		public var validatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingWebhookConfiguration> {

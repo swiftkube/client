@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - CertificatesV1Alpha1API
+// MARK: - StorageVersionMigrationV1Alpha1API
 
-public protocol CertificatesV1Alpha1API {
+public protocol StorageVersionMigrationV1Alpha1API {
 
-	var clusterTrustBundles: ClusterScopedGenericKubernetesClient<certificates.v1alpha1.ClusterTrustBundle> { get }
+	var storageVersionMigrations: ClusterScopedGenericKubernetesClient<storagemigration.v1alpha1.StorageVersionMigration> { get }
 }
 
-/// DSL for `certificates.k8s.io.v1alpha1` API Group
+/// DSL for `storagemigration.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class CertificatesV1Alpha1: CertificatesV1Alpha1API {
+	class StorageVersionMigrationV1Alpha1: StorageVersionMigrationV1Alpha1API {
 		private var client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var clusterTrustBundles: ClusterScopedGenericKubernetesClient<certificates.v1alpha1.ClusterTrustBundle> {
-			client.clusterScoped(for: certificates.v1alpha1.ClusterTrustBundle.self)
+		public var storageVersionMigrations: ClusterScopedGenericKubernetesClient<storagemigration.v1alpha1.StorageVersionMigration> {
+			client.clusterScoped(for: storagemigration.v1alpha1.StorageVersionMigration.self)
 		}
 	}
 
-	var certificatesV1Alpha1: CertificatesV1Alpha1API {
-		CertificatesV1Alpha1(self)
+	var storageVersionMigrationV1Alpha1: StorageVersionMigrationV1Alpha1API {
+		StorageVersionMigrationV1Alpha1(self)
 	}
 }
