@@ -1,4 +1,4 @@
-// swift-tools-version:5.8
+// swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
 	name: "SwiftkubeClient",
 	platforms: [
-		.macOS(.v10_15), .iOS(.v14), .tvOS(.v14), .watchOS(.v7),
+		.macOS(.v12), .iOS(.v14), .tvOS(.v14), .watchOS(.v7),
 	],
 	products: [
 		.library(
@@ -15,12 +15,12 @@ let package = Package(
 		),
 	],
 	dependencies: [
-		.package(url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.14.0")),
-		.package(url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.21.2")),
-		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.6.1")),
-		.package(url: "https://github.com/apple/swift-metrics.git", .upToNextMajor(from: "2.5.0")),
-		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.1.2")),
-		.package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.67.0")),
+		.package(url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.16.0")),
+		.package(url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.24.2")),
+		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.6.2")),
+		.package(url: "https://github.com/apple/swift-metrics.git", .upToNextMajor(from: "2.5.1")),
+		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.1.3")),
+		.package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.80.0")),
 	],
 	targets: [
 		.target(
@@ -41,5 +41,6 @@ let package = Package(
 				"SwiftkubeClient",
 			]
 		),
-	]
+	],
+	swiftLanguageVersions: [.v5, .version("6")]
 )
