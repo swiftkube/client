@@ -52,7 +52,7 @@ jobs:
           ${{ matrix.os }}-${{ matrix.swift }}-
     - name: Install runtime for macOS
       continue-on-error: true
-      if: matrix.os == 'macos-10.15'
+      if: matrix.os == 'macos-latest'
       run: |
         brew install docker-machine docker
         sudo docker --version
