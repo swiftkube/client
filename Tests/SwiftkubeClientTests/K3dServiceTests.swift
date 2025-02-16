@@ -76,7 +76,7 @@ final class K3dServiceTests: K3dTestCase {
 			deletedService.fulfill()
 		}
 
-		wait(for: [deletedService], timeout: 10)
+		await fulfillment(of: [deletedService], timeout: 10)
 	}
 
 	private func buildService(name: String, port: Int32, deploy: apps.v1.Deployment) -> core.v1.Service {

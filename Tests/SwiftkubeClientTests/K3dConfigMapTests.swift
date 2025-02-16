@@ -85,7 +85,7 @@ final class K3dConfigMapTests: K3dTestCase {
 			deletedConfigMap.fulfill()
 		}
 
-		wait(for: [deletedConfigMap], timeout: 30)
+		await fulfillment(of: [deletedConfigMap], timeout: 30)
 	}
 
 	func testWatch() async {
@@ -95,7 +95,7 @@ final class K3dConfigMapTests: K3dTestCase {
 			var records: [Record] = []
 			do {
 				let watchTask = try K3dTestCase.client.configMaps.watch(in: .namespace("cm3"))
-				for try await event in watchTask.start() {
+				for try await event in await watchTask.start() {
 					let record = Record(eventType: event.type, resource: event.resource.metadata!.name!)
 					records.append(record)
 
@@ -115,10 +115,10 @@ final class K3dConfigMapTests: K3dTestCase {
 		try? _ = await K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1")
 		try? _ = await K3dTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"]))
 
-		wait(for: [expectation], timeout: 10)
+		await fulfillment(of: [expectation], timeout:10)
 
 		task.cancel()
-		let result = try? await task.result.get()
+		let result = await task.result.get()
 
 		assertEqual(result, [
 			Record(eventType: .added, resource: "kube-root-ca.crt"),

@@ -50,10 +50,10 @@ final class K3dCRDTests: K3dTestCase {
 										"ingredients": [
 											"type": "array",
 											"items": ["type": "string"]
-										]
-									]
-								]
-							]
+										] as [String: Sendable]
+									] as [String: Sendable]
+								] as [String: Sendable]
+							] as [String: Sendable]
 						])
 					),
 					served: true,
