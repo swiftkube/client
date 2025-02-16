@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
 	name: "SwiftkubeClient",
 	platforms: [
-		.macOS(.v12), .iOS(.v14), .tvOS(.v14), .watchOS(.v7),
+		.macOS(.v12), .iOS(.v15), .tvOS(.v15), .watchOS(.v8),
 	],
 	products: [
 		.library(
