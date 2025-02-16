@@ -20,7 +20,7 @@ import SwiftkubeModel
 // MARK: - EventType
 
 /// Possible kubernetes event types.
-public enum EventType: String, RawRepresentable, Equatable {
+public enum EventType: String, RawRepresentable, Equatable, Sendable {
 	case added = "ADDED"
 	case modified = "MODIFIED"
 	case deleted = "DELETED"
@@ -29,7 +29,7 @@ public enum EventType: String, RawRepresentable, Equatable {
 
 // MARK: - AnyWatchEvent
 
-protocol AnyWatchEvent {
+protocol AnyWatchEvent: Sendable {
 	var resourceVersion: String? { get }
 }
 

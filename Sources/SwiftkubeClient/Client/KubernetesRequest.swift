@@ -23,7 +23,7 @@ import SwiftkubeModel
 // MARK: - KubernetesRequest
 
 /// Represents a request against Kubernetes API Server
-public struct KubernetesRequest {
+public struct KubernetesRequest: Sendable {
 
 	/// API URL for this request.
 	let url: URL
@@ -102,7 +102,7 @@ public struct KubernetesRequest {
 
 // MARK: - RequestBody
 
-internal enum RequestBody {
+internal enum RequestBody: Sendable {
 	case resource(payload: any KubernetesAPIResource)
 	case subResource(type: ResourceType, payload: any KubernetesResource)
 

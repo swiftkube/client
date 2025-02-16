@@ -44,27 +44,18 @@ public class KubernetesClient {
 	internal let logger: Logger
 
 	internal let jsonDecoder: JSONDecoder = {
-		let timeFormatter: ISO8601DateFormatter = {
-			let formatter = ISO8601DateFormatter()
-			formatter.formatOptions = .withInternetDateTime
-			return formatter
-		}()
-
-		let microTimeFormatter: ISO8601DateFormatter = {
-			let formatter = ISO8601DateFormatter()
-			formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-			return formatter
-		}()
+		let timeFormatter = Date.ISO8601FormatStyle.iso8601
+		let microTimeFormatter = Date.ISO8601FormatStyle.iso8601.time(includingFractionalSeconds: true)
 
 		let jsonDecoder = JSONDecoder()
 		jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
 			let string = try decoder.singleValueContainer().decode(String.self)
 
-			if let date = timeFormatter.date(from: string) {
+			if let date = try? timeFormatter.parse(string) {
 				return date
 			}
 
-			if let date = microTimeFormatter.date(from: string) {
+			if let date = try? microTimeFormatter.parse(string) {
 				return date
 			}
 
@@ -173,7 +164,7 @@ public class KubernetesClient {
 	/// - Parameters:
 	///   - queue: The ``DispatchQueue`` for the callback upon completion.
 	///   - callback: The callback indicating any errors encountered during shutdown.
-	public func shutdown(queue: DispatchQueue, _ callback: @escaping (Error?) -> Void) {
+	public func shutdown(queue: DispatchQueue, _ callback: @Sendable @escaping (Error?) -> Void) {
 		httpClient.shutdown(queue: queue, callback)
 	}
 

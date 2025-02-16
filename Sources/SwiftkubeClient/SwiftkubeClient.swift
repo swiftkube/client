@@ -42,7 +42,7 @@ public enum SwiftkubeClientError: Error {
 	/// Thrown on all  errors returned from the Kubernetes API server.
 	case statusError(meta.v1.Status)
 	/// Indicates all response decoding errors.
-	case unexpectedError(Any)
+	case unexpectedError(Data)
 	/// Thrown when the underlying HTTPClient reports an error.
 	case clientError(Error)
 	/// Thrown when a `SwiftkubeClientTask` encounters non-recoverable connection errors.

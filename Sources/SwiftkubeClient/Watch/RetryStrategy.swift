@@ -28,7 +28,7 @@ public struct RetryAttempt: Hashable {
 
 /// A RetryStrategy defines how client requests should be retried when encountering non-recoverable errors.
 /// Basically it is a sequence of RetryAttempts generated according to a Policy and Backoff definition.
-public struct RetryStrategy: Sequence {
+public struct RetryStrategy: Sequence, Sendable {
 
 	public typealias Iterator = RetryAttemptIterator
 
@@ -37,7 +37,7 @@ public struct RetryStrategy: Sequence {
 	}
 
 	/// The retry policy for a given strategy.
-	public enum Policy {
+	public enum Policy: Sendable {
 		/// Always retries.
 		case always
 		/// Never retries.
@@ -58,7 +58,7 @@ public struct RetryStrategy: Sequence {
 	}
 
 	/// Defines the backoff behaviour between each retry attempt.
-	public enum Backoff {
+	public enum Backoff: Sendable {
 		/// No backoff.
 		case none
 		/// A fixed delay between each attempt specified in seconds.
