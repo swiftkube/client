@@ -7,6 +7,7 @@ on:
     branches: [ "*" ]
 
 jobs:
+
   swiftformat-lint:
       runs-on: ubuntu-latest
       steps:
@@ -17,58 +18,47 @@ jobs:
           url: https://github.com/nicklockwood/SwiftFormat
       - name: Lint Sources
         run: swiftformat --lint Sources
-
-  macOS:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      with:
-        path: .build
-        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-spm-
-    - name: Build
-      run: swift build
-    - name: Test
-      run: swift test --skip K3d
-
   iOS:
     name: Test iOS
     runs-on: macOS-latest
     strategy:
       matrix:
-        destination: ["platform=iOS Simulator,OS=16.2,name=iPhone 14 Pro"]
+        destination: 
+          - "platform=iOS Simulator,OS=17.5,name=iPhone 15 Pro"
+          - "platform=iOS Simulator,OS=18.2,name=iPhone 16 Pro"
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: iOS - ${{ matrix.destination }}
         run: set -o pipefail && xcodebuild -scheme SwiftkubeClient -destination "${{ matrix.destination }}" clean build | xcpretty
 
-  linux:
-    runs-on: ubuntu-latest
+  build:
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        swift: ["5.9", "5.10", "6.0"]
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: SPM Cache
+      uses: actions/cache@v2
       with:
         path: .build
-        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        key: ${{ matrix.os }}-${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
         restore-keys: |
-          ${{ runner.os }}-spm-
-    - name: Create cluster
-      uses: AbsaOSS/k3d-action@v2
+          ${{ matrix.os }}-${{ matrix.swift }}-
+    - name: Start minikube
+      uses: medyagh/setup-minikube@latest
+      id: minikube
       with:
-        cluster-name: "swiftkube"
-        args: -c k3d/swiftkube.yaml
-    - name: Setup Swift
-      uses: fwal/setup-swift@v1
+        minikube-version: 1.35.0
+    - uses: swift-actions/setup-swift@v2
       with:
-        swift-version: "5.8"
+        swift-version: ${{ matrix.swift }}
+    - name: Get swift version
+      run: swift --version
     - name: Build
       run: swift build
     - name: Test

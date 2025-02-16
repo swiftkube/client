@@ -22,6 +22,6 @@ final class K3dNodeTests: K3dTestCase {
 
 	func testListNodes() async {
 		let nodes = try? await K3dTestCase.client.nodes.list()
-		XCTAssertEqual(nodes?.items.count, 3)
+		XCTAssertEqual(nodes?.items.count, 1)
 	}
 }
