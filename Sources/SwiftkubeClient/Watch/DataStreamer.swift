@@ -20,30 +20,34 @@ import Logging
 import NIO
 import NIOFoundationCompat
 
-// MARK: - DataStreamerType
+// MARK: - DataStreamerTransformer
 
-internal protocol DataStreamerType {
-	associatedtype Element
+protocol DataStreamerTransformer: Sendable {
+	associatedtype Element: Sendable
 
-	func doStream(response: HTTPClientResponse, logger: Logger) -> AsyncThrowingStream<Element, Error>
-	func process(data: Data, continuation: AsyncThrowingStream<Element, Error>.Continuation)
+	func transform(input: String) -> Result<Element, Error>
 }
 
 // MARK: - DataStreamer
 
-internal class DataStreamer<Output>: DataStreamerType {
+internal actor DataStreamer<T: DataStreamerTransformer>: Sendable where T.Element: Sendable {
 
 	private var task: Task<Void, Error>?
+	private let transformer: T
 
-	func doStream(response: HTTPClientResponse, logger: Logger) -> AsyncThrowingStream<Output, Error> {
-		AsyncThrowingStream<Element, Error>(bufferingPolicy: .unbounded) { continuation in
-			task = makeTask(response: response, continuation: continuation, logger: logger)
+	internal init(transformer: consuming T) {
+		self.transformer = transformer
+	}
+
+	func doStream(response: consuming HTTPClientResponse, logger: Logger) -> AsyncThrowingStream<T.Element, Error> {
+		AsyncThrowingStream<T.Element, Error>(bufferingPolicy: .unbounded) { continuation in
+			self.task = makeTask(response: response, continuation: continuation, logger: logger)
 		}
 	}
 
 	private func makeTask(
 		response: HTTPClientResponse,
-		continuation: AsyncThrowingStream<Output, Error>.Continuation,
+		continuation: AsyncThrowingStream<T.Element, Error>.Continuation,
 		logger: Logger
 	) -> Task<Void, Error> {
 		Task {
@@ -76,7 +80,18 @@ internal class DataStreamer<Output>: DataStreamerType {
 						return continuation.finish()
 					}
 
-					process(data: data, continuation: continuation)
+					guard let string = String(data: data, encoding: .utf8) else {
+						continuation.finish(throwing: SwiftkubeClientError.decodingError("Could not deserialize payload"))
+						return
+					}
+
+					string.enumerateLines { line, _ in
+						let result = self.transformer.transform(input: line)
+						switch result {
+						case let .success(item): continuation.yield(item)
+						case let .failure(error): continuation.finish(throwing: error)
+						}
+					}
 				}
 
 				continuation.finish()
@@ -85,10 +100,6 @@ internal class DataStreamer<Output>: DataStreamerType {
 				continuation.finish(throwing: error)
 			}
 		}
-	}
-
-	func process(data: Data, continuation: AsyncThrowingStream<Output, Error>.Continuation) {
-		fatalError("Should only be used from a subclass")
 	}
 
 	func cancel() {

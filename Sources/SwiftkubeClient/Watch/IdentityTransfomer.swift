@@ -20,18 +20,11 @@ import Logging
 import NIO
 import SwiftkubeModel
 
-// MARK: - LineStreamer
+// MARK: - IdentityTransfomer
 
-internal class LineStreamer: DataStreamer<String> {
+internal struct IdentityTransfomer: DataStreamerTransformer {
 
-	internal override func process(data: Data, continuation: AsyncThrowingStream<String, Error>.Continuation) {
-		guard let string = String(data: data, encoding: .utf8) else {
-			continuation.finish(throwing: SwiftkubeClientError.decodingError("Could not deserialize payload"))
-			return
-		}
-
-		string.enumerateLines { line, _ in
-			continuation.yield(line)
-		}
+	func transform(input: String) -> Result<String, any Error> {
+		.success(input)
 	}
 }
