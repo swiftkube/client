@@ -377,7 +377,7 @@ public extension GenericKubernetesClient {
 		return SwiftkubeClientTask(
 			client: httpClient,
 			request: request,
-			streamer: ResourceEventStreamer(decoder: jsonDecoder),
+			transformer: ResourceEventTransformer(decoder: jsonDecoder),
 			retryStrategy: retryStrategy,
 			logger: logger
 		)
@@ -439,7 +439,7 @@ public extension GenericKubernetesClient {
 		return SwiftkubeClientTask(
 			client: httpClient,
 			request: request,
-			streamer: LineStreamer(),
+			transformer: IdentityTransfomer(),
 			retryStrategy: retryStrategy,
 			logger: logger
 		)

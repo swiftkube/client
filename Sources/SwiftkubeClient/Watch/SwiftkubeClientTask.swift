@@ -48,11 +48,10 @@ import SwiftkubeModel
 ///   print(item)
 /// }
 /// ```
-public class SwiftkubeClientTask<Output> {
+public actor SwiftkubeClientTask<Output: Sendable> {
 
 	private let client: HTTPClient
-
-	private let streamer: DataStreamer<Output>
+	private let dataStreamer: DataStreamer<AnyDataStreamerTransformer<Output>>
 	private let logger: Logger
 	private let retriesSequence: RetryStrategy.Iterator
 
@@ -61,23 +60,25 @@ public class SwiftkubeClientTask<Output> {
 	private var currentTask: Task<Void, Error>?
 	private var cancelled: Bool = false
 
-	internal init(
+	internal init<T: DataStreamerTransformer>(
 		client: HTTPClient,
-		request: KubernetesRequest,
-		streamer: DataStreamer<Output>,
-		retryStrategy: RetryStrategy,
+		request: consuming KubernetesRequest,
+		transformer: consuming T,
+		retryStrategy: consuming RetryStrategy,
 		logger: Logger
-	) {
+	) where T.Element == Output {
 		self.client = client
 		self.request = request
-		self.streamer = streamer
+		self.dataStreamer = DataStreamer(transformer: AnyDataStreamerTransformer(transformer))
 		self.retriesSequence = retryStrategy.makeIterator()
 		self.logger = logger
-		self.resourceVersion = request.resourceVersion
+		self.resourceVersion = self.request.resourceVersion
 	}
 
 	deinit {
-		doCancel()
+		cancelled = true
+		currentTask?.cancel()
+		currentTask = nil
 	}
 
 	/// Starts this task, which then begins to immediately emit data as an asynchronous stream.
@@ -91,6 +92,7 @@ public class SwiftkubeClientTask<Output> {
 		}
 
 		logger.debug("Staring task for request: \(request)")
+
 		return AsyncThrowingStream<Output, Error>(bufferingPolicy: .unbounded) { continuation in
 			currentTask?.cancel()
 			currentTask = makeTask(continuation: continuation)
@@ -109,7 +111,7 @@ public class SwiftkubeClientTask<Output> {
 				do {
 					let asyncRequest = try request.asAsyncClientRequest()
 					let response = try await client.execute(asyncRequest, deadline: .distantFuture, logger: logger)
-					let stream = streamer.doStream(response: response, logger: logger)
+					let stream = await dataStreamer.doStream(response: response, logger: logger)
 
 					for try await event in stream {
 						if let watchEvent = event as? AnyWatchEvent {
@@ -120,7 +122,7 @@ public class SwiftkubeClientTask<Output> {
 
 						guard !Task.isCancelled else {
 							logger.debug("Task for request: \(request) was cancelled")
-							streamer.cancel()
+							await dataStreamer.cancel()
 							continuation.finish()
 							break
 						}
@@ -156,10 +158,6 @@ public class SwiftkubeClientTask<Output> {
 
 	/// Cancels the task execution.
 	public func cancel() {
-		doCancel()
-	}
-
-	private func doCancel() {
 		cancelled = true
 		currentTask?.cancel()
 		currentTask = nil
