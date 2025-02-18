@@ -11,7 +11,8 @@ jobs:
   swiftformat-lint:
       runs-on: ubuntu-latest
       steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Install SwiftFormat
         uses: Cyberbeni/install-swift-tool@v2
         with:
@@ -44,7 +45,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: SPM Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: .build
         key: ${{ matrix.os }}-${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
