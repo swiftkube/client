@@ -55,6 +55,7 @@ jobs:
       if: matrix.os == 'macos-14'
       run: |
         brew install docker-machine docker
+        brew services start docker-machine
         sudo docker --version
         sysctl hw.physicalcpu hw.logicalcpu
     - name: Start minikube
