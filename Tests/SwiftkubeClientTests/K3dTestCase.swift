@@ -22,8 +22,14 @@ import XCTest
 
 open class K3dTestCase: XCTestCase {
 
+	#if compiler(>=6.0)
 	nonisolated(unsafe) static var logger: Logger!
 	nonisolated(unsafe) static var client: KubernetesClient!
+	#else
+	static var logger: Logger!
+	static var client: KubernetesClient!
+	#endif
+
 	static let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
 
 	open override class func setUp() {

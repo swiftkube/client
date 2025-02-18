@@ -118,7 +118,12 @@ final class K3dConfigMapTests: K3dTestCase {
 		await fulfillment(of: [expectation], timeout:10)
 
 		task.cancel()
+
+		#if compiler(>=6.0)
 		let result = await task.result.get()
+		#else
+		let result = try? await task.result.get()
+		#endif
 
 		assertEqual(result, [
 			Record(eventType: .added, resource: "kube-root-ca.crt"),
