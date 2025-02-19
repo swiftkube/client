@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.19.0
+
+### New
+
+- Update to Kubernetes model v1.32.0
+- Update dependencies:
+  - Async HTTP Client 1.24.2
+  - Kubernetes 1.32.0
+  - SwiftkubeModel 0.16.0
+  - SwiftNIO 2.80.0
+  - SwiftLog 1.6.2
+  - SwiftMetrics 2.5.1
+  - Yams 5.1.3
+- Add function to create `KubernetesClientConfig` from string  #41
+- Add support for Swift 6 and strict concurrency
+
+### Breaking Change
+
+- Raise minimum Swift version to 5.9
+- Raise minimum supported macOS platform version to 12
+- `KubernetesResources` is `Sendable` now
+  - Any CRDs conforming to `KubernetesResources` must be `Sendable`
+- `SwiftkubeClientTask` is an actor now and all its public methods are async
+  - Previous calls to `task.start()` must be changed to `await task.start()`
+
+
 ## 0.18.0
 
 ### New
