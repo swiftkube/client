@@ -9,8 +9,8 @@
     <a href="https://swiftpackageindex.com/swiftkube/client">
       <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
     </a>
-	<a href="https://v1-28.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.29.6-blue.svg" alt="Kubernetes 1.29.6"/>
+	<a href="https://v1-28.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/">
+		<img src="https://img.shields.io/badge/Kubernetes-1.32.0-blue.svg" alt="Kubernetes 1.32.0"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -42,7 +42,7 @@
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based 
 on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.28.3
+- [x] Covers all Kubernetes API Groups in v1.32.0
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -68,18 +68,14 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 
 ## Compatibility Matrix
 
-|                   | 1.18.9 | 1.19.8 | 1.20.9 | 1.22.7 | 1.24.8 | 1.24.10 | 1.26.4 | 1.28.0 | 1.28.3 | 1.29.6 |
-|-------------------|--------|--------|--------|--------|--------|---------|--------|--------|--------|--------|
-| `0.6.x`           | ✓      | -      | -      | -      | -      | -       | -      | -      | -      | -      |
-| `0.7.x...0.9.x`   | -      | ✓      | -      | -      | -      | -       | -      | -      | -      | -      |
-| `0.10.x`          | -      | -      | ✓      | -      | -      | -       | -      | -      | -      | -      |
-| `0.11.x`          | -      | -      | -      | ✓      | -      | -       | -      | -      | -      | -      |
-| `0.12.x...0.13.x` | -      | -      | -      | -      | ✓      | -       | -      | -      | -      | -      |
-| `0.14.x`          | -      | -      | -      | -      | -      | ✓       | -      | -      | -      | -      |
-| `0.15.x`          | -      | -      | -      | -      | -      | -       | ✓      | -      | -      | -      |
-| `0.16.x`          | -      | -      | -      | -      | -      | -       | -      | ✓      | -      | -      |
-| `0.17.x`          | -      | -      | -      | -      | -      | -       | -      | -      | ✓      | -      |
-| `0.18.x`          | -      | -      | -      | -      | -      | -       | -      | -      | -      | ✓      |
+|                   | 1.24.10 | 1.26.4 | 1.28.0 | 1.28.3 | 1.29.6 | 1.32.0 |
+|-------------------|---------|--------|--------|--------|--------|--------|
+| `0.14.x`          | ✓       | -      | -      | -      | -      | -      |
+| `0.15.x`          | -       | ✓      | -      | -      | -      | -      |
+| `0.16.x`          | -       | -      | ✓      | -      | -      | -      |
+| `0.17.x`          | -       | -      | -      | ✓      | -      | -      |
+| `0.18.x`          | -       | -      | -      | -      | ✓      | -      |
+| `0.19.x`          | -       | -      | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
@@ -264,7 +260,7 @@ buffering policy is used, which should be taken into consideration.
 
 ```swift
 let task: SwiftkubeClientTask = client.pods.watch(in: .allNamespaces)
-let stream = task.start()
+let stream = await task.start()
 
 for try await event in stream {
   print(event)
@@ -299,7 +295,7 @@ let strategy = RetryStrategy(
 )
 let task = client.pods.watch(in: .default, retryStrategy: strategy)
 
-for try await event in task.stream() {
+for try await event in await task.stream() {
   print(event)
 }
 ```
@@ -405,7 +401,7 @@ try await client.apiExtensionsV1.customResourceDefinitions.create(crd)
 The `KubernetesClient` can now be "extended", in order to manage the Custom Resources. One way would be to use the
 `UnstructuredResource` described in the previous section given some `GroupVersionResource`.
 
-However, the client can work with any object that implement the relevant marker protocols, which allows for custom types
+However, the client can work with any object that implements the relevant marker protocols, which allows for custom types
 to be defined and used directly.
 
 Here is a complete example to clarify.
@@ -456,7 +452,7 @@ The marker protocols are:
 - `CollectionDeletableResource` activate the `deleteAll` API for the resource
 - `ScalableResource` activates the `scale` API for the resource
 - `MetadataHavingResource` indicates, that the resource has a `metadata` field of type `meta.v1.ObjectMeta?`
-- `StatusHavingResource` indicate, that the resource has a `scale` field (w/o assuming its type)
+- `StatusHavingResource` indicate, that the resource has a `state` field (w/o assuming its type)
 
 The following custom structs can be defined:
 
@@ -470,7 +466,7 @@ struct CronTab: KubernetesAPIResource, NamespacedResource, MetadataHavingResourc
   var spec: CronTabSpec
 }
 
-struct CronTabSpec: Codable, Hashable {
+struct CronTabSpec: Codable, Hashable, Sendable {
   var cronSpec: String
   var image: String
   var replicas: Int
@@ -548,7 +544,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeClient` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.18.0")
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.19.0")
 ```
 
 then include it as a dependency in your target:
@@ -559,7 +555,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.18.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.19.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
