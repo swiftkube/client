@@ -69,7 +69,7 @@ final class K8sCRDTests: K8sTestCase {
 		var apiVersion = "example.swiftkube.dev/v1"
 		var kind = "Cocktails"
 		var metadata: SwiftkubeModel.meta.v1.ListMeta?
-		var items: [K3dCRDTests.Cocktail]
+		var items: [K8sCRDTests.Cocktail]
 	}
 
 	struct Cocktail: KubernetesAPIResource, NamespacedResource,
