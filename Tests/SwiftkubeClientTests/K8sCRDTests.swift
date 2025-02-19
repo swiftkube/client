@@ -18,7 +18,7 @@ import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-final class K3dCRDTests: K3dTestCase {
+final class K8sCRDTests: K8sTestCase {
 
 	private let cocktailCRD = apiextensions.v1.CustomResourceDefinition(
 		metadata: meta.v1.ObjectMeta(name: "cocktails.example.swiftkube.dev"),
@@ -99,9 +99,9 @@ final class K3dCRDTests: K3dTestCase {
 	}
 
 	func testCRD() async {
-		let _ = try? await K3dTestCase.client.apiExtensionsV1.customResourceDefinitions.create(cocktailCRD)
+		let _ = try? await K8sTestCase.client.apiExtensionsV1.customResourceDefinitions.create(cocktailCRD)
 
-		let allCRDs = try? await K3dTestCase.client.apiExtensionsV1.customResourceDefinitions.list()
+		let allCRDs = try? await K8sTestCase.client.apiExtensionsV1.customResourceDefinitions.list()
 
 		let cocktail = allCRDs?.first { element in
 			element.spec.names.kind == "Cocktail"
@@ -114,7 +114,7 @@ final class K3dCRDTests: K3dTestCase {
 			resource: "cocktails"
 		)
 
-		let cocktailsClient = K3dTestCase.client.for(Cocktail.self, gvr: gvr)
+		let cocktailsClient = K8sTestCase.client.for(Cocktail.self, gvr: gvr)
 
 		try? _ = await cocktailsClient.create(in: .namespace("crd-test"), Cocktail(
 			metadata: meta.v1.ObjectMeta(name: "gin-tonic"),

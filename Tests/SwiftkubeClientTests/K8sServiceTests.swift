@@ -19,7 +19,7 @@ import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-final class K3dServiceTests: K3dTestCase {
+final class K8sServiceTests: K8sTestCase {
 
 	let deployment = buildDeployment()
 
@@ -34,16 +34,16 @@ final class K3dServiceTests: K3dTestCase {
 	}
 
 	func testListCreate() async {
-		try? _ = await K3dTestCase.client.appsV1.deployments.create(in: .namespace("svc1"), deployment)
+		try? _ = await K8sTestCase.client.appsV1.deployments.create(in: .namespace("svc1"), deployment)
 
 		for service in [
 			buildService(name: "svc1", port: 8080, deploy: deployment),
 			buildService(name: "svc2", port: 9090, deploy: deployment),
 		] {
-			try? _ = await K3dTestCase.client.services.create(inNamespace: .namespace("svc1"), service)
+			try? _ = await K8sTestCase.client.services.create(inNamespace: .namespace("svc1"), service)
 		}
 
-		let services = try? await K3dTestCase.client.services.list(in: .namespace("svc1"))
+		let services = try? await K8sTestCase.client.services.list(in: .namespace("svc1"))
 
 		let names = services?.items.map { $0.name }
 		assertEqual(names, ["svc1", "svc2"])
@@ -53,21 +53,21 @@ final class K3dServiceTests: K3dTestCase {
 	}
 
 	func testDelete() async {
-		try? _ = await K3dTestCase.client.appsV1.deployments.create(in: .namespace("svc1"), deployment)
+		try? _ = await K8sTestCase.client.appsV1.deployments.create(in: .namespace("svc1"), deployment)
 
-		let service = try? await K3dTestCase.client.services.create(
+		let service = try? await K8sTestCase.client.services.create(
 			inNamespace: .namespace("svc1"),
 			buildService(name: "deleteme", port: 8080, deploy: deployment)
 		)
 
 		XCTAssertNotNil(service)
 
-		let _ = try! await K3dTestCase.client.services.delete(inNamespace: .namespace("svc1"), name: "deleteme")
+		let _ = try! await K8sTestCase.client.services.delete(inNamespace: .namespace("svc1"), name: "deleteme")
 
 		let deletedService = expectation(description: "Deleted Service")
 
 		do {
-			let _ = try await K3dTestCase.client.configMaps.get(in: .namespace("svc1"), name: "deleteme")
+			let _ = try await K8sTestCase.client.configMaps.get(in: .namespace("svc1"), name: "deleteme")
 		} catch let error {
 			guard case let SwiftkubeClientError.statusError(status) = error, status.code == 404 else {
 				return

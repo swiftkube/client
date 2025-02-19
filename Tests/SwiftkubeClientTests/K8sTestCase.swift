@@ -20,7 +20,7 @@ import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-open class K3dTestCase: XCTestCase {
+open class K8sTestCase: XCTestCase {
 
 	#if compiler(>=6.0)
 	nonisolated(unsafe) static var logger: Logger!

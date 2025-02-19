@@ -18,7 +18,7 @@ import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-final class K3dNamespaceTests: K3dTestCase {
+final class K8sNamespaceTests: K8sTestCase {
 
 	override class func setUp() {
 		super.setUp()
@@ -35,7 +35,7 @@ final class K3dNamespaceTests: K3dTestCase {
 	}
 
 	func testListByLabels_eq() async {
-		let namespaces = try? await K3dTestCase.client.namespaces.list(options: [
+		let namespaces = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.eq(["app": "nginx"]))
 		])
 		.map { $0.name }
@@ -44,7 +44,7 @@ final class K3dNamespaceTests: K3dTestCase {
 	}
 
 	func testListByLabels_neq() async {
-		let namespaces = try? await K3dTestCase.client.namespaces.list(options: [
+		let namespaces = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.exists(["app"])),
 			.labelSelector(.neq(["app": "nginx"]))
 		])
@@ -54,14 +54,14 @@ final class K3dNamespaceTests: K3dTestCase {
 	}
 
 	func testListByLabels_exists() async {
-		let namespaces = try? await K3dTestCase.client.namespaces.list(options: [
+		let namespaces = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.exists(["app"]))
 		])
 		.map { $0.name }
 
 		assertEqual(namespaces, ["ns1", "ns2", "ns3"])
 
-		let empty = try? await K3dTestCase.client.namespaces.list(options: [
+		let empty = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.exists(["foo"]))
 		])
 		.map { $0.name }
@@ -70,14 +70,14 @@ final class K3dNamespaceTests: K3dTestCase {
 	}
 
 	func testListByLabels_in() async {
-		let all = try? await K3dTestCase.client.namespaces.list(options: [
+		let all = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.in(["app": ["nginx", "swiftkube"]]))
 		])
 		.map { $0.name }
 
 		assertEqual(all, ["ns1", "ns2", "ns3"])
 
-		let sub = try? await K3dTestCase.client.namespaces.list(options: [
+		let sub = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.in(["app": ["nginx"]]))
 		])
 		.map { $0.name }
@@ -86,7 +86,7 @@ final class K3dNamespaceTests: K3dTestCase {
 	}
 
 	func testListByLabels_notIn() async {
-		let namespaces = try? await K3dTestCase.client.namespaces.list(options: [
+		let namespaces = try? await K8sTestCase.client.namespaces.list(options: [
 			.labelSelector(.exists(["app"])),
 			.labelSelector(.notIn(["app": ["swiftkube"]]))
 		])
@@ -96,7 +96,7 @@ final class K3dNamespaceTests: K3dTestCase {
 	}
 
 	func testGetByName() async {
-		let namespace = try? await K3dTestCase.client.namespaces.get(name: "ns2").name
+		let namespace = try? await K8sTestCase.client.namespaces.get(name: "ns2").name
 		XCTAssertEqual(namespace, "ns2")
 	}
 }

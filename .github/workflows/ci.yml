@@ -39,7 +39,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14]
+        os: [ubuntu-22.04, macos-latest]
         swift: ["5.9", "5.10", "6.0"]
     steps:
     - name: Checkout
@@ -51,15 +51,16 @@ jobs:
         key: ${{ matrix.os }}-${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
         restore-keys: |
           ${{ matrix.os }}-${{ matrix.swift }}-
-    - name: Install runtime for macOS
-      continue-on-error: true
-      if: matrix.os == 'macos-14'
-      run: |
-        brew install docker-machine docker
-        brew services start docker-machine
-        sudo docker --version
-        sysctl hw.physicalcpu hw.logicalcpu
+    # - name: Install runtime for macOS
+    #   continue-on-error: true
+    #   if: matrix.os == 'macos-latest'
+    #   run: |
+    #     brew install docker-machine docker
+    #     brew services start docker-machine
+    #     sudo docker --version
+    #     sysctl hw.physicalcpu hw.logicalcpu
     - name: Start minikube
+      if: matrix.os == 'ubuntu-22.04'
       uses: medyagh/setup-minikube@latest
       id: minikube
       with:
@@ -71,5 +72,9 @@ jobs:
       run: swift --version
     - name: Build
       run: swift build
-    - name: Test
+    - name: Test Linux
+      if: matrix.os == 'ubuntu-22.04'
       run: swift test
+    - name: Test macOS
+      if: matrix.os == 'macos-latest'
+      run: swift test --skip K3d

@@ -18,10 +18,10 @@ import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-final class K3dNodeTests: K3dTestCase {
+final class K8sNodeTests: K8sTestCase {
 
 	func testListNodes() async {
-		let nodes = try? await K3dTestCase.client.nodes.list()
+		let nodes = try? await K8sTestCase.client.nodes.list()
 		XCTAssertEqual(nodes?.items.count, 1)
 	}
 }

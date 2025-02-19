@@ -19,7 +19,7 @@ import SwiftkubeClient
 import SwiftkubeModel
 import XCTest
 
-final class K3dConfigMapTests: K3dTestCase {
+final class K8sConfigMapTests: K8sTestCase {
 
 	override class func setUp() {
 		super.setUp()
@@ -41,10 +41,10 @@ final class K3dConfigMapTests: K3dTestCase {
 			buildConfigMap("test2", data: ["app": "nginx", "env": "qa"]),
 			buildConfigMap("test3", data: ["app": "swiftkube", "env": "prod"])
 		] {
-			try? _ = await K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm1"), configMap)
+			try? _ = await K8sTestCase.client.configMaps.create(inNamespace: .namespace("cm1"), configMap)
 		}
 
-		let configMaps = try? await K3dTestCase.client.configMaps.list(in: .namespace("cm1"))
+		let configMaps = try? await K8sTestCase.client.configMaps.list(in: .namespace("cm1"))
 			.map {
 				$0.name
 			}
@@ -53,7 +53,7 @@ final class K3dConfigMapTests: K3dTestCase {
 	}
 
 	func testCreate() async {
-		let configMap = try? await K3dTestCase.client.configMaps.create(
+		let configMap = try? await K8sTestCase.client.configMaps.create(
 			inNamespace: .namespace("cm2"),
 			buildConfigMap("test", data: ["app": "nginx", "env": "dev"])
 		)
@@ -64,19 +64,19 @@ final class K3dConfigMapTests: K3dTestCase {
 	}
 
 	func testDelete() async {
-		let configMap = try? await K3dTestCase.client.configMaps.create(
+		let configMap = try? await K8sTestCase.client.configMaps.create(
 			inNamespace: .namespace("cm2"),
 			buildConfigMap("deleteme", data: [:])
 		)
 
 		XCTAssertNotNil(configMap)
 
-		let _ = try? await K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm2"), name: configMap!.name!)
+		let _ = try? await K8sTestCase.client.configMaps.delete(inNamespace: .namespace("cm2"), name: configMap!.name!)
 
 		let deletedConfigMap = expectation(description: "Deleted ConfigMap")
 
 		do {
-			let _ = try await K3dTestCase.client.configMaps.get(in: .namespace("cm2"), name: "deleteme")
+			let _ = try await K8sTestCase.client.configMaps.get(in: .namespace("cm2"), name: "deleteme")
 		} catch let error {
 			guard case let SwiftkubeClientError.statusError(status) = error, status.code == 404 else {
 				return
@@ -94,7 +94,7 @@ final class K3dConfigMapTests: K3dTestCase {
 		let task = Task {
 			var records: [Record] = []
 			do {
-				let watchTask = try K3dTestCase.client.configMaps.watch(in: .namespace("cm3"))
+				let watchTask = try K8sTestCase.client.configMaps.watch(in: .namespace("cm3"))
 				for try await event in await watchTask.start() {
 					let record = Record(eventType: event.type, resource: event.resource.metadata!.name!)
 					records.append(record)
@@ -110,10 +110,10 @@ final class K3dConfigMapTests: K3dTestCase {
 			}
 		}
 
-		try? _ = await K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test1"))
-		try? _ = await K3dTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test2"))
-		try? _ = await K3dTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1")
-		try? _ = await K3dTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"]))
+		try? _ = await K8sTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test1"))
+		try? _ = await K8sTestCase.client.configMaps.create(inNamespace: .namespace("cm3"), buildConfigMap("test2"))
+		try? _ = await K8sTestCase.client.configMaps.delete(inNamespace: .namespace("cm3"), name: "test1")
+		try? _ = await K8sTestCase.client.configMaps.update(inNamespace: .namespace("cm3"), buildConfigMap("test2", data: ["foo": "bar"]))
 
 		await fulfillment(of: [expectation], timeout:10)
 
