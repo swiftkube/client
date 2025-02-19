@@ -95,7 +95,7 @@ open class K8sTestCase: XCTestCase {
 		}
 	}
 
-	func assertEqual<S: Sequence>(_ lhs: S?, _ rhs: S?, file: StaticString = #file, line: UInt = #line) where S.Element: Hashable {
+	func assertEqual<S: Sequence>(_ lhs: S?, _ rhs: S?, file: StaticString = #filePath, line: UInt = #line) where S.Element: Hashable {
 		XCTAssert(
 			Set(lhs ?? [] as! S) == Set(rhs ?? [] as! S),
 			"\(String(describing: lhs)) is not equal to \(String(describing: rhs))",

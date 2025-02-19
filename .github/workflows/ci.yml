@@ -77,4 +77,4 @@ jobs:
       run: swift test
     - name: Test macOS
       if: matrix.os == 'macos-latest'
-      run: swift test --skip K3d
+      run: swift test --skip K8s
