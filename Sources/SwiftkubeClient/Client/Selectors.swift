@@ -24,7 +24,7 @@ import SwiftkubeModel
 // MARK: - NamespaceSelector
 
 /// A namespace selector enumeration for use in namespaced client requests.
-public enum NamespaceSelector: Hashable {
+public enum NamespaceSelector: Hashable, Sendable {
 	/// Selects a namespace by name.
 	case namespace(String)
 	/// Selects the `default` namespace.
@@ -65,7 +65,7 @@ public enum NamespaceSelector: Hashable {
 /// - Set-based label requirements allow filtering keys according to a set of values.
 ///
 /// A label selector can be made of multiple requirements. In the case of multiple requirements, all must be satisfied.
-public enum LabelSelectorRequirement: Hashable {
+public enum LabelSelectorRequirement: Hashable, Sendable {
 	/// Filters by matching label keys and values.
 	case eq([String: String])
 	/// Filters by non-matching label keys and values.
@@ -98,7 +98,7 @@ public enum LabelSelectorRequirement: Hashable {
 /// Represents requirements fot label selectors, for example in ``ListOption/fieldSelector(_:)``.
 ///
 /// Field selectors let you select Kubernetes resources based on the value of one or more resource fields.
-public enum FieldSelectorRequirement: Hashable {
+public enum FieldSelectorRequirement: Hashable, Sendable {
 	/// Filters by matching field keys and values.
 	case eq([String: String])
 	/// Filters by non-matching field keys and values.
@@ -117,7 +117,7 @@ public enum FieldSelectorRequirement: Hashable {
 // MARK: - ListOption
 
 /// Options for `List` API calls.
-public enum ListOption: Hashable {
+public enum ListOption: Hashable, Sendable {
 	/// The continue option should be set when retrieving more results from the server.
 	///
 	/// Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters
@@ -207,7 +207,7 @@ public enum ListOption: Hashable {
 // MARK: - ReadOption
 
 /// Options for `Read` API calls
-public enum ReadOption: Hashable {
+public enum ReadOption: Hashable, Sendable {
 	/// If 'true', then the output is pretty printed.
 	case pretty(Bool)
 	/// Should the export be exact. Exact export maintains cluster-specific fields like 'Namespace'.
