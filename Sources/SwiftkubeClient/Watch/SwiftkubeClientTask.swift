@@ -42,8 +42,8 @@ import SwiftkubeModel
 /// Example:
 ///
 /// ```swift
-/// let task = try client.configMaps.watch(in: .default)
-/// let stream = task.start()
+/// let task = try await client.configMaps.watch(in: .default)
+/// let stream = await task.start()
 /// for try await item in stream {
 ///   print(item)
 /// }
