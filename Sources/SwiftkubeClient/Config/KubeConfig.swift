@@ -23,7 +23,7 @@ import Foundation
 /// Where possible, json tags match the cli argument names.
 /// Top level config objects and all values required for proper functioning are not "omitempty".  Any truly optional piece of config is allowed to be omitted.
 /// Config holds the information needed to build connect to remote kubernetes clusters as a given user
-public struct KubeConfig: Codable {
+public struct KubeConfig: Codable, Sendable {
 
 	enum CodingKeys: String, CodingKey {
 		case kind, apiVersion, clusters, users, contexts
@@ -52,7 +52,7 @@ public struct KubeConfig: Codable {
 // MARK: - Cluster
 
 /// Cluster contains information about how to communicate with a kubernetes cluster.
-public struct Cluster: Codable {
+public struct Cluster: Codable, Sendable {
 
 	enum CodingKeys: String, CodingKey {
 		case server
@@ -85,7 +85,7 @@ public struct Cluster: Codable {
 // MARK: - AuthInfo
 
 /// AuthInfo contains information that describes identity information.  This is use to tell the kubernetes cluster who you are.
-public struct AuthInfo: Codable {
+public struct AuthInfo: Codable, Sendable {
 
 	enum CodingKeys: String, CodingKey {
 		case clientCertificate = "client-certificate"
@@ -146,7 +146,7 @@ public struct AuthInfo: Codable {
 // MARK: - Context
 
 /// Context is a tuple of references to a cluster (how do I communicate with a kubernetes cluster), a user (how do I identify myself), and a namespace (what subset of resources do I want to work with)
-public struct Context: Codable {
+public struct Context: Codable, Sendable {
 
 	/// Cluster is the name of the cluster for this context.
 	public var cluster: String
@@ -161,7 +161,7 @@ public struct Context: Codable {
 // MARK: - NamedCluster
 
 /// NamedCluster relates nicknames to cluster information.
-public struct NamedCluster: Codable {
+public struct NamedCluster: Codable, Sendable {
 
 	/// Name is the nickname for this Cluster.
 	public var name: String
@@ -173,7 +173,7 @@ public struct NamedCluster: Codable {
 // MARK: - NamedContext
 
 /// NamedContext relates nicknames to context information.
-public struct NamedContext: Codable {
+public struct NamedContext: Codable, Sendable {
 
 	/// Name is the nickname for this Context.
 	public var name: String
@@ -185,7 +185,7 @@ public struct NamedContext: Codable {
 // MARK: - NamedAuthInfo
 
 /// NamedAuthInfo relates nicknames to auth information.
-public struct NamedAuthInfo: Codable {
+public struct NamedAuthInfo: Codable, Sendable {
 	enum CodingKeys: String, CodingKey {
 		case name
 		case authInfo = "user"
@@ -201,7 +201,7 @@ public struct NamedAuthInfo: Codable {
 // MARK: - AuthProviderConfig
 
 /// AuthProviderConfig holds the configuration for a specified auth provider.
-public struct AuthProviderConfig: Codable {
+public struct AuthProviderConfig: Codable, Sendable {
 
 	/// Name is the nickname for this AuthProviderConfig.
 	public var name: String
@@ -215,7 +215,7 @@ public struct AuthProviderConfig: Codable {
 ///  ExecConfig specifies a command to provide client credentials.
 ///  The command is exec'd and outputs structured stdout holding credentials.
 ///  See the client.authentication.k8s.io API group for specifications of the exact input and output format
-public struct ExecConfig: Codable {
+public struct ExecConfig: Codable, Sendable {
 	/// Command to execute.
 	public var command: String
 
@@ -233,7 +233,7 @@ public struct ExecConfig: Codable {
 // MARK: - ExecEnvVar
 
 /// ExecEnvVar is used for setting environment variables when executing an exec-based credential plugin.
-public struct ExecEnvVar: Codable {
+public struct ExecEnvVar: Codable, Sendable {
 
 	/// Variable name.
 	public var name: String
