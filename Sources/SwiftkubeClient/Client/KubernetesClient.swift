@@ -257,8 +257,7 @@ public extension KubernetesClient {
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new ``ClusterScopedGenericKubernetesClient`` for the given resource type.
 	func clusterScoped<R: KubernetesAPIResource & ClusterScopedResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
-		let genericClient = GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
-		return ClusterScopedGenericKubernetesClient<R>(client: genericClient, config: config)
+		ClusterScopedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
 	/// Create a new `namespace-scoped` client for the given namespace-scoped resoruce type.
@@ -266,8 +265,7 @@ public extension KubernetesClient {
 	/// - Parameter type: The ``KubernetesAPIResource`` type.
 	/// - Returns A new ``NamespacedGenericKubernetesClient`` for the given resource type.
 	func namespaceScoped<R: KubernetesAPIResource & NamespacedResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
-		let genericClient = GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
-		return NamespacedGenericKubernetesClient<R>(client: genericClient, config: config)
+		NamespacedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 }
 
