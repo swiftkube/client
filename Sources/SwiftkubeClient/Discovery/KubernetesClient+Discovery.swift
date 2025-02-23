@@ -23,7 +23,7 @@ import SwiftkubeModel
 // MARK: - Info
 
 /// Holds information about the kubernetes API server version when calling ``DiscoveryAPI/serverVersion()``.
-public struct Info: Codable {
+public struct Info: Codable, Sendable {
 	public let major: String
 	public let minor: String
 	public let gitVersion: String

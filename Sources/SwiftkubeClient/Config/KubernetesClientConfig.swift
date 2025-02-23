@@ -23,7 +23,7 @@ import Yams
 // MARK: - KubernetesClientConfig
 
 /// Configuration object for the ``KubernetesClient``
-public struct KubernetesClientConfig {
+public struct KubernetesClientConfig: Sendable {
 
 	/// The URL for the kuberentes API server.
 	public let masterURL: URL

@@ -19,7 +19,7 @@ import Foundation
 import NIOSSL
 
 /// Supported client authentication schemes.
-public enum KubernetesClientAuthentication {
+public enum KubernetesClientAuthentication: Sendable {
 	/// Basic Authentincation via username/password.
 	case basicAuth(username: String, password: String)
 	/// Bearer token authentication scheme via a valid API token.
