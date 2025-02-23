@@ -20,9 +20,8 @@ import SwiftkubeModel
 
 // MARK: - NamespacedGenericKubernetesClient
 
-/// A generic Kubernetes client class for namespace-scoped API resource objects.
-public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource & NamespacedResource>: GenericKubernetesClient<Resource> {
-}
+/// A generic Kubernetes client for namespace-scoped API resource objects.
+public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource & NamespacedResource>: GenericKubernetesClient<Resource> {}
 
 // MARK: - ReadableResource
 
@@ -60,8 +59,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	/// Example:
 	///
 	/// ```swift
-	/// let task = try client.pods.watch(in: .default)
-	/// let stream = task.start()
+	/// let task = try await self.pods.watch(in: .default)
+	/// let stream = await task.start()
 	/// for try await item in stream {
 	///   print(item)
 	/// }
@@ -81,7 +80,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = try client.pods.watch(in: .default, retryStrategy: strategy)
+	/// let task = try await self.pods.watch(in: .default, retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
@@ -94,8 +93,8 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 		in namespace: NamespaceSelector? = nil,
 		options: [ListOption]? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy()
-	) throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
-		try super.watch(
+	) async throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
+		try await super.watch(
 			in: namespace ?? .namespace(config.namespace),
 			options: options,
 			retryStrategy: retryStrategy

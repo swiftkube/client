@@ -34,7 +34,7 @@ final class K8sServiceTests: K8sTestCase {
 	}
 
 	func testListCreate() async {
-		try? _ = await K8sTestCase.client.appsV1.deployments.create(in: .namespace("svc1"), deployment)
+		try? _ = await K8sTestCase.client.appsV1.deployments.create(inNamespace: .namespace("svc1"), deployment)
 
 		for service in [
 			buildService(name: "svc1", port: 8080, deploy: deployment),
@@ -53,7 +53,7 @@ final class K8sServiceTests: K8sTestCase {
 	}
 
 	func testDelete() async {
-		try? _ = await K8sTestCase.client.appsV1.deployments.create(in: .namespace("svc1"), deployment)
+		try? _ = await K8sTestCase.client.appsV1.deployments.create(inNamespace: .namespace("svc1"), deployment)
 
 		let service = try? await K8sTestCase.client.services.create(
 			inNamespace: .namespace("svc1"),

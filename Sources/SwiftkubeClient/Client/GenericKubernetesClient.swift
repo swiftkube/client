@@ -337,8 +337,8 @@ public extension GenericKubernetesClient {
 	/// Example:
 	///
 	/// ```swift
-	/// let task = try client.configMaps.watch(in: .default)
-	/// let stream = task.start()
+	/// let task = try await client.configMaps.watch(in: .default)
+	/// let stream = await task.start()
 	/// for try await item in stream {
 	///   print(item)
 	/// }
@@ -358,7 +358,7 @@ public extension GenericKubernetesClient {
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = try client.pods.watch(in: .default, retryStrategy: strategy)
+	/// let task = try await client.pods.watch(in: .default, retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
@@ -371,7 +371,7 @@ public extension GenericKubernetesClient {
 		in namespace: NamespaceSelector,
 		options: [ListOption]? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy()
-	) throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
+	) async throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
 		let request = try makeRequest().in(namespace).toWatch().with(options: options).build()
 
 		return SwiftkubeClientTask(
@@ -399,8 +399,8 @@ public extension GenericKubernetesClient {
 	/// Example:
 	///
 	/// ```swift
-	/// let task = try client.pods.follow(in: .namespace("default"), name: "nginx")
-	/// let stream = task.start()
+	/// let task = try await client.pods.follow(in: .namespace("default"), name: "nginx")
+	/// let stream = await task.start()
 	/// for try await line in stream {
 	///   print(line)
 	///	}
@@ -416,7 +416,7 @@ public extension GenericKubernetesClient {
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy)
+	/// let task = await client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
@@ -433,7 +433,7 @@ public extension GenericKubernetesClient {
 		container: String?,
 		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
-	) throws -> SwiftkubeClientTask<String> {
+	) async throws -> SwiftkubeClientTask<String> {
 		let request = try makeRequest().in(namespace).toFollow(pod: name, container: container, timestamps: timestamps).build()
 
 		return SwiftkubeClientTask(

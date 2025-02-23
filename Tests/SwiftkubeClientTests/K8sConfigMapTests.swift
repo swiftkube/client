@@ -94,7 +94,7 @@ final class K8sConfigMapTests: K8sTestCase {
 		let task = Task {
 			var records: [Record] = []
 			do {
-				let watchTask = try K8sTestCase.client.configMaps.watch(in: .namespace("cm3"))
+				let watchTask = try await K8sTestCase.client.configMaps.watch(in: .namespace("cm3"))
 				for try await event in await watchTask.start() {
 					let record = Record(eventType: event.type, resource: event.resource.metadata!.name!)
 					records.append(record)

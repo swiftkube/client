@@ -56,7 +56,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 	///    initialDelay = 5.0,
 	///    jitter = 0.2
 	/// )
-	/// let task = client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy)
+	/// let task = await client.pods.follow(in: .default, name: "nginx", retryStrategy: strategy)
 	/// ```
 	///
 	/// - Parameters:
@@ -73,8 +73,8 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		container: String? = nil,
 		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
-	) throws -> SwiftkubeClientTask<String> {
-		try super.follow(
+	) async throws -> SwiftkubeClientTask<String> {
+		try await super.follow(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
