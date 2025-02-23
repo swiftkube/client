@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.20.0
+
+- Mark configuration structs as Sendable
+- Mark `NamespaceSelector`, `LabelSelectorRequirement`, `FieldSelectorRequirement` as Sendable
+- Mark `ListOption` and `ReadOptions` as Sendable
+- Make client's `watch` and `follow` functions asynchronous
+
 ## 0.19.0
 
 ### New
