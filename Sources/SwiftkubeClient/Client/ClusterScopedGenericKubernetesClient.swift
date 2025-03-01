@@ -21,7 +21,16 @@ import SwiftkubeModel
 // MARK: - ClusterScopedGenericKubernetesClient
 
 /// A generic Kubernetes client for cluster-scoped API resource objects.
-public class ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource & ClusterScopedResource>: GenericKubernetesClient<Resource> {}
+public actor ClusterScopedGenericKubernetesClient<Resource: KubernetesAPIResource & ClusterScopedResource> {
+
+	internal let client: GenericKubernetesClient<Resource>
+	internal let config: KubernetesClientConfig
+
+	internal init(client: GenericKubernetesClient<Resource>, config: KubernetesClientConfig) {
+		self.client = client
+		self.config = config
+	}
+}
 
 // MARK: - ReadableResource
 
@@ -36,7 +45,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 	///
 	/// - Returns: The API resource specified by the given name.
 	func get(name: String, options: [ReadOption]? = nil) async throws -> Resource {
-		try await super.get(in: .allNamespaces, name: name, options: options)
+		try await client.get(in: .allNamespaces, name: name, options: options)
 	}
 
 	/// Watches cluster-scoped resources.
@@ -89,7 +98,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ReadableRe
 		options: [ListOption]? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy()
 	) async throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
-		try await super.watch(in: .allNamespaces, options: options, retryStrategy: retryStrategy)
+		try await client.watch(in: .allNamespaces, options: options, retryStrategy: retryStrategy)
 	}
 }
 
@@ -104,7 +113,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ListableRe
 	///
 	/// - Returns: A ``KubernetesAPIResourceList`` of resources.
 	func list(options: [ListOption]? = nil) async throws -> Resource.List {
-		try await super.list(in: .allNamespaces, options: options)
+		try await client.list(in: .allNamespaces, options: options)
 	}
 }
 
@@ -119,7 +128,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: CreatableR
 	///
 	/// - Returns: The created ``KubernetesAPIResource``.
 	func create(_ resource: Resource) async throws -> Resource {
-		try await super.create(in: .allNamespaces, resource)
+		try await client.create(in: .allNamespaces, resource)
 	}
 
 	/// Creates an API resource.
@@ -128,7 +137,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: CreatableR
 	///
 	/// - Returns: The created ``KubernetesAPIResource``.
 	func create(_ block: () -> Resource) async throws -> Resource {
-		try await super.create(in: .allNamespaces, block())
+		try await client.create(in: .allNamespaces, block())
 	}
 }
 
@@ -143,7 +152,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Replaceabl
 	///
 	/// - Returns: The updated ``KubernetesAPIResource``.
 	func update(_ resource: Resource) async throws -> Resource {
-		try await super.update(in: .allNamespaces, resource)
+		try await client.update(in: .allNamespaces, resource)
 	}
 }
 
@@ -159,7 +168,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: DeletableR
 	///   - options: An instance of ``meta.v1.DeleteOptions`` to control the behaviour of the `Delete` operation.
 	///
 	func delete(name: String, options: meta.v1.DeleteOptions? = nil) async throws {
-		try await super.delete(in: .allNamespaces, name: name, options: options)
+		try await client.delete(in: .allNamespaces, name: name, options: options)
 	}
 }
 
@@ -171,7 +180,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: Collection
 	/// Deletes all API resources in the target collection.
 	///
 	func deleteAll() async throws {
-		try await super.deleteAll(in: .allNamespaces)
+		try await client.deleteAll(in: .allNamespaces)
 	}
 }
 
@@ -187,7 +196,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: StatusHavi
 	///
 	/// - Returns: The API resource specified by the given name.
 	func getStatus(name: String) async throws -> Resource {
-		try await super.getStatus(in: .allNamespaces, name: name)
+		try await client.getStatus(in: .allNamespaces, name: name)
 	}
 
 	/// Replaces, i.e. updates, an API resource's status .
@@ -198,7 +207,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: StatusHavi
 	///
 	/// - Returns: The updated ``KubernetesAPIResource``.
 	func updateStatus(name: String, _ resource: Resource) async throws -> Resource {
-		try await super.updateStatus(in: .allNamespaces, name: name, resource)
+		try await client.updateStatus(in: .allNamespaces, name: name, resource)
 	}
 }
 
@@ -214,7 +223,7 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ScalableRe
 	///
 	/// - Returns: The ``autoscaling.v1.Scale`` of the resource specified by the given name.
 	func getScale(name: String) async throws -> autoscaling.v1.Scale {
-		try await super.getScale(in: .allNamespaces, name: name)
+		try await client.getScale(in: .allNamespaces, name: name)
 	}
 
 	/// Replaces, i.e. updates, an API resource's scale.
@@ -226,6 +235,6 @@ public extension ClusterScopedGenericKubernetesClient where Resource: ScalableRe
 	///
 	/// - Returns: The updated ``autoscaling.v1.Scale``.
 	func updateScale(name: String, scale: autoscaling.v1.Scale) async throws -> autoscaling.v1.Scale {
-		try await super.updateScale(in: .allNamespaces, name: name, scale: scale)
+		try await client.updateScale(in: .allNamespaces, name: name, scale: scale)
 	}
 }

@@ -21,7 +21,16 @@ import SwiftkubeModel
 // MARK: - NamespacedGenericKubernetesClient
 
 /// A generic Kubernetes client for namespace-scoped API resource objects.
-public class NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource & NamespacedResource>: GenericKubernetesClient<Resource> {}
+public actor NamespacedGenericKubernetesClient<Resource: KubernetesAPIResource & NamespacedResource> {
+
+	internal let client: GenericKubernetesClient<Resource>
+	internal let config: KubernetesClientConfig
+
+	internal init(client: GenericKubernetesClient<Resource>, config: KubernetesClientConfig) {
+		self.client = client
+		self.config = config
+	}
+}
 
 // MARK: - ReadableResource
 
@@ -40,7 +49,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 	/// - Returns: The API resource specified by the given name in the given namespace.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func get(in namespace: NamespaceSelector? = nil, name: String, options: [ReadOption]? = nil) async throws -> Resource {
-		try await super.get(in: namespace ?? .namespace(config.namespace), name: name, options: options)
+		try await client.get(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 
 	/// Watches the API resources in the given namespace.
@@ -94,7 +103,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReadableResou
 		options: [ListOption]? = nil,
 		retryStrategy: RetryStrategy = RetryStrategy()
 	) async throws -> SwiftkubeClientTask<WatchEvent<Resource>> {
-		try await super.watch(
+		try await client.watch(
 			in: namespace ?? .namespace(config.namespace),
 			options: options,
 			retryStrategy: retryStrategy
@@ -118,7 +127,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ListableResou
 	/// - Returns: A ``KubernetesAPIResourceList`` of resources.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func list(in namespace: NamespaceSelector? = nil, options: [ListOption]? = nil) async throws -> Resource.List {
-		try await super.list(in: namespace ?? .namespace(config.namespace), options: options)
+		try await client.list(in: namespace ?? .namespace(config.namespace), options: options)
 	}
 }
 
@@ -138,7 +147,7 @@ public extension NamespacedGenericKubernetesClient where Resource: CreatableReso
 	/// - Returns: The created ``KubernetesAPIResource``.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func create(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) async throws -> Resource {
-		try await super.create(in: namespace ?? .namespace(config.namespace), resource)
+		try await client.create(in: namespace ?? .namespace(config.namespace), resource)
 	}
 
 	/// Creates an API resource in the given namespace.
@@ -152,7 +161,7 @@ public extension NamespacedGenericKubernetesClient where Resource: CreatableReso
 	/// - Returns: The created ``KubernetesAPIResource``.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func create(inNamespace namespace: NamespaceSelector? = nil, _ block: () -> Resource) async throws -> Resource {
-		try await super.create(in: namespace ?? .namespace(config.namespace), block())
+		try await client.create(in: namespace ?? .namespace(config.namespace), block())
 	}
 }
 
@@ -172,7 +181,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ReplaceableRe
 	/// - Returns: The created ``KubernetesAPIResource``.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func update(inNamespace namespace: NamespaceSelector? = nil, _ resource: Resource) async throws -> Resource {
-		try await super.update(in: namespace ?? .namespace(config.namespace), resource)
+		try await client.update(in: namespace ?? .namespace(config.namespace), resource)
 	}
 }
 
@@ -193,7 +202,7 @@ public extension NamespacedGenericKubernetesClient where Resource: DeletableReso
 	/// - Returns: The created ``KubernetesAPIResource`
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func delete(inNamespace namespace: NamespaceSelector? = nil, name: String, options: meta.v1.DeleteOptions? = nil) async throws {
-		try await super.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
+		try await client.delete(in: namespace ?? .namespace(config.namespace), name: name, options: options)
 	}
 }
 
@@ -211,7 +220,7 @@ public extension NamespacedGenericKubernetesClient where Resource: CollectionDel
 	/// - Returns: A ``ResourceOrStatus`` instance.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func deleteAll(inNamespace namespace: NamespaceSelector? = nil) async throws {
-		try await super.deleteAll(in: namespace ?? .namespace(config.namespace))
+		try await client.deleteAll(in: namespace ?? .namespace(config.namespace))
 	}
 }
 
@@ -231,7 +240,7 @@ public extension NamespacedGenericKubernetesClient where Resource: StatusHavingR
 	/// - Returns: The ``KubernetesAPIResource``.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func getStatus(in namespace: NamespaceSelector? = nil, name: String) async throws -> Resource {
-		try await super.getStatus(in: namespace ?? .namespace(config.namespace), name: name)
+		try await client.getStatus(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	/// Replaces the resource's status in the given namespace.
@@ -246,7 +255,7 @@ public extension NamespacedGenericKubernetesClient where Resource: StatusHavingR
 	/// - Returns: The updated ``KubernetesAPIResource``.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func updateStatus(in namespace: NamespaceSelector? = nil, name: String, _ resource: Resource) async throws -> Resource {
-		try await super.updateStatus(in: namespace ?? .namespace(config.namespace), name: name, resource)
+		try await client.updateStatus(in: namespace ?? .namespace(config.namespace), name: name, resource)
 	}
 }
 
@@ -266,7 +275,7 @@ public extension NamespacedGenericKubernetesClient where Resource: ScalableResou
 	/// - Returns: The ``autoscaling.v1.Scale`` for the desired resource.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func getScale(in namespace: NamespaceSelector? = nil, name: String) async throws -> autoscaling.v1.Scale {
-		try await super.getScale(in: namespace ?? .namespace(config.namespace), name: name)
+		try await client.getScale(in: namespace ?? .namespace(config.namespace), name: name)
 	}
 
 	/// Replaces the resource's scale in the given namespace.
@@ -281,6 +290,6 @@ public extension NamespacedGenericKubernetesClient where Resource: ScalableResou
 	/// - Returns: The updated ``autoscaling.v1.Scale`` for the desired resource.
 	/// - Throws: An error of type ``SwiftkubeClientError``.
 	func updateScale(in namespace: NamespaceSelector? = nil, name: String, scale: autoscaling.v1.Scale) async throws -> autoscaling.v1.Scale {
-		try await super.updateScale(in: namespace ?? .namespace(config.namespace), name: name, scale: scale)
+		try await client.updateScale(in: namespace ?? .namespace(config.namespace), name: name, scale: scale)
 	}
 }

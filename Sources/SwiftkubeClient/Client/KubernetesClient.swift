@@ -36,7 +36,7 @@ import SwiftkubeModel
 /// let deployments = try await client.appsV1.deployments.list(in:.allNamespaces)
 /// deployments.forEach { print($0) }
 /// ```
-public class KubernetesClient {
+public actor KubernetesClient {
 
 	/// The client's configuration object.
 	public let config: KubernetesClientConfig
@@ -116,7 +116,7 @@ public class KubernetesClient {
 	/// - Parameters:
 	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
 	///    - logger: The logger to use for this client.
-	public convenience init?(
+	public init?(
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
 	) {
@@ -137,7 +137,7 @@ public class KubernetesClient {
 	///    - url: The url to load the configuration from for this client instance. It can be a local file or remote URL.
 	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
 	///    - logger: The logger to use for this client.
-	public convenience init?(
+	public init?(
 		fromURL url: URL,
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
@@ -257,7 +257,8 @@ public extension KubernetesClient {
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new ``ClusterScopedGenericKubernetesClient`` for the given resource type.
 	func clusterScoped<R: KubernetesAPIResource & ClusterScopedResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
-		ClusterScopedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
+		let genericClient = GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
+		return ClusterScopedGenericKubernetesClient<R>(client: genericClient, config: config)
 	}
 
 	/// Create a new `namespace-scoped` client for the given namespace-scoped resoruce type.
@@ -265,7 +266,8 @@ public extension KubernetesClient {
 	/// - Parameter type: The ``KubernetesAPIResource`` type.
 	/// - Returns A new ``NamespacedGenericKubernetesClient`` for the given resource type.
 	func namespaceScoped<R: KubernetesAPIResource & NamespacedResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
-		NamespacedGenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
+		let genericClient = GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
+		return NamespacedGenericKubernetesClient<R>(client: genericClient, config: config)
 	}
 }
 

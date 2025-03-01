@@ -26,7 +26,7 @@ import SwiftkubeModel
 // MARK: - GenericKubernetesClient
 
 /// A generic client implementation following the Kubernetes API style.
-public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
+public actor GenericKubernetesClient<Resource: KubernetesAPIResource> {
 
 	public let gvr: GroupVersionResource
 
@@ -48,7 +48,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - config: The configuration for this client instance.
 	///   - jsonDecoder: An instance of ``JSONDecoder`` to use by this client.
 	///   - logger: The logger to use for this client.
-	internal convenience init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
+	internal init(httpClient: HTTPClient, config: KubernetesClientConfig, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.init(httpClient: httpClient, config: config, gvr: GroupVersionResource(of: Resource.self)!, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
@@ -60,7 +60,7 @@ public class GenericKubernetesClient<Resource: KubernetesAPIResource> {
 	///   - gvr: The ``GroupVersionResource`` of the target resource.
 	///   - jsonDecoder: An instance of ``JSONDecoder`` to use by this client.
 	///   - logger: The logger to use for this client.
-	internal required init(httpClient: HTTPClient, config: KubernetesClientConfig, gvr: GroupVersionResource, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
+	internal init(httpClient: HTTPClient, config: KubernetesClientConfig, gvr: GroupVersionResource, jsonDecoder: JSONDecoder, logger: Logger? = nil) {
 		self.httpClient = httpClient
 		self.config = config
 		self.gvr = gvr

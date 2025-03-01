@@ -74,7 +74,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		timestamps: Bool = false,
 		retryStrategy: RetryStrategy = RetryStrategy.never
 	) async throws -> SwiftkubeClientTask<String> {
-		try await super.follow(
+		try await client.follow(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
@@ -103,7 +103,7 @@ public extension NamespacedGenericKubernetesClient where Resource == core.v1.Pod
 		previous: Bool = false,
 		timestamps: Bool = false
 	) async throws -> String {
-		try await super.logs(
+		try await client.logs(
 			in: namespace ?? .namespace(config.namespace),
 			name: name,
 			container: container,
