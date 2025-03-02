@@ -199,7 +199,7 @@ public actor KubernetesClient {
 	/// - Parameters:
 	///   - queue: The ``DispatchQueue`` for the callback upon completion.
 	///   - callback: The callback indicating any errors encountered during shutdown.
-	public func shutdown(queue: DispatchQueue, _ callback: @Sendable @escaping (Error?) -> Void) {
+	public nonisolated func shutdown(queue: DispatchQueue, _ callback: @Sendable @escaping (Error?) -> Void) {
 		httpClient.shutdown(queue: queue, callback)
 	}
 
@@ -209,7 +209,7 @@ public actor KubernetesClient {
 	}
 
 	/// Shuts down the client synchronously.
-	public func syncShutdown() throws {
+	public nonisolated func syncShutdown() throws {
 		try httpClient.syncShutdown()
 	}
 }
