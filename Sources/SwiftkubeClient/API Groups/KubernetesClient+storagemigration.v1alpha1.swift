@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - StorageVersionMigrationV1Alpha1API
 
-public protocol StorageVersionMigrationV1Alpha1API {
+public protocol StorageVersionMigrationV1Alpha1API: Sendable {
 
 	var storageVersionMigrations: ClusterScopedGenericKubernetesClient<storagemigration.v1alpha1.StorageVersionMigration> { get }
 }
@@ -27,8 +27,8 @@ public protocol StorageVersionMigrationV1Alpha1API {
 /// DSL for `storagemigration.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class StorageVersionMigrationV1Alpha1: StorageVersionMigrationV1Alpha1API {
-		private var client: KubernetesClient
+	final class StorageVersionMigrationV1Alpha1: StorageVersionMigrationV1Alpha1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

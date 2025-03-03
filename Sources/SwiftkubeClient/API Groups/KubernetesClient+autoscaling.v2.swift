@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - AutoScalingV2API
 
-public protocol AutoScalingV2API {
+public protocol AutoScalingV2API: Sendable {
 
 	var horizontalPodAutoscalers: NamespacedGenericKubernetesClient<autoscaling.v2.HorizontalPodAutoscaler> { get }
 }
@@ -27,8 +27,8 @@ public protocol AutoScalingV2API {
 /// DSL for `autoscaling.v2` API Group
 public extension KubernetesClient {
 
-	class AutoScalingV2: AutoScalingV2API {
-		private var client: KubernetesClient
+	final class AutoScalingV2: AutoScalingV2API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

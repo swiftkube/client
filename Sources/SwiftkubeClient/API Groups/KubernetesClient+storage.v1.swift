@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - StorageV1API
 
-public protocol StorageV1API {
+public protocol StorageV1API: Sendable {
 
 	var csiDrivers: ClusterScopedGenericKubernetesClient<storage.v1.CSIDriver> { get }
 	var csiNodes: ClusterScopedGenericKubernetesClient<storage.v1.CSINode> { get }
@@ -31,8 +31,8 @@ public protocol StorageV1API {
 /// DSL for `storage.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class StorageV1: StorageV1API {
-		private var client: KubernetesClient
+	final class StorageV1: StorageV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

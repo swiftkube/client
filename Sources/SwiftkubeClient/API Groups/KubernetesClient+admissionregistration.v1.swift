@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - AdmissionRegistrationV1API
 
-public protocol AdmissionRegistrationV1API {
+public protocol AdmissionRegistrationV1API: Sendable {
 
 	var mutatingWebhookConfigurations: ClusterScopedGenericKubernetesClient<admissionregistration.v1.MutatingWebhookConfiguration> { get }
 	var validatingAdmissionPolicies: ClusterScopedGenericKubernetesClient<admissionregistration.v1.ValidatingAdmissionPolicy> { get }
@@ -30,8 +30,8 @@ public protocol AdmissionRegistrationV1API {
 /// DSL for `admissionregistration.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class AdmissionRegistrationV1: AdmissionRegistrationV1API {
-		private var client: KubernetesClient
+	final class AdmissionRegistrationV1: AdmissionRegistrationV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - NetworkingV1Beta1API
 
-public protocol NetworkingV1Beta1API {
+public protocol NetworkingV1Beta1API: Sendable {
 
 	var iPAddresses: ClusterScopedGenericKubernetesClient<networking.v1beta1.IPAddress> { get }
 	var serviceCIDRs: ClusterScopedGenericKubernetesClient<networking.v1beta1.ServiceCIDR> { get }
@@ -28,8 +28,8 @@ public protocol NetworkingV1Beta1API {
 /// DSL for `networking.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
-	class NetworkingV1Beta1: NetworkingV1Beta1API {
-		private var client: KubernetesClient
+	final class NetworkingV1Beta1: NetworkingV1Beta1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

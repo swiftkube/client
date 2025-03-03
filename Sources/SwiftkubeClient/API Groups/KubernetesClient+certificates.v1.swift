@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - CertificatesV1API
 
-public protocol CertificatesV1API {
+public protocol CertificatesV1API: Sendable {
 
 	var certificateSigningRequests: ClusterScopedGenericKubernetesClient<certificates.v1.CertificateSigningRequest> { get }
 }
@@ -27,8 +27,8 @@ public protocol CertificatesV1API {
 /// DSL for `certificates.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class CertificatesV1: CertificatesV1API {
-		private var client: KubernetesClient
+	final class CertificatesV1: CertificatesV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

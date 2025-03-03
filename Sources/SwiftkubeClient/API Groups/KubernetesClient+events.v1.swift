@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - EventsV1API
 
-public protocol EventsV1API {
+public protocol EventsV1API: Sendable {
 
 	var events: NamespacedGenericKubernetesClient<SwiftkubeModel.events.v1.Event> { get }
 }
@@ -27,8 +27,8 @@ public protocol EventsV1API {
 /// DSL for `events.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class EventsV1: EventsV1API {
-		private var client: KubernetesClient
+	final class EventsV1: EventsV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

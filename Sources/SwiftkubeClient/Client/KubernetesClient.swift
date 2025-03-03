@@ -225,7 +225,7 @@ public extension KubernetesClient {
 	///
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `KubernetesAPIResource`.
-	func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
+	nonisolated func `for`<R: KubernetesAPIResource>(_ type: R.Type) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
@@ -236,7 +236,7 @@ public extension KubernetesClient {
 	/// - Parameter gvr: The ``GroupVersionResource`` of the desired resource.
 	/// - Returns A new ``GenericKubernetesClient`` for the given resource's ``GroupVersionResource``. This client decodes
 	/// kubernetes objects as ``UnstructuredResource``s.
-	func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<UnstructuredResource> {
+	nonisolated func `for`(gvr: GroupVersionResource) -> GenericKubernetesClient<UnstructuredResource> {
 		GenericKubernetesClient<UnstructuredResource>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
@@ -248,7 +248,7 @@ public extension KubernetesClient {
 	///   - type: The ``KubernetesAPIResource`` type.
 	///   - gvr: The ``GroupVersionResource`` of the desired resource.
 	/// - Returns A new `GenericKubernetesClient` for the given resource's `GroupVersionResource`.
-	func `for`<R: KubernetesAPIResource>(_ type: R.Type, gvr: GroupVersionResource) -> GenericKubernetesClient<R> {
+	nonisolated func `for`<R: KubernetesAPIResource>(_ type: R.Type, gvr: GroupVersionResource) -> GenericKubernetesClient<R> {
 		GenericKubernetesClient<R>(httpClient: httpClient, config: config, gvr: gvr, jsonDecoder: jsonDecoder, logger: logger)
 	}
 
@@ -256,7 +256,7 @@ public extension KubernetesClient {
 	///
 	/// - Parameter type: The `KubernetesAPIResource` type.
 	/// - Returns A new ``ClusterScopedGenericKubernetesClient`` for the given resource type.
-	func clusterScoped<R: KubernetesAPIResource & ClusterScopedResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
+	nonisolated func clusterScoped<R: KubernetesAPIResource & ClusterScopedResource>(for type: R.Type) -> ClusterScopedGenericKubernetesClient<R> {
 		let genericClient = GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 		return ClusterScopedGenericKubernetesClient<R>(client: genericClient, config: config)
 	}
@@ -265,7 +265,7 @@ public extension KubernetesClient {
 	///
 	/// - Parameter type: The ``KubernetesAPIResource`` type.
 	/// - Returns A new ``NamespacedGenericKubernetesClient`` for the given resource type.
-	func namespaceScoped<R: KubernetesAPIResource & NamespacedResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
+	nonisolated func namespaceScoped<R: KubernetesAPIResource & NamespacedResource>(for type: R.Type) -> NamespacedGenericKubernetesClient<R> {
 		let genericClient = GenericKubernetesClient<R>(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 		return NamespacedGenericKubernetesClient<R>(client: genericClient, config: config)
 	}

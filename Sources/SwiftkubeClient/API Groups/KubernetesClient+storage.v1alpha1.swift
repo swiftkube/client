@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - StorageV1Alpha1API
 
-public protocol StorageV1Alpha1API {
+public protocol StorageV1Alpha1API: Sendable {
 
 	var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1alpha1.VolumeAttributesClass> { get }
 }
@@ -27,8 +27,8 @@ public protocol StorageV1Alpha1API {
 /// DSL for `storage.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class StorageV1Alpha1: StorageV1Alpha1API {
-		private var client: KubernetesClient
+	final class StorageV1Alpha1: StorageV1Alpha1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

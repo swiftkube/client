@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - SchedulingV1API
 
-public protocol SchedulingV1API {
+public protocol SchedulingV1API: Sendable {
 
 	var priorityClasses: ClusterScopedGenericKubernetesClient<scheduling.v1.PriorityClass> { get }
 }
@@ -27,8 +27,8 @@ public protocol SchedulingV1API {
 /// DSL for `scheduling.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class SchedulingV1: SchedulingV1API {
-		private var client: KubernetesClient
+	final class SchedulingV1: SchedulingV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

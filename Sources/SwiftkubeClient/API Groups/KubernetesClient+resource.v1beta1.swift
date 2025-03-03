@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - ResourceV1Beta1API
 
-public protocol ResourceV1Beta1API {
+public protocol ResourceV1Beta1API: Sendable {
 
 	var deviceClasses: ClusterScopedGenericKubernetesClient<resource.v1beta1.DeviceClass> { get }
 	var resourceClaims: NamespacedGenericKubernetesClient<resource.v1beta1.ResourceClaim> { get }
@@ -30,8 +30,8 @@ public protocol ResourceV1Beta1API {
 /// DSL for `resource.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
-	class ResourceV1Beta1: ResourceV1Beta1API {
-		private var client: KubernetesClient
+	final class ResourceV1Beta1: ResourceV1Beta1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

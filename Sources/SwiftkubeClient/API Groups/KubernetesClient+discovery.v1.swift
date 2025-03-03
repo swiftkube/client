@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - DiscoveryV1API
 
-public protocol DiscoveryV1API {
+public protocol DiscoveryV1API: Sendable {
 
 	var endpointSlices: NamespacedGenericKubernetesClient<discovery.v1.EndpointSlice> { get }
 }
@@ -27,8 +27,8 @@ public protocol DiscoveryV1API {
 /// DSL for `discovery.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class DiscoveryV1: DiscoveryV1API {
-		private var client: KubernetesClient
+	final class DiscoveryV1: DiscoveryV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

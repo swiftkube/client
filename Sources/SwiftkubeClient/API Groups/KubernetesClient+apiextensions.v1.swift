@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - APIExtensionsV1API
 
-public protocol APIExtensionsV1API {
+public protocol APIExtensionsV1API: Sendable {
 
 	var customResourceDefinitions: ClusterScopedGenericKubernetesClient<apiextensions.v1.CustomResourceDefinition> { get }
 }
@@ -27,8 +27,8 @@ public protocol APIExtensionsV1API {
 /// DSL for `apiextensions.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class APIExtensionsV1: APIExtensionsV1API {
-		private var client: KubernetesClient
+	final class APIExtensionsV1: APIExtensionsV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

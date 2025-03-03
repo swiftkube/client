@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - InternalV1Alpha1API
 
-public protocol InternalV1Alpha1API {
+public protocol InternalV1Alpha1API: Sendable {
 
 	var storageVersions: ClusterScopedGenericKubernetesClient<`internal`.v1alpha1.StorageVersion> { get }
 }
@@ -27,8 +27,8 @@ public protocol InternalV1Alpha1API {
 /// DSL for `internal.apiserver.k8s.io.v1alpha1` API Group
 public extension KubernetesClient {
 
-	class InternalV1Alpha1: InternalV1Alpha1API {
-		private var client: KubernetesClient
+	final class InternalV1Alpha1: InternalV1Alpha1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - CoordinationV1Alpha2API
 
-public protocol CoordinationV1Alpha2API {
+public protocol CoordinationV1Alpha2API: Sendable {
 
 	var leaseCandidates: NamespacedGenericKubernetesClient<coordination.v1alpha2.LeaseCandidate> { get }
 }
@@ -27,8 +27,8 @@ public protocol CoordinationV1Alpha2API {
 /// DSL for `coordination.k8s.io.v1alpha2` API Group
 public extension KubernetesClient {
 
-	class CoordinationV1Alpha2: CoordinationV1Alpha2API {
-		private var client: KubernetesClient
+	final class CoordinationV1Alpha2: CoordinationV1Alpha2API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

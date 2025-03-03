@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - AppsV1API
 
-public protocol AppsV1API {
+public protocol AppsV1API: Sendable {
 
 	var controllerRevisions: NamespacedGenericKubernetesClient<apps.v1.ControllerRevision> { get }
 	var daemonSets: NamespacedGenericKubernetesClient<apps.v1.DaemonSet> { get }
@@ -31,8 +31,8 @@ public protocol AppsV1API {
 /// DSL for `apps.v1` API Group
 public extension KubernetesClient {
 
-	class AppsV1: AppsV1API {
-		private var client: KubernetesClient
+	final class AppsV1: AppsV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

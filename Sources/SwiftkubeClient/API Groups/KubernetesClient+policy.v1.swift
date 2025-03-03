@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - PolicyV1API
 
-public protocol PolicyV1API {
+public protocol PolicyV1API: Sendable {
 
 	var podDisruptionBudgets: NamespacedGenericKubernetesClient<policy.v1.PodDisruptionBudget> { get }
 }
@@ -27,8 +27,8 @@ public protocol PolicyV1API {
 /// DSL for `policy.v1` API Group
 public extension KubernetesClient {
 
-	class PolicyV1: PolicyV1API {
-		private var client: KubernetesClient
+	final class PolicyV1: PolicyV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

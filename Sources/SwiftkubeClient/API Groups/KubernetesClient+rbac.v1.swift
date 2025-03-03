@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - RBACV1API
 
-public protocol RBACV1API {
+public protocol RBACV1API: Sendable {
 
 	var clusterRoles: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRole> { get }
 	var clusterRoleBindings: ClusterScopedGenericKubernetesClient<rbac.v1.ClusterRoleBinding> { get }
@@ -30,8 +30,8 @@ public protocol RBACV1API {
 /// DSL for `rbac.authorization.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class RBACV1: RBACV1API {
-		private var client: KubernetesClient
+	final class RBACV1: RBACV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

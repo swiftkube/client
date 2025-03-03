@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - AuthorizationV1API
 
-public protocol AuthorizationV1API {
+public protocol AuthorizationV1API: Sendable {
 
 	var localSubjectAccessReviews: NamespacedGenericKubernetesClient<authorization.v1.LocalSubjectAccessReview> { get }
 	var selfSubjectAccessReviews: ClusterScopedGenericKubernetesClient<authorization.v1.SelfSubjectAccessReview> { get }
@@ -30,8 +30,8 @@ public protocol AuthorizationV1API {
 /// DSL for `authorization.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class AuthorizationV1: AuthorizationV1API {
-		private var client: KubernetesClient
+	final class AuthorizationV1: AuthorizationV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

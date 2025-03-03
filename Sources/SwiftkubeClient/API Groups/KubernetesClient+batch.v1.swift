@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - BatchV1API
 
-public protocol BatchV1API {
+public protocol BatchV1API: Sendable {
 
 	var cronJobs: NamespacedGenericKubernetesClient<batch.v1.CronJob> { get }
 	var jobs: NamespacedGenericKubernetesClient<batch.v1.Job> { get }
@@ -28,8 +28,8 @@ public protocol BatchV1API {
 /// DSL for `batch.v1` API Group
 public extension KubernetesClient {
 
-	class BatchV1: BatchV1API {
-		private var client: KubernetesClient
+	final class BatchV1: BatchV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

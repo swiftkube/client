@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - APIRegistrationV1API
 
-public protocol APIRegistrationV1API {
+public protocol APIRegistrationV1API: Sendable {
 
 	var apiServices: ClusterScopedGenericKubernetesClient<apiregistration.v1.APIService> { get }
 }
@@ -27,8 +27,8 @@ public protocol APIRegistrationV1API {
 /// DSL for `apiregistration.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class APIRegistrationV1: APIRegistrationV1API {
-		private var client: KubernetesClient
+	final class APIRegistrationV1: APIRegistrationV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client

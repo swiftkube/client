@@ -19,7 +19,7 @@ import SwiftkubeModel
 
 // MARK: - NodeV1API
 
-public protocol NodeV1API {
+public protocol NodeV1API: Sendable {
 
 	var runtimeClasses: ClusterScopedGenericKubernetesClient<node.v1.RuntimeClass> { get }
 }
@@ -27,8 +27,8 @@ public protocol NodeV1API {
 /// DSL for `node.k8s.io.v1` API Group
 public extension KubernetesClient {
 
-	class NodeV1: NodeV1API {
-		private var client: KubernetesClient
+	final class NodeV1: NodeV1API {
+		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
