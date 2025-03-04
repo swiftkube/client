@@ -76,6 +76,8 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 | `0.17.x`          | -       | -      | -      | ✓      | -      | -      |
 | `0.18.x`          | -       | -      | -      | -      | ✓      | -      |
 | `0.19.x`          | -       | -      | -      | -      | -      | ✓      |
+| `0.20.x`          | -       | -      | -      | -      | -      | ✓      |
+| `0.21.x`          | -       | -      | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
@@ -259,7 +261,7 @@ The task instance must be started explicitly via ``SwiftkubeClientTask/start()``
 buffering policy is used, which should be taken into consideration.
 
 ```swift
-let task: SwiftkubeClientTask = client.pods.watch(in: .allNamespaces)
+let task: SwiftkubeClientTask = try await client.pods.watch(in: .allNamespaces)
 let stream = await task.start()
 
 for try await event in stream {
@@ -275,7 +277,7 @@ let options = [
   .labelSelector(.exists(["env"]))
 ]
 
-let task = client.pods.watch(in: .default, options: options)
+let task = try await client.pods.watch(in: .default, options: options)
 ```
 
 The client reconnects automatically and restarts the watch upon encountering non-recoverable errors. The 
@@ -293,7 +295,7 @@ let strategy = RetryStrategy(
   initialDelay = 5.0,
   jitter = 0.2
 )
-let task = client.pods.watch(in: .default, retryStrategy: strategy)
+let task = try await client.pods.watch(in: .default, retryStrategy: strategy)
 
 for try await event in await task.stream() {
   print(event)
@@ -313,9 +315,9 @@ The `follow` API resembles the `watch`, but instead of events, it emits the log 
 :warning: The client does not reconnect on errors in `follow` mode.
 
 ```swift
-let task = client.pods.follow(in: .default, name: "nginx", container: "app")
+let task = try await client.pods.follow(in: .default, name: "nginx", container: "app")
 
-for try await line in task.start() {
+for try await line in await task.start() {
   print(line)
 }
 
@@ -544,7 +546,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeClient` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.19.0")
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.21.0")
 ```
 
 then include it as a dependency in your target:
@@ -555,7 +557,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.19.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.21.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [

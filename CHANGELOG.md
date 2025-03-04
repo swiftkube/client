@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.0
+
+- Make client implementations actors
+- Mark synchronous shutdown methods as nonisolated
+- Make API-Groups protocols and implementations as Sendable
+
 ## 0.20.0
 
 - Mark configuration structs as Sendable
