@@ -75,9 +75,7 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 | `0.16.x`          | -       | -      | ✓      | -      | -      | -      |
 | `0.17.x`          | -       | -      | -      | ✓      | -      | -      |
 | `0.18.x`          | -       | -      | -      | -      | ✓      | -      |
-| `0.19.x`          | -       | -      | -      | -      | -      | ✓      |
-| `0.20.x`          | -       | -      | -      | -      | -      | ✓      |
-| `0.21.x`          | -       | -      | -      | -      | -      | ✓      |
+| `0.19.x`-`0.22.0` | -       | -      | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
@@ -546,7 +544,7 @@ app.get("metrics") { request -> EventLoopFuture<String> in
 To use the `SwiftkubeClient` in a SwiftPM project, add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.21.0")
+.package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.22.0")
 ```
 
 then include it as a dependency in your target:
@@ -557,7 +555,7 @@ import PackageDescription
 let package = Package(
     // ...
     dependencies: [
-        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.21.0")
+        .package(name: "SwiftkubeClient", url: "https://github.com/swiftkube/client.git", from: "0.22.0")
     ],
     targets: [
         .target(name: "<your-target>", dependencies: [
