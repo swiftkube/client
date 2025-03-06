@@ -69,7 +69,7 @@ public protocol DiscoveryAPI {
 public extension KubernetesClient {
 
 	/// Constructs a client fot ``DiscoveryAPI``.
-	var discoveryClient: DiscoveryAPI {
+	nonisolated var discoveryClient: DiscoveryAPI {
 		DiscoveryClient(httpClient: httpClient, config: config, jsonDecoder: jsonDecoder, logger: logger)
 	}
 }

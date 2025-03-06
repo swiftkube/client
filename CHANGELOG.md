@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.0
+
+- Make immutable and non-mutating client properties nonisolated
+ 
 ## 0.21.0
 
 - Make client implementations actors

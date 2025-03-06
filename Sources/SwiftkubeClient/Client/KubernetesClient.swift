@@ -39,7 +39,7 @@ import SwiftkubeModel
 public actor KubernetesClient {
 
 	/// The client's configuration object.
-	public let config: KubernetesClientConfig
+	public nonisolated let config: KubernetesClientConfig
 	internal let httpClient: HTTPClient
 	internal let logger: Logger
 
