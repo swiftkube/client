@@ -9,7 +9,7 @@
     <a href="https://swiftpackageindex.com/swiftkube/client">
       <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
     </a>
-	<a href="https://v1-28.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/">
+	<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/">
 		<img src="https://img.shields.io/badge/Kubernetes-1.32.0-blue.svg" alt="Kubernetes 1.32.0"/>
 	</a>
 	<a href="https://swift.org/package-manager">
@@ -101,12 +101,12 @@ To create a client just import `SwiftkubeClient` and init an instance.
  ```
 
 You should shut down the `KubernetesClient` instance when you're done using it, which in turn shuts down the underlying
-`HTTPClient`. Thus, you shouldn't call `client.syncShutdown()` before all requests have finished. You can also shut down
+`HTTPClient`. Thus, you shouldn't call `client.shutdown()` before all requests have finished. You can also shut down
 the client asynchronously in an async/await context or by providing a `DispatchQueue` for the completion callback.
 
 ```swift
 // when finished close the client
- try client.syncShutdown()
+try client.syncShutdown()
  
 // async/await
 try await client.shutdown()
