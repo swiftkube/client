@@ -39,6 +39,8 @@ public struct KubernetesClientConfig: Sendable {
 	public let timeout: HTTPClient.Configuration.Timeout
 	/// The default redirect configuration for the underlying `HTTPCLient`.
 	public let redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
+	/// URL to the proxy to be used for all requests made by this client.
+	public let proxyURL: URL?
 	/// Whether to request and decode gzipped responses from the API server.
 	public let gzip: Bool
 
@@ -50,6 +52,7 @@ public struct KubernetesClientConfig: Sendable {
 		insecureSkipTLSVerify: Bool,
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
+		proxyURL: URL? = nil,
 		gzip: Bool = false
 	) {
 		self.masterURL = masterURL
@@ -59,6 +62,7 @@ public struct KubernetesClientConfig: Sendable {
 		self.insecureSkipTLSVerify = insecureSkipTLSVerify
 		self.timeout = timeout
 		self.redirectConfiguration = redirectConfiguration
+		self.proxyURL = proxyURL
 		self.gzip = gzip
 	}
 }
@@ -209,7 +213,8 @@ internal struct StringConfigLoader: KubernetesClientConfigLoader {
 			trustRoots: cluster.trustRoots(logger: logger),
 			insecureSkipTLSVerify: cluster.insecureSkipTLSVerify ?? true,
 			timeout: timeout,
-			redirectConfiguration: redirectConfiguration
+			redirectConfiguration: redirectConfiguration,
+			proxyURL: cluster.proxyURL.flatMap { URL(string: $0) }
 		)
 	}
 }
@@ -266,7 +271,8 @@ internal struct URLConfigLoader: KubernetesClientConfigLoader {
 			trustRoots: cluster.trustRoots(logger: logger),
 			insecureSkipTLSVerify: cluster.insecureSkipTLSVerify ?? true,
 			timeout: timeout,
-			redirectConfiguration: redirectConfiguration
+			redirectConfiguration: redirectConfiguration,
+			proxyURL: cluster.proxyURL.flatMap { URL(string: $0) }
 		)
 	}
 }
@@ -336,7 +342,8 @@ internal struct ServiceAccountConfigLoader: KubernetesClientConfigLoader {
 			trustRoots: trustRoots,
 			insecureSkipTLSVerify: trustRoots == nil,
 			timeout: timeout,
-			redirectConfiguration: redirectConfiguration
+			redirectConfiguration: redirectConfiguration,
+			proxyURL: nil
 		)
 	}
 

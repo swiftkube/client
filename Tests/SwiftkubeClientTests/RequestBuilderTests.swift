@@ -34,7 +34,8 @@ final class RequestBuilderTests: XCTestCase {
 			trustRoots: nil,
 			insecureSkipTLSVerify: false,
 			timeout: .init(connect: .seconds(1), read: .seconds(5)),
-			redirectConfiguration: .disallow
+			redirectConfiguration: .disallow,
+			proxyURL: nil
 		)
 
 		gvr = GroupVersionResource(of: core.v1.Pod.self)!
