@@ -52,7 +52,22 @@ public struct KubeConfig: Codable, Sendable {
 // MARK: - Cluster
 
 /// Cluster contains information about how to communicate with a kubernetes cluster.
-public struct Cluster: Codable, Sendable {
+public struct Cluster: Codable, Sendable, Hashable, Equatable {
+	public init(
+		server: String,
+		tlsServerName: String? = nil,
+		insecureSkipTLSVerify: Bool? = nil,
+		certificateAuthority: String? = nil,
+		certificateAuthorityData: Data? = nil,
+		proxyURL: String? = nil
+	) {
+		self.server = server
+		self.tlsServerName = tlsServerName
+		self.insecureSkipTLSVerify = insecureSkipTLSVerify
+		self.certificateAuthority = certificateAuthority
+		self.certificateAuthorityData = certificateAuthorityData
+		self.proxyURL = proxyURL
+	}
 
 	enum CodingKeys: String, CodingKey {
 		case server
@@ -85,7 +100,36 @@ public struct Cluster: Codable, Sendable {
 // MARK: - AuthInfo
 
 /// AuthInfo contains information that describes identity information.  This is use to tell the kubernetes cluster who you are.
-public struct AuthInfo: Codable, Sendable {
+public struct AuthInfo: Codable, Sendable, Hashable, Equatable {
+	public init(
+		clientCertificate: String? = nil,
+		clientCertificateData: Data? = nil,
+		clientKey: String? = nil,
+		clientKeyData: Data? = nil,
+		token: String? = nil,
+		tokenFile: String? = nil,
+		impersonate: String? = nil,
+		impersonateGroups: [String]? = nil,
+		impersonateUserExtra: [String: String]? = nil,
+		username: String? = nil,
+		password: String? = nil,
+		authProvider: AuthProviderConfig? = nil,
+		exec: ExecConfig? = nil
+	) {
+		self.clientCertificate = clientCertificate
+		self.clientCertificateData = clientCertificateData
+		self.clientKey = clientKey
+		self.clientKeyData = clientKeyData
+		self.token = token
+		self.tokenFile = tokenFile
+		self.impersonate = impersonate
+		self.impersonateGroups = impersonateGroups
+		self.impersonateUserExtra = impersonateUserExtra
+		self.username = username
+		self.password = password
+		self.authProvider = authProvider
+		self.exec = exec
+	}
 
 	enum CodingKeys: String, CodingKey {
 		case clientCertificate = "client-certificate"
@@ -201,7 +245,7 @@ public struct NamedAuthInfo: Codable, Sendable {
 // MARK: - AuthProviderConfig
 
 /// AuthProviderConfig holds the configuration for a specified auth provider.
-public struct AuthProviderConfig: Codable, Sendable {
+public struct AuthProviderConfig: Codable, Sendable, Hashable, Equatable {
 
 	/// Name is the nickname for this AuthProviderConfig.
 	public var name: String
@@ -215,7 +259,7 @@ public struct AuthProviderConfig: Codable, Sendable {
 ///  ExecConfig specifies a command to provide client credentials.
 ///  The command is exec'd and outputs structured stdout holding credentials.
 ///  See the client.authentication.k8s.io API group for specifications of the exact input and output format
-public struct ExecConfig: Codable, Sendable {
+public struct ExecConfig: Codable, Sendable, Hashable, Equatable {
 	/// Command to execute.
 	public var command: String
 
@@ -233,7 +277,7 @@ public struct ExecConfig: Codable, Sendable {
 // MARK: - ExecEnvVar
 
 /// ExecEnvVar is used for setting environment variables when executing an exec-based credential plugin.
-public struct ExecEnvVar: Codable, Sendable {
+public struct ExecEnvVar: Codable, Sendable, Hashable, Equatable {
 
 	/// Variable name.
 	public var name: String
