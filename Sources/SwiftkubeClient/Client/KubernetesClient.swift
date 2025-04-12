@@ -181,12 +181,35 @@ public actor KubernetesClient {
 			tlsConfiguration.privateKey = NIOSSLPrivateKeySource.privateKey(clientKey)
 		}
 
+		let proxy: HTTPClient.Configuration.Proxy? = {
+			guard let proxyURL = config.proxyURL else { return nil }
+
+			if proxyURL.scheme == "socks5", let host = proxyURL.host {
+				return .socksServer(host: host, port: proxyURL.port ?? 1080)
+			}
+
+			if proxyURL.scheme == "http", let host = proxyURL.host {
+				if let username = proxyURL.user, let password = proxyURL.password {
+					return .server(
+						host: host,
+						port: proxyURL.port ?? 80,
+						authorization: HTTPClient.Authorization.basic(username: username, password: password)
+					)
+				}
+
+				return .server(host: host, port: proxyURL.port ?? 80)
+			}
+
+			return nil
+		}()
+
 		self.httpClient = HTTPClient(
 			eventLoopGroupProvider: provider,
 			configuration: HTTPClient.Configuration(
 				tlsConfiguration: tlsConfiguration,
 				redirectConfiguration: config.redirectConfiguration,
 				timeout: config.timeout,
+				proxy: proxy,
 				decompression: config.gzip ? .enabled(limit: .none) : .disabled
 			)
 		)
