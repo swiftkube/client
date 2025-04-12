@@ -272,6 +272,29 @@ public struct ExecConfig: Codable, Sendable, Hashable, Equatable {
 
 	/// Preferred input version of the ExecInfo. The returned ExecCredentials MUST use the same encoding version as the input.
 	public var apiVersion: String
+
+	/// This text is shown to the user when the executable doesn't seem to be
+	/// present. For example, `brew install foo-cli` might be a good InstallHint for
+	/// foo-cli on Mac OS systems.
+	public var installHint: String?
+
+	/// ProvideClusterInfo determines whether or not to provide cluster information,
+	/// which could potentially contain very large CA data, to this exec plugin as a
+	/// part of the KUBERNETES_EXEC_INFO environment variable. By default, it is set
+	/// to false. Package k8s.io/client-go/tools/auth/exec provides helper methods for
+	/// reading this environment variable.
+	public var provideClusterInfo: Bool?
+
+	/// InteractiveMode determines this plugin's relationship with standard input. Valid
+	/// values are "Never" (this exec plugin never uses standard input), "IfAvailable" (this
+	/// exec plugin wants to use standard input if it is available), or "Always" (this exec
+	/// plugin requires standard input to function). See ExecInteractiveMode values for more
+	/// details.
+	///
+	/// If APIVersion is client.authentication.k8s.io/v1alpha1 or
+	/// client.authentication.k8s.io/v1beta1, then this field is optional and defaults
+	/// to "IfAvailable" when unset. Otherwise, this field is required.
+	public var interactiveMode: String?
 }
 
 // MARK: - ExecEnvVar
