@@ -76,6 +76,8 @@ public enum LabelSelectorRequirement: Hashable, Sendable {
 	case notIn([String: [String]])
 	/// A label must exist.
 	case exists([String])
+	/// A label must not exist.
+	case doesNotExist([String])
 
 	internal var value: String {
 		switch self {
@@ -88,6 +90,8 @@ public enum LabelSelectorRequirement: Hashable, Sendable {
 		case let .notIn(labels):
 			return labels.asQueryParam(joiner: "notin")
 		case let .exists(labels):
+			return labels.joined(separator: ",")
+		case let .doesNotExist(labels):
 			return labels.joined(separator: ",")
 		}
 	}
