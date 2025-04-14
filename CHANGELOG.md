@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.23.0
+
+- Update to Kubernetes model v1.32.2
+- Add client support for proxy URLs (#43 by @ewilken)
+- Add client support for gzipped server responses (#43 by @ewilken)
+- Add an optional `tailLines` parameter to the log request to be able to limit the number of lines requested from the server (#43 by @ewilken)
+- Fix a bug on `RequestBuilder` where a path was overwritten where it should have been appended (#43 by @ewilken)
+  - This became apparent with users using Rancher, where the base path already had a `/` in it
+- Add a `doesNotExist` variant to `LabelSelectorRequirement`, akin to the upstream "DoesNotExist" variant on selectors (#43 by @ewilken)
+- Add the upstream `installHint`, `provideClusterInfo` and `interactiveMode` fields to ExecConfig (#43 by @ewilken)
+- Make `ExecCredential` public too able to base custom exec implementations on top of it (#43 by @ewilken)
+- Add public initializers to `Cluster` and `AuthInfo` (#43 by @ewilken)
+- Make `Cluster`, `AuthInfo`, `AuthProviderConfig`, `ExecConfig` and `ExecEnvVar` conform to Hashable and Equatable (#43 by @ewilken)
+
 ## 0.22.0
 
 - Make immutable and non-mutating client properties nonisolated
