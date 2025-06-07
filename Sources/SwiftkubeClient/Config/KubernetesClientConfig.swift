@@ -286,12 +286,19 @@ internal struct LocalKubeConfigLoader: KubernetesClientConfigLoader {
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
-		guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
-			logger?.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
+		var kubeConfigURL: URL?
+
+		if let kubeConfigPath = ProcessInfo.processInfo.environment["KUBECONFIG"] {
+			kubeConfigURL = URL(fileURLWithPath: kubeConfigPath)
+		} else if let homePath = ProcessInfo.processInfo.environment["HOME"] {
+			kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
+		}
+
+		guard let kubeConfigURL else {
+			logger?.info("Skipping local kubeconfig detection, neither environment variable KUBECONFIG nor HOME are set.")
 			return nil
 		}
 
-		let kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
 		return try? URLConfigLoader(url: kubeConfigURL)
 			.load(timeout: timeout, redirectConfiguration: redirectConfiguration, logger: logger)
 	}
