@@ -120,6 +120,7 @@ client.shutdown(queue: queue) { (error: Error?) in
 
 The client tries to resolve a `kube config` automatically from different sources in the following order:
 
+- If set, kube config file at path of environment variable `KUBECONFIG`
 - Kube config file in the user's `$HOME/.kube/config` directory 
 - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, 
 - if it's running in Kubernetes.
