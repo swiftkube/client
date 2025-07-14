@@ -24,7 +24,7 @@ import Yams
 
 /// Configuration object for the ``KubernetesClient``
 public struct KubernetesClientConfig: Sendable {
-	
+
 	/// The URL for the kuberentes API server.
 	public let masterURL: URL
 	/// The namespace for the current client context.
@@ -38,12 +38,13 @@ public struct KubernetesClientConfig: Sendable {
 	/// The default timeout configuration for the underlying `HTTPClient`.
 	public let timeout: HTTPClient.Configuration.Timeout
 	/// The default redirect configuration for the underlying `HTTPCLient`.
-	public let redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
+	public let redirectConfiguration:
+		HTTPClient.Configuration.RedirectConfiguration
 	/// URL to the proxy to be used for all requests made by this client.
 	public let proxyURL: URL?
 	/// Whether to request and decode gzipped responses from the API server.
 	public let gzip: Bool
-	
+
 	public init(
 		masterURL: URL,
 		namespace: String,
@@ -67,7 +68,7 @@ public struct KubernetesClientConfig: Sendable {
 	}
 }
 
-public extension KubernetesClientConfig {
+extension KubernetesClientConfig {
 	/// Initializes a client configuration from a given KubeConfigLoader.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
@@ -80,19 +81,27 @@ public extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	static func createFromKubeConfigLoader(
+	public static func createFromKubeConfigLoader(
 		configLoader: KubeConfigLoader,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
+			nil,
 		logger: Logger = SwiftkubeClient.loggingDisabled
 	) -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
-		let redirectConfiguration = redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-		
-		return try? KubeConfigKubernetesClientConfigLoader(configLoader: configLoader)
-			.forCurrentContext(logger: logger, timeout: timeout, redirectConfiguration: redirectConfiguration)
+		let redirectConfiguration =
+			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
+
+		return try? KubeConfigKubernetesClientConfigLoader(
+			configLoader: configLoader
+		)
+		.forCurrentContext(
+			logger: logger,
+			timeout: timeout,
+			redirectConfiguration: redirectConfiguration
+		)
 	}
-	
+
 	/// Initializes a client configuration from a given KubeConfigLoader.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
@@ -106,20 +115,29 @@ public extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	static func createFromKubeConfigLoaderForContext(
+	public static func createFromKubeConfigLoaderForContext(
 		configLoader: KubeConfigLoader,
 		context: String,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
+			nil,
 		logger: Logger = SwiftkubeClient.loggingDisabled
 	) -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
-		let redirectConfiguration = redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-		
-		return try? KubeConfigKubernetesClientConfigLoader(configLoader: configLoader)
-			.forContext(context: context, logger: logger, timeout: timeout, redirectConfiguration: redirectConfiguration)
+		let redirectConfiguration =
+			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
+
+		return try? KubeConfigKubernetesClientConfigLoader(
+			configLoader: configLoader
+		)
+		.forContext(
+			context: context,
+			logger: logger,
+			timeout: timeout,
+			redirectConfiguration: redirectConfiguration
+		)
 	}
-	
+
 	/// Initializes a client configuration.
 	///
 	/// This factory method tries to resolve a `kube config` automatically from
@@ -137,19 +155,25 @@ public extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	static func initialize(
+	public static func initialize(
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
+			nil,
 		logger: Logger? = SwiftkubeClient.loggingDisabled
 	) -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
-		let redirectConfiguration = redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-		
+		let redirectConfiguration =
+			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
+
 		return
-		createFromKubeConfigLoader(configLoader: LocalKubeConfigLoader()) ??
-		(try? ServiceAccountConfigLoader().load(timeout: timeout, redirectConfiguration: redirectConfiguration, logger: logger))
+			createFromKubeConfigLoader(configLoader: LocalKubeConfigLoader())
+			?? (try? ServiceAccountConfigLoader().load(
+				timeout: timeout,
+				redirectConfiguration: redirectConfiguration,
+				logger: logger
+			))
 	}
-	
+
 	/// Initializes a client configuration.
 	///
 	/// This factory method tries to resolve a `kube config` automatically from
@@ -167,20 +191,29 @@ public extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	static func initialize(
+	public static func initialize(
 		context: String,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
+			nil,
 		logger: Logger? = SwiftkubeClient.loggingDisabled
 	) -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
-		let redirectConfiguration = redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-		
+		let redirectConfiguration =
+			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
+
 		return
-		createFromKubeConfigLoaderForContext(configLoader: LocalKubeConfigLoader(), context: context) ??
-		(try? ServiceAccountConfigLoader().load(timeout: timeout, redirectConfiguration: redirectConfiguration, logger: logger))
+			createFromKubeConfigLoaderForContext(
+				configLoader: LocalKubeConfigLoader(),
+				context: context
+			)
+			?? (try? ServiceAccountConfigLoader().load(
+				timeout: timeout,
+				redirectConfiguration: redirectConfiguration,
+				logger: logger
+			))
 	}
-	
+
 	/// Initializes a client configuration from a given URL.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
@@ -193,18 +226,25 @@ public extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	static func create(
+	public static func create(
 		fromUrl url: URL,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
+			nil,
 		logger: Logger = SwiftkubeClient.loggingDisabled
 	) -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
-		let redirectConfiguration = redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-		
-		return createFromKubeConfigLoader(configLoader: URLConfigLoader(url: url), timeout: timeout, redirectConfiguration: redirectConfiguration, logger: logger)
+		let redirectConfiguration =
+			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
+
+		return createFromKubeConfigLoader(
+			configLoader: URLConfigLoader(url: url),
+			timeout: timeout,
+			redirectConfiguration: redirectConfiguration,
+			logger: logger
+		)
 	}
-	
+
 	/// Initializes a client configuration from a given String.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
@@ -217,16 +257,23 @@ public extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	static func createFromString(
+	public static func createFromString(
 		fromString string: String,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
+			nil,
 		logger: Logger = SwiftkubeClient.loggingDisabled
 	) -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
-		let redirectConfiguration = redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-		
-		return createFromKubeConfigLoader(configLoader: StringConfigLoader(contents: string), timeout: timeout, redirectConfiguration: redirectConfiguration, logger: logger)
+		let redirectConfiguration =
+			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
+
+		return createFromKubeConfigLoader(
+			configLoader: StringConfigLoader(contents: string),
+			timeout: timeout,
+			redirectConfiguration: redirectConfiguration,
+			logger: logger
+		)
 	}
 }
 
@@ -238,14 +285,15 @@ public protocol KubeConfigLoader {
 
 struct KubeConfigKubernetesClientConfigLoader {
 	let configLoader: KubeConfigLoader
-	
+
 	func forContext(
 		context: String,
 		logger: Logger?,
 		timeout: HTTPClient.Configuration.Timeout = .init(),
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration = .follow(max: 10, allowCycles: false),
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration =
+			.follow(max: 10, allowCycles: false),
 	) throws -> KubernetesClientConfig? {
-		return try configLoader.load(logger: logger).flatMap( { config in
+		return try configLoader.load(logger: logger).flatMap({ config in
 			kubeToClientConfig(
 				contextSelector: contextSelector(context: context),
 				logger: logger,
@@ -254,13 +302,14 @@ struct KubeConfigKubernetesClientConfigLoader {
 			)(config)
 		})
 	}
-	
+
 	func forCurrentContext(
 		logger: Logger?,
 		timeout: HTTPClient.Configuration.Timeout = .init(),
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration = .follow(max: 10, allowCycles: false),
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration =
+			.follow(max: 10, allowCycles: false),
 	) throws -> KubernetesClientConfig? {
-		return try configLoader.load(logger: logger).flatMap( { config in
+		return try configLoader.load(logger: logger).flatMap({ config in
 			kubeToClientConfig(
 				contextSelector: currentContextSelector,
 				logger: logger,
@@ -269,17 +318,22 @@ struct KubeConfigKubernetesClientConfigLoader {
 			)(config)
 		})
 	}
-	
-	internal func currentContextSelector(namedContext: NamedContext, kubeConfig: KubeConfig) -> Bool {
+
+	internal func currentContextSelector(
+		namedContext: NamedContext,
+		kubeConfig: KubeConfig
+	) -> Bool {
 		namedContext.name == kubeConfig.currentContext
 	}
-	
-	internal func contextSelector(context: String) -> (NamedContext, KubeConfig) -> Bool  {
+
+	internal func contextSelector(context: String) -> (NamedContext, KubeConfig)
+		-> Bool
+	{
 		return { namedContext, _ in
 			namedContext.name == context
 		}
 	}
-	
+
 	internal func kubeToClientConfig(
 		contextSelector: @escaping (NamedContext, KubeConfig) -> Bool,
 		logger: Logger?,
@@ -287,26 +341,39 @@ struct KubeConfigKubernetesClientConfigLoader {
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
 	) -> (KubeConfig) -> KubernetesClientConfig? {
 		return { kubeConfig in
-			guard let context = kubeConfig.contexts?.filter({ contextSelector($0, kubeConfig) }).map(\.context).first else {
+			guard
+				let context = kubeConfig.contexts?.filter({
+					contextSelector($0, kubeConfig)
+				}).map(\.context).first
+			else {
 				return nil
 			}
-			
-			guard let cluster = kubeConfig.clusters?.filter({ $0.name == context.cluster }).map(\.cluster).first else {
+
+			guard
+				let cluster = kubeConfig.clusters?.filter({
+					$0.name == context.cluster
+				}).map(\.cluster).first
+			else {
 				return nil
 			}
-			
+
 			guard let masterURL = URL(string: cluster.server) else {
 				return nil
 			}
-			
-			guard let authInfo = kubeConfig.users?.filter({ $0.name == context.user }).map(\.authInfo).first else {
+
+			guard
+				let authInfo = kubeConfig.users?.filter({
+					$0.name == context.user
+				}).map(\.authInfo).first
+			else {
 				return nil
 			}
-			
-			guard let authentication = authInfo.authentication(logger: logger) else {
+
+			guard let authentication = authInfo.authentication(logger: logger)
+			else {
 				return nil
 			}
-			
+
 			return KubernetesClientConfig(
 				masterURL: masterURL,
 				namespace: context.namespace ?? "default",
@@ -325,10 +392,10 @@ struct KubeConfigKubernetesClientConfigLoader {
 
 internal struct StringConfigLoader: KubeConfigLoader {
 	let contents: String
-	
+
 	func load(logger: Logging.Logger?) throws -> KubeConfig? {
 		let decoder = YAMLDecoder()
-		
+
 		return try? decoder.decode(KubeConfig.self, from: contents)
 	}
 }
@@ -337,12 +404,13 @@ internal struct StringConfigLoader: KubeConfigLoader {
 
 internal struct URLConfigLoader: KubeConfigLoader {
 	let url: URL
-	
+
 	func load(logger: Logging.Logger?) throws -> KubeConfig? {
-		guard let contents = try? String(contentsOf: url, encoding: .utf8) else {
+		guard let contents = try? String(contentsOf: url, encoding: .utf8)
+		else {
 			return nil
 		}
-		
+
 		return try? StringConfigLoader(contents: contents).load(logger: logger)
 	}
 }
@@ -352,19 +420,23 @@ internal struct URLConfigLoader: KubeConfigLoader {
 internal struct LocalKubeConfigLoader: KubeConfigLoader {
 	func load(logger: Logging.Logger?) throws -> KubeConfig? {
 		var kubeConfigURL: URL?
-		
-		if let kubeConfigPath = ProcessInfo.processInfo.environment["KUBECONFIG"] {
+
+		if let kubeConfigPath = ProcessInfo.processInfo.environment[
+			"KUBECONFIG"
+		] {
 			kubeConfigURL = URL(fileURLWithPath: kubeConfigPath)
 		} else if let homePath = ProcessInfo.processInfo.environment["HOME"] {
 			kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
 		}
-		
+
 		guard let kubeConfigURL else {
-			logger?.warning("Skipping local kubeconfig loading, neither environment variable KUBECONFIG nor HOME are set.")
+			logger?.warning(
+				"Skipping local kubeconfig loading, neither environment variable KUBECONFIG nor HOME are set."
+			)
 			return nil
 		}
 		logger?.info("Loading configuration from \(kubeConfigURL)")
-		
+
 		return try? URLConfigLoader(url: kubeConfigURL).load(logger: logger)
 	}
 }
@@ -372,41 +444,64 @@ internal struct LocalKubeConfigLoader: KubeConfigLoader {
 // MARK: - ServiceAccountConfigLoader
 
 internal struct ServiceAccountConfigLoader {
-	
+
 	internal func load(
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
 		guard
-			let masterHost = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_HOST"],
-			let masterPort = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_PORT"]
+			let masterHost = ProcessInfo.processInfo.environment[
+				"KUBERNETES_SERVICE_HOST"
+			],
+			let masterPort = ProcessInfo.processInfo.environment[
+				"KUBERNETES_SERVICE_PORT"
+			]
 		else {
-			logger?.warning("Skipping service account kubeconfig because either KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT is not set")
+			logger?.warning(
+				"Skipping service account kubeconfig because either KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT is not set"
+			)
 			return nil
 		}
-		
-		guard let masterURL = buildMasterURL(host: masterHost, port: masterPort) else {
-			logger?.warning("Could not construct master URL from host: \(masterHost) and port: \(masterPort)")
+
+		guard let masterURL = buildMasterURL(host: masterHost, port: masterPort)
+		else {
+			logger?.warning(
+				"Could not construct master URL from host: \(masterHost) and port: \(masterPort)"
+			)
 			return nil
 		}
-		
-		let namespaceFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+
+		let namespaceFile = URL(
+			fileURLWithPath:
+				"/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+		)
 		let namespace = try? String(contentsOf: namespaceFile, encoding: .utf8)
-		
+
 		if namespace == nil {
-			logger?.debug("Did not find service account namespace at /var/run/secrets/kubernetes.io/serviceaccount/namespace")
+			logger?.debug(
+				"Did not find service account namespace at /var/run/secrets/kubernetes.io/serviceaccount/namespace"
+			)
 		}
-		
-		let tokenFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/token")
-		guard let token = try? String(contentsOf: tokenFile, encoding: .utf8) else {
-			logger?.warning("Did not find service account token at /var/run/secrets/kubernetes.io/serviceaccount/token")
+
+		let tokenFile = URL(
+			fileURLWithPath:
+				"/var/run/secrets/kubernetes.io/serviceaccount/token"
+		)
+		guard let token = try? String(contentsOf: tokenFile, encoding: .utf8)
+		else {
+			logger?.warning(
+				"Did not find service account token at /var/run/secrets/kubernetes.io/serviceaccount/token"
+			)
 			return nil
 		}
-		
-		let caFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+
+		let caFile = URL(
+			fileURLWithPath:
+				"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		)
 		let trustRoots = loadTrustRoots(caFile: caFile, logger: logger)
-		
+
 		return KubernetesClientConfig(
 			masterURL: masterURL,
 			namespace: namespace ?? "default",
@@ -418,7 +513,7 @@ internal struct ServiceAccountConfigLoader {
 			proxyURL: nil
 		)
 	}
-	
+
 	private func buildMasterURL(host: String, port: String) -> URL? {
 		if host.contains(":") {
 			return URL(string: "https://[\(host)]:\(port)")
@@ -426,51 +521,63 @@ internal struct ServiceAccountConfigLoader {
 			return URL(string: "https://\(host):\(port)")
 		}
 	}
-	
-	private func loadTrustRoots(caFile: URL, logger: Logger?) -> NIOSSLTrustRoots? {
+
+	private func loadTrustRoots(caFile: URL, logger: Logger?)
+		-> NIOSSLTrustRoots?
+	{
 		guard
 			let caData = try? Data(contentsOf: caFile),
-			let certificates = try? NIOSSLCertificate.fromPEMBytes([UInt8](caData))
+			let certificates = try? NIOSSLCertificate.fromPEMBytes(
+				[UInt8](caData)
+			)
 		else {
-			logger?.warning("Could not load service account ca cert at /var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+			logger?.warning(
+				"Could not load service account ca cert at /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+			)
 			return nil
 		}
-		
+
 		return NIOSSLTrustRoots.certificates(certificates)
 	}
 }
 
-private extension Cluster {
-	
-	func trustRoots(logger: Logger?) -> NIOSSLTrustRoots? {
+extension Cluster {
+
+	fileprivate func trustRoots(logger: Logger?) -> NIOSSLTrustRoots? {
 		do {
 			if let caFile = certificateAuthority {
 				let certificates = try NIOSSLCertificate.fromPEMFile(caFile)
 				return NIOSSLTrustRoots.certificates(certificates)
 			}
-			
+
 			if let caData = certificateAuthorityData {
-				let certificates = try NIOSSLCertificate.fromPEMBytes([UInt8](caData))
+				let certificates = try NIOSSLCertificate.fromPEMBytes(
+					[UInt8](caData)
+				)
 				return NIOSSLTrustRoots.certificates(certificates)
 			}
 		} catch {
-			logger?.warning("Error loading certificate authority for cluster \(server): \(error)")
+			logger?.warning(
+				"Error loading certificate authority for cluster \(server): \(error)"
+			)
 		}
 		return nil
 	}
 }
 
-public extension AuthInfo {
-	
-	func authentication(logger: Logger?) -> KubernetesClientAuthentication? {
+extension AuthInfo {
+
+	public func authentication(logger: Logger?)
+		-> KubernetesClientAuthentication?
+	{
 		if let username = username, let password = password {
 			return .basicAuth(username: username, password: password)
 		}
-		
+
 		if let token = token {
 			return .bearer(token: token)
 		}
-		
+
 		do {
 			if let tokenFile = tokenFile {
 				let fileURL = URL(fileURLWithPath: tokenFile)
@@ -478,40 +585,74 @@ public extension AuthInfo {
 				return .bearer(token: token)
 			}
 		} catch {
-			logger?.warning("Error initializing authentication from token file \(String(describing: tokenFile)): \(error)")
+			logger?.warning(
+				"Error initializing authentication from token file \(String(describing: tokenFile)): \(error)"
+			)
 		}
-		
+
 		do {
-			if let clientCertificateFile = clientCertificate, let clientKeyFile = clientKey {
-				let clientCertificate = try NIOSSLCertificate(file: clientCertificateFile, format: .pem)
-				let clientKey = try NIOSSLPrivateKey(file: clientKeyFile, format: .pem)
-				return .x509(clientCertificate: clientCertificate, clientKey: clientKey)
+			if let clientCertificateFile = clientCertificate,
+				let clientKeyFile = clientKey
+			{
+				let clientCertificate = try NIOSSLCertificate(
+					file: clientCertificateFile,
+					format: .pem
+				)
+				let clientKey = try NIOSSLPrivateKey(
+					file: clientKeyFile,
+					format: .pem
+				)
+				return .x509(
+					clientCertificate: clientCertificate,
+					clientKey: clientKey
+				)
 			}
-			
-			if let clientCertificateData = clientCertificateData, let clientKeyData = clientKeyData {
-				let clientCertificate = try NIOSSLCertificate(bytes: [UInt8](clientCertificateData), format: .pem)
-				let clientKey = try NIOSSLPrivateKey(bytes: [UInt8](clientKeyData), format: .pem)
-				return .x509(clientCertificate: clientCertificate, clientKey: clientKey)
+
+			if let clientCertificateData = clientCertificateData,
+				let clientKeyData = clientKeyData
+			{
+				let clientCertificate = try NIOSSLCertificate(
+					bytes: [UInt8](clientCertificateData),
+					format: .pem
+				)
+				let clientKey = try NIOSSLPrivateKey(
+					bytes: [UInt8](clientKeyData),
+					format: .pem
+				)
+				return .x509(
+					clientCertificate: clientCertificate,
+					clientKey: clientKey
+				)
 			}
 		} catch {
-			logger?.warning("Error initializing authentication from client certificate: \(error)")
+			logger?.warning(
+				"Error initializing authentication from client certificate: \(error)"
+			)
 		}
-		
-#if os(Linux) || os(macOS)
-		do {
-			if let exec {
-				let outputData = try run(command: exec.command, arguments: exec.args)
-				
-				let decoder = JSONDecoder()
-				decoder.dateDecodingStrategy = .iso8601
-				let credential = try decoder.decode(ExecCredential.self, from: outputData)
-				
-				return .bearer(token: credential.status.token)
+
+		#if os(Linux) || os(macOS)
+			do {
+				if let exec {
+					let outputData = try run(
+						command: exec.command,
+						arguments: exec.args
+					)
+
+					let decoder = JSONDecoder()
+					decoder.dateDecodingStrategy = .iso8601
+					let credential = try decoder.decode(
+						ExecCredential.self,
+						from: outputData
+					)
+
+					return .bearer(token: credential.status.token)
+				}
+			} catch {
+				logger?.warning(
+					"Error initializing authentication from exec \(error)"
+				)
 			}
-		} catch {
-			logger?.warning("Error initializing authentication from exec \(error)")
-		}
-#endif
+		#endif
 		return nil
 	}
 }
@@ -528,13 +669,13 @@ public struct ExecCredential: Codable {
 	let status: Status
 }
 
-public extension ExecCredential {
-	struct Spec: Codable {
+extension ExecCredential {
+	public struct Spec: Codable {
 		let cluster: Cluster?
 		let interactive: Bool?
 	}
-	
-	struct Status: Codable {
+
+	public struct Status: Codable {
 		let expirationTimestamp: Date
 		let token: String
 		let clientCertificateData: String?
@@ -543,25 +684,30 @@ public extension ExecCredential {
 }
 
 #if os(Linux) || os(macOS)
-internal func run(command: String, arguments: [String]? = nil) throws -> Data {
-	func run(_ command: String, _ arguments: [String]?) throws -> Data {
-		let task = Process()
-		task.executableURL = URL(fileURLWithPath: command)
-		arguments.flatMap { task.arguments = $0 }
-		
-		let pipe = Pipe()
-		task.standardOutput = pipe
-		
-		try task.run()
-		
-		return pipe.fileHandleForReading.availableData
+	internal func run(command: String, arguments: [String]? = nil) throws
+		-> Data
+	{
+		func run(_ command: String, _ arguments: [String]?) throws -> Data {
+			let task = Process()
+			task.executableURL = URL(fileURLWithPath: command)
+			arguments.flatMap { task.arguments = $0 }
+
+			let pipe = Pipe()
+			task.standardOutput = pipe
+
+			try task.run()
+
+			return pipe.fileHandleForReading.availableData
+		}
+
+		func resolve(command: String) throws -> String {
+			try String(
+				decoding:
+					run("/usr/bin/which", ["\(command)"]),
+				as: UTF8.self
+			).trimmingCharacters(in: .whitespacesAndNewlines)
+		}
+
+		return try run(resolve(command: command), arguments)
 	}
-	
-	func resolve(command: String) throws -> String {
-		try String(decoding:
-					run("/usr/bin/which", ["\(command)"]), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-	}
-	
-	return try run(resolve(command: command), arguments)
-}
 #endif
