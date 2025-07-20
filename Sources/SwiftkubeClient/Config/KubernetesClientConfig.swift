@@ -69,7 +69,7 @@ public struct KubernetesClientConfig: Sendable {
 }
 
 extension KubernetesClientConfig {
-	/// Initializes a client configuration from a given KubeConfigLoader.
+	/// Initializes a client configuration from a given KubeConfig.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
 	///
@@ -100,13 +100,13 @@ extension KubernetesClientConfig {
 		)
 	}
 
-	/// Initializes a client configuration from a given KubeConfigLoader.
+	/// Initializes a client configuration from a given KubeConfig for the specified Kubernetes Context.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
 	///
 	/// - Parameters:
 	///   - kubeConfig: The KubeConfig previously created
-	///   - context: The specific context to use
+	///   - context: The specific Context within the KubeConfig to use
 	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will
 	/// default to 10 seconds.
 	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default
@@ -134,7 +134,7 @@ extension KubernetesClientConfig {
 		)
 	}
 
-	/// Initializes a client configuration.
+	/// Initializes a client configuration from the Service Account expressed in the environment
 	///
 	/// This factory method tries to resolve a `kube config` automatically from
 	/// different sources in the following order:
