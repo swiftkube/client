@@ -74,28 +74,26 @@ extension KubernetesClientConfig {
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
 	///
 	/// - Parameters:
-	///   - configLoader: The KubeConfigLoader to use to load the KubeConfig
+	///   - kubeConfig: The KubeConfig previously created, will use the current context as set in KubeConfig
 	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will
 	/// default to 10 seconds.
 	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func createFromKubeConfigLoader(
-		configLoader: KubeConfigLoader,
+	public static func from(
+		kubeConfig: KubeConfig,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
 			nil,
 		logger: Logger = SwiftkubeClient.loggingDisabled
-	) -> KubernetesClientConfig? {
+	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
 		let redirectConfiguration =
 			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
 
-		return try? KubeConfigKubernetesClientConfigLoader(
-			configLoader: configLoader
-		)
-		.forCurrentContext(
+		return try forCurrentContext(
+			kubeConfig: kubeConfig,
 			logger: logger,
 			timeout: timeout,
 			redirectConfiguration: redirectConfiguration
@@ -107,30 +105,28 @@ extension KubernetesClientConfig {
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
 	///
 	/// - Parameters:
-	///   - configLoader: The KubeConfigLoader to use to load the KubeConfig
-	///   - context: The specific Kubernetes context to use
+	///   - kubeConfig: The KubeConfig previously created
+	///   - context: The specific context to use
 	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will
 	/// default to 10 seconds.
 	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func createFromKubeConfigLoaderForContext(
-		configLoader: KubeConfigLoader,
+	public static func from(
+		kubeConfig: KubeConfig,
 		context: String,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
 			nil,
 		logger: Logger = SwiftkubeClient.loggingDisabled
-	) -> KubernetesClientConfig? {
+	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
 		let redirectConfiguration =
 			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
 
-		return try? KubeConfigKubernetesClientConfigLoader(
-			configLoader: configLoader
-		)
-		.forContext(
+		return try forContext(
+			kubeConfig: kubeConfig,
 			context: context,
 			logger: logger,
 			timeout: timeout,
@@ -155,178 +151,63 @@ extension KubernetesClientConfig {
 	/// to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func initialize(
+	public static func fromServiceAccount(
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
 			nil,
 		logger: Logger? = SwiftkubeClient.loggingDisabled
-	) -> KubernetesClientConfig? {
+	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
 		let redirectConfiguration =
 			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
 
-		return
-			createFromKubeConfigLoader(configLoader: LocalKubeConfigLoader())
-			?? (try? ServiceAccountConfigLoader().load(
+		return try
+			buildFromServiceAccount(
 				timeout: timeout,
 				redirectConfiguration: redirectConfiguration,
 				logger: logger
-			))
-	}
-
-	/// Initializes a client configuration.
-	///
-	/// This factory method tries to resolve a `kube config` automatically from
-	/// different sources in the following order:
-	///
-	/// - A Kube config file in the user's `$HOME/.kube/config` directory
-	/// - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
-	///
-	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
-	///
-	/// - Parameters:
-	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will
-	/// default to 10 seconds.
-	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default
-	/// to a maximum of 5 follows w/o cycles.
-	///   - logger: The logger to use for the underlying configuration loaders.
-	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func initialize(
-		context: String,
-		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
-			nil,
-		logger: Logger? = SwiftkubeClient.loggingDisabled
-	) -> KubernetesClientConfig? {
-		let timeout = timeout ?? .init()
-		let redirectConfiguration =
-			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-
-		return
-			createFromKubeConfigLoaderForContext(
-				configLoader: LocalKubeConfigLoader(),
-				context: context
 			)
-			?? (try? ServiceAccountConfigLoader().load(
-				timeout: timeout,
-				redirectConfiguration: redirectConfiguration,
-				logger: logger
-			))
 	}
-
-	/// Initializes a client configuration from a given URL.
-	///
-	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
-	///
-	/// - Parameters:
-	///   - url: The url to load the configuration from. It can be a local file or remote URL.
-	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will
-	/// default to 10 seconds.
-	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default
-	/// to a maximum of 5 follows w/o cycles.
-	///   - logger: The logger to use for the underlying configuration loaders.
-	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func create(
-		fromUrl url: URL,
-		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
-			nil,
-		logger: Logger = SwiftkubeClient.loggingDisabled
-	) -> KubernetesClientConfig? {
-		let timeout = timeout ?? .init()
-		let redirectConfiguration =
-			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-
-		return createFromKubeConfigLoader(
-			configLoader: URLConfigLoader(url: url),
-			timeout: timeout,
-			redirectConfiguration: redirectConfiguration,
-			logger: logger
-		)
-	}
-
-	/// Initializes a client configuration from a given String.
-	///
-	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
-	///
-	/// - Parameters:
-	///   - string: The string to load the configuration from.
-	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will
-	/// default to 10 seconds.
-	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default
-	/// to a maximum of 5 follows w/o cycles.
-	///   - logger: The logger to use for the underlying configuration loaders.
-	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func createFromString(
-		fromString string: String,
-		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
-			nil,
-		logger: Logger = SwiftkubeClient.loggingDisabled
-	) -> KubernetesClientConfig? {
-		let timeout = timeout ?? .init()
-		let redirectConfiguration =
-			redirectConfiguration ?? .follow(max: 5, allowCycles: false)
-
-		return createFromKubeConfigLoader(
-			configLoader: StringConfigLoader(contents: string),
-			timeout: timeout,
-			redirectConfiguration: redirectConfiguration,
-			logger: logger
-		)
-	}
-}
-
-// MARK: - KubeConfigLoader
-
-public protocol KubeConfigLoader {
-	func load(logger: Logger?) throws -> KubeConfig?
-}
-
-struct KubeConfigKubernetesClientConfigLoader {
-	let configLoader: KubeConfigLoader
-
-	func forContext(
+	
+	internal static func forContext(
+		kubeConfig: KubeConfig,
 		context: String,
 		logger: Logger?,
-		timeout: HTTPClient.Configuration.Timeout = .init(),
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration =
-			.follow(max: 10, allowCycles: false),
+		timeout: HTTPClient.Configuration.Timeout,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
 	) throws -> KubernetesClientConfig? {
-		return try configLoader.load(logger: logger).flatMap({ config in
+		return
 			kubeToClientConfig(
 				contextSelector: contextSelector(context: context),
 				logger: logger,
 				timeout: timeout,
 				redirectConfiguration: redirectConfiguration
-			)(config)
-		})
+			)(kubeConfig)
 	}
 
-	func forCurrentContext(
+	internal static func forCurrentContext(
+		kubeConfig: KubeConfig,
 		logger: Logger?,
-		timeout: HTTPClient.Configuration.Timeout = .init(),
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration =
-			.follow(max: 10, allowCycles: false),
+		timeout: HTTPClient.Configuration.Timeout,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
 	) throws -> KubernetesClientConfig? {
-		return try configLoader.load(logger: logger).flatMap({ config in
+		return
 			kubeToClientConfig(
 				contextSelector: currentContextSelector,
 				logger: logger,
 				timeout: timeout,
 				redirectConfiguration: redirectConfiguration
-			)(config)
-		})
+			)(kubeConfig)
 	}
 
-	internal func currentContextSelector(
+	internal static func currentContextSelector(
 		namedContext: NamedContext,
 		kubeConfig: KubeConfig
 	) -> Bool {
 		namedContext.name == kubeConfig.currentContext
 	}
 
-	internal func contextSelector(context: String) -> (NamedContext, KubeConfig)
+	internal static  func contextSelector(context: String) -> (NamedContext, KubeConfig)
 		-> Bool
 	{
 		return { namedContext, _ in
@@ -334,7 +215,7 @@ struct KubeConfigKubernetesClientConfigLoader {
 		}
 	}
 
-	internal func kubeToClientConfig(
+	internal static func kubeToClientConfig(
 		contextSelector: @escaping (NamedContext, KubeConfig) -> Bool,
 		logger: Logger?,
 		timeout: HTTPClient.Configuration.Timeout,
@@ -386,70 +267,38 @@ struct KubeConfigKubernetesClientConfigLoader {
 			)
 		}
 	}
-}
-
-// MARK: - StringConfigLoader
-
-internal struct StringConfigLoader: KubeConfigLoader {
-	let contents: String
-
-	func load(logger: Logging.Logger?) throws -> KubeConfig? {
-		let decoder = YAMLDecoder()
-
-		return try? decoder.decode(KubeConfig.self, from: contents)
-	}
-}
-
-// MARK: - URLConfigLoader
-
-internal struct URLConfigLoader: KubeConfigLoader {
-	let url: URL
-
-	func load(logger: Logging.Logger?) throws -> KubeConfig? {
-		guard let contents = try? String(contentsOf: url, encoding: .utf8)
-		else {
-			return nil
-		}
-
-		return try? StringConfigLoader(contents: contents).load(logger: logger)
-	}
-}
-
-// MARK: - LocalKubeConfigLoader
-
-internal struct LocalKubeConfigLoader: KubeConfigLoader {
-	func load(logger: Logging.Logger?) throws -> KubeConfig? {
-		var kubeConfigURL: URL?
-
-		if let kubeConfigPath = ProcessInfo.processInfo.environment[
-			"KUBECONFIG"
-		] {
-			kubeConfigURL = URL(fileURLWithPath: kubeConfigPath)
-		} else if let homePath = ProcessInfo.processInfo.environment["HOME"] {
-			kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
-		}
-
-		guard let kubeConfigURL else {
-			logger?.warning(
-				"Skipping local kubeconfig loading, neither environment variable KUBECONFIG nor HOME are set."
-			)
-			return nil
-		}
-		logger?.info("Loading configuration from \(kubeConfigURL)")
-
-		return try? URLConfigLoader(url: kubeConfigURL).load(logger: logger)
-	}
-}
-
-// MARK: - ServiceAccountConfigLoader
-
-internal struct ServiceAccountConfigLoader {
-
-	internal func load(
+	
+	internal static func buildFromServiceAccount(
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
+		func buildMasterURL(host: String, port: String) -> URL? {
+			if host.contains(":") {
+				return URL(string: "https://[\(host)]:\(port)")
+			} else {
+				return URL(string: "https://\(host):\(port)")
+			}
+		}
+
+		func loadTrustRoots(caFile: URL, logger: Logger?)
+			-> NIOSSLTrustRoots?
+		{
+			guard
+				let caData = try? Data(contentsOf: caFile),
+				let certificates = try? NIOSSLCertificate.fromPEMBytes(
+					[UInt8](caData)
+				)
+			else {
+				logger?.warning(
+					"Could not load service account ca cert at /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+				)
+				return nil
+			}
+
+			return NIOSSLTrustRoots.certificates(certificates)
+		}
+
 		guard
 			let masterHost = ProcessInfo.processInfo.environment[
 				"KUBERNETES_SERVICE_HOST"
@@ -512,32 +361,6 @@ internal struct ServiceAccountConfigLoader {
 			redirectConfiguration: redirectConfiguration,
 			proxyURL: nil
 		)
-	}
-
-	private func buildMasterURL(host: String, port: String) -> URL? {
-		if host.contains(":") {
-			return URL(string: "https://[\(host)]:\(port)")
-		} else {
-			return URL(string: "https://\(host):\(port)")
-		}
-	}
-
-	private func loadTrustRoots(caFile: URL, logger: Logger?)
-		-> NIOSSLTrustRoots?
-	{
-		guard
-			let caData = try? Data(contentsOf: caFile),
-			let certificates = try? NIOSSLCertificate.fromPEMBytes(
-				[UInt8](caData)
-			)
-		else {
-			logger?.warning(
-				"Could not load service account ca cert at /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-			)
-			return nil
-		}
-
-		return NIOSSLTrustRoots.certificates(certificates)
 	}
 }
 
