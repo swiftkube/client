@@ -86,7 +86,7 @@ extension KubernetesClientConfig {
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
 			nil,
-		logger: Logger = SwiftkubeClient.loggingDisabled
+		logger: Logger?
 	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
 		let redirectConfiguration =
@@ -119,7 +119,7 @@ extension KubernetesClientConfig {
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
 			nil,
-		logger: Logger = SwiftkubeClient.loggingDisabled
+		logger: Logger?
 	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
 		let redirectConfiguration =

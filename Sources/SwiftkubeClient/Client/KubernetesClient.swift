@@ -165,6 +165,25 @@ public actor KubernetesClient {
 			)
 		)
 	}
+	
+	public static func forContext(
+		context: String,
+		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+		logger: Logger? = nil
+	) throws -> KubernetesClient? {
+		return try KubeConfig.fromLocalEnvironment()
+			.flatMap { try KubernetesClientConfig.from(kubeConfig: $0, context: context, logger: logger) }
+			.map { KubernetesClient(config: $0) }
+	}
+
+	public static func forCurrentContext(
+		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+		logger: Logger? = nil
+	) throws -> KubernetesClient? {
+		return try KubeConfig.fromLocalEnvironment()
+			.flatMap { try KubernetesClientConfig.from(kubeConfig: $0, logger: logger) }
+			.map { KubernetesClient(config: $0) }
+	}
 
 	/// Shuts down the client gracefully.
 	///
