@@ -165,13 +165,13 @@ public actor KubernetesClient {
 			)
 		)
 	}
-	
+
 	public static func forContext(
 		context: String,
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
 	) throws -> KubernetesClient? {
-		return try KubeConfig.fromLocalEnvironment()
+		try KubeConfig.fromLocalEnvironment()
 			.flatMap { try KubernetesClientConfig.from(kubeConfig: $0, context: context, logger: logger) }
 			.map { KubernetesClient(config: $0) }
 	}
@@ -180,7 +180,7 @@ public actor KubernetesClient {
 		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
 		logger: Logger? = nil
 	) throws -> KubernetesClient? {
-		return try KubeConfig.fromLocalEnvironment()
+		try KubeConfig.fromLocalEnvironment()
 			.flatMap { try KubernetesClientConfig.from(kubeConfig: $0, logger: logger) }
 			.map { KubernetesClient(config: $0) }
 	}

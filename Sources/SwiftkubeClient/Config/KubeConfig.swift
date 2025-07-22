@@ -52,23 +52,23 @@ public struct KubeConfig: Codable, Sendable {
 	public var currentContext: String?
 }
 
-extension KubeConfig {
-	
-	public static func from(config: String) throws -> KubeConfig {
+public extension KubeConfig {
+
+	static func from(config: String) throws -> KubeConfig {
 		let decoder = YAMLDecoder()
 
 		return try decoder.decode(KubeConfig.self, from: config)
 	}
-	
-	public static func from(url: URL) throws -> KubeConfig {
+
+	static func from(url: URL) throws -> KubeConfig {
 		let contents = try String(contentsOf: url, encoding: .utf8)
 
 		return try from(config: contents)
 	}
-	
-	public static func fromLocalEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
+
+	static func fromLocalEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
 		let kubeConfigURL: URL? = ProcessInfo.processInfo.environment[envVar].map { URL(fileURLWithPath: $0) } ?? ProcessInfo.processInfo.environment["HOME"].map { URL(fileURLWithPath: $0 + "/.kube/config") }
-		
+
 		guard let kubeConfigURL else {
 			logger?.warning(
 				"Skipping local kubeconfig loading, neither environment variable KUBECONFIG nor HOME are set."
@@ -79,7 +79,6 @@ extension KubeConfig {
 
 		return try from(url: kubeConfigURL)
 	}
-	
 }
 
 // MARK: - Cluster

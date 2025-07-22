@@ -168,7 +168,7 @@ extension KubernetesClientConfig {
 				logger: logger
 			)
 	}
-	
+
 	internal static func forContext(
 		kubeConfig: KubeConfig,
 		context: String,
@@ -176,13 +176,12 @@ extension KubernetesClientConfig {
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
 	) throws -> KubernetesClientConfig? {
-		return
-			kubeToClientConfig(
-				contextSelector: contextSelector(context: context),
-				logger: logger,
-				timeout: timeout,
-				redirectConfiguration: redirectConfiguration
-			)(kubeConfig)
+		kubeToClientConfig(
+			contextSelector: contextSelector(context: context),
+			logger: logger,
+			timeout: timeout,
+			redirectConfiguration: redirectConfiguration
+		)(kubeConfig)
 	}
 
 	internal static func forCurrentContext(
@@ -191,13 +190,12 @@ extension KubernetesClientConfig {
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
 	) throws -> KubernetesClientConfig? {
-		return
-			kubeToClientConfig(
-				contextSelector: currentContextSelector,
-				logger: logger,
-				timeout: timeout,
-				redirectConfiguration: redirectConfiguration
-			)(kubeConfig)
+		kubeToClientConfig(
+			contextSelector: currentContextSelector,
+			logger: logger,
+			timeout: timeout,
+			redirectConfiguration: redirectConfiguration
+		)(kubeConfig)
 	}
 
 	internal static func currentContextSelector(
@@ -207,10 +205,10 @@ extension KubernetesClientConfig {
 		namedContext.name == kubeConfig.currentContext
 	}
 
-	internal static  func contextSelector(context: String) -> (NamedContext, KubeConfig)
+	internal static func contextSelector(context: String) -> (NamedContext, KubeConfig)
 		-> Bool
 	{
-		return { namedContext, _ in
+		{ namedContext, _ in
 			namedContext.name == context
 		}
 	}
@@ -221,7 +219,7 @@ extension KubernetesClientConfig {
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
 	) -> (KubeConfig) -> KubernetesClientConfig? {
-		return { kubeConfig in
+		{ kubeConfig in
 			guard
 				let context = kubeConfig.contexts?.filter({
 					contextSelector($0, kubeConfig)
@@ -267,7 +265,7 @@ extension KubernetesClientConfig {
 			)
 		}
 	}
-	
+
 	internal static func buildFromServiceAccount(
 		timeout: HTTPClient.Configuration.Timeout,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
@@ -323,7 +321,7 @@ extension KubernetesClientConfig {
 
 		let namespaceFile = URL(
 			fileURLWithPath:
-				"/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+			"/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 		)
 		let namespace = try? String(contentsOf: namespaceFile, encoding: .utf8)
 
@@ -335,7 +333,7 @@ extension KubernetesClientConfig {
 
 		let tokenFile = URL(
 			fileURLWithPath:
-				"/var/run/secrets/kubernetes.io/serviceaccount/token"
+			"/var/run/secrets/kubernetes.io/serviceaccount/token"
 		)
 		guard let token = try? String(contentsOf: tokenFile, encoding: .utf8)
 		else {
@@ -347,7 +345,7 @@ extension KubernetesClientConfig {
 
 		let caFile = URL(
 			fileURLWithPath:
-				"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+			"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 		)
 		let trustRoots = loadTrustRoots(caFile: caFile, logger: logger)
 
@@ -364,9 +362,9 @@ extension KubernetesClientConfig {
 	}
 }
 
-extension Cluster {
+private extension Cluster {
 
-	fileprivate func trustRoots(logger: Logger?) -> NIOSSLTrustRoots? {
+	func trustRoots(logger: Logger?) -> NIOSSLTrustRoots? {
 		do {
 			if let caFile = certificateAuthority {
 				let certificates = try NIOSSLCertificate.fromPEMFile(caFile)
@@ -388,9 +386,9 @@ extension Cluster {
 	}
 }
 
-extension AuthInfo {
+public extension AuthInfo {
 
-	public func authentication(logger: Logger?)
+	func authentication(logger: Logger?)
 		-> KubernetesClientAuthentication?
 	{
 		if let username = username, let password = password {
@@ -415,7 +413,7 @@ extension AuthInfo {
 
 		do {
 			if let clientCertificateFile = clientCertificate,
-				let clientKeyFile = clientKey
+			   let clientKeyFile = clientKey
 			{
 				let clientCertificate = try NIOSSLCertificate(
 					file: clientCertificateFile,
@@ -432,7 +430,7 @@ extension AuthInfo {
 			}
 
 			if let clientCertificateData = clientCertificateData,
-				let clientKeyData = clientKeyData
+			   let clientKeyData = clientKeyData
 			{
 				let clientCertificate = try NIOSSLCertificate(
 					bytes: [UInt8](clientCertificateData),
@@ -492,13 +490,13 @@ public struct ExecCredential: Codable {
 	let status: Status
 }
 
-extension ExecCredential {
-	public struct Spec: Codable {
+public extension ExecCredential {
+	struct Spec: Codable {
 		let cluster: Cluster?
 		let interactive: Bool?
 	}
 
-	public struct Status: Codable {
+	struct Status: Codable {
 		let expirationTimestamp: Date
 		let token: String
 		let clientCertificateData: String?
@@ -526,7 +524,7 @@ extension ExecCredential {
 		func resolve(command: String) throws -> String {
 			try String(
 				decoding:
-					run("/usr/bin/which", ["\(command)"]),
+				run("/usr/bin/which", ["\(command)"]),
 				as: UTF8.self
 			).trimmingCharacters(in: .whitespacesAndNewlines)
 		}
