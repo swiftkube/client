@@ -17,29 +17,29 @@
 import Foundation
 import SwiftkubeModel
 
-// MARK: - AuthenticationV1Beta1API
+// MARK: - CertificatesV1Beta1API
 
-public protocol AuthenticationV1Beta1API: Sendable {
+public protocol CertificatesV1Beta1API: Sendable {
 
-	var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1beta1.SelfSubjectReview> { get }
+	var clusterTrustBundles: ClusterScopedGenericKubernetesClient<certificates.v1beta1.ClusterTrustBundle> { get }
 }
 
-/// DSL for `authentication.k8s.io.v1beta1` API Group
+/// DSL for `certificates.k8s.io.v1beta1` API Group
 public extension KubernetesClient {
 
-	final class AuthenticationV1Beta1: AuthenticationV1Beta1API {
+	final class CertificatesV1Beta1: CertificatesV1Beta1API {
 		private let client: KubernetesClient
 
 		internal init(_ client: KubernetesClient) {
 			self.client = client
 		}
 
-		public var selfSubjectReviews: ClusterScopedGenericKubernetesClient<authentication.v1beta1.SelfSubjectReview> {
-			client.clusterScoped(for: authentication.v1beta1.SelfSubjectReview.self)
+		public var clusterTrustBundles: ClusterScopedGenericKubernetesClient<certificates.v1beta1.ClusterTrustBundle> {
+			client.clusterScoped(for: certificates.v1beta1.ClusterTrustBundle.self)
 		}
 	}
 
-	var authenticationV1Beta1: AuthenticationV1Beta1API {
-		AuthenticationV1Beta1(self)
+	var certificatesV1Beta1: CertificatesV1Beta1API {
+		CertificatesV1Beta1(self)
 	}
 }
