@@ -15,6 +15,9 @@
 //
 
 import Foundation
+import Logging
+import NIOSSL
+import Yams
 
 // MARK: - KubeConfig
 
@@ -47,6 +50,35 @@ public struct KubeConfig: Codable, Sendable {
 
 	/// CurrentContext is the name of the context that you would like to use by default
 	public var currentContext: String?
+}
+
+public extension KubeConfig {
+
+	static func from(config: String) throws -> KubeConfig {
+		let decoder = YAMLDecoder()
+
+		return try decoder.decode(KubeConfig.self, from: config)
+	}
+
+	static func from(url: URL) throws -> KubeConfig {
+		let contents = try String(contentsOf: url, encoding: .utf8)
+
+		return try from(config: contents)
+	}
+
+	static func fromLocalEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
+		let kubeConfigURL: URL? = ProcessInfo.processInfo.environment[envVar].map { URL(fileURLWithPath: $0) } ?? ProcessInfo.processInfo.environment["HOME"].map { URL(fileURLWithPath: $0 + "/.kube/config") }
+
+		guard let kubeConfigURL else {
+			logger?.warning(
+				"Skipping local kubeconfig loading, neither environment variable KUBECONFIG nor HOME are set."
+			)
+			return nil
+		}
+		logger?.info("Loading configuration from \(kubeConfigURL)")
+
+		return try from(url: kubeConfigURL)
+	}
 }
 
 // MARK: - Cluster
