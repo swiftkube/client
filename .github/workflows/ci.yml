@@ -1,4 +1,4 @@
-name: "swiftkube-client-ci"
+name: "CI"
 
 on:
   push:
@@ -6,75 +6,62 @@ on:
   pull_request:
     branches: [ "*" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
-  swiftformat-lint:
-      runs-on: ubuntu-latest
-      steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install SwiftFormat
-        uses: Cyberbeni/install-swift-tool@v2
-        with:
-          url: https://github.com/nicklockwood/SwiftFormat
-      - name: Lint Sources
-        run: swiftformat --lint Sources
-  iOS:
-    name: Test iOS
-    runs-on: macOS-latest
-    strategy:
-      matrix:
-        destination: 
-          - "platform=iOS Simulator,OS=18.5,name=iPhone 16 Pro"
-          - "platform=iOS Simulator,OS=18.5,name=iPad Pro 13-inch (M4)"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: iOS - ${{ matrix.destination }}
-        run: set -o pipefail && xcodebuild -scheme SwiftkubeClient -destination "${{ matrix.destination }}" clean build | xcpretty
-
-  build:
-    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, macos-latest]
-        swift: ["5.9", "5.10", "6.0"]
+  lint:
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v5
+    - name: Install SwiftFormat
+      uses: Cyberbeni/install-swift-tool@v2
+      with:
+        url: https://github.com/nicklockwood/SwiftFormat
+    - name: Lint Sources
+      run: swiftformat --lint Sources
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        image: ["swift:5.10", "swift:6.0", "swift:6.1", "swiftlang/swift:nightly-6.2-noble"]
+    container:
+      image: ${{ matrix.image }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+    - name: Build
+      run: swift build
+
+  macos:
+    runs-on: macOS-latest
+    timeout-minutes: 15
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
     - name: SPM Cache
       uses: actions/cache@v4
       with:
         path: .build
-        key: ${{ matrix.os }}-${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
+        key: macos-latests-${{ hashFiles('**/Package.resolved') }}
         restore-keys: |
-          ${{ matrix.os }}-${{ matrix.swift }}-
-    # - name: Install runtime for macOS
-    #   continue-on-error: true
-    #   if: matrix.os == 'macos-latest'
-    #   run: |
-    #     brew install docker-machine docker
-    #     brew services start docker-machine
-    #     sudo docker --version
-    #     sysctl hw.physicalcpu hw.logicalcpu
-    - name: Start minikube
-      if: matrix.os == 'ubuntu-22.04'
-      uses: medyagh/setup-minikube@latest
-      id: minikube
-      with:
-        minikube-version: 1.35.0
-    - uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: ${{ matrix.swift }}
-    - name: Get swift version
-      run: swift --version
+          macos-latests-
     - name: Build
       run: swift build
-    - name: Test Linux
-      if: matrix.os == 'ubuntu-22.04'
-      run: swift test
-    - name: Test macOS
-      if: matrix.os == 'macos-latest'
-      run: swift test --skip K8s
+
+  ios:
+    runs-on: macOS-latest
+    strategy:
+      matrix:
+        destination: 
+          - "platform=iOS Simulator,OS=18.5,name=iPad Pro 13-inch (M4)"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Build
+        run: set -o pipefail && xcodebuild -scheme SwiftkubeClient -destination "${{ matrix.destination }}" clean build | xcpretty

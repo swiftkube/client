@@ -1,0 +1,40 @@
+name: "Test"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      matrix:
+        swift: ["5.9", "5.10", "6.0"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+    - name: SPM Cache
+      uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ matrix.swift }}-
+    - name: Start minikube
+      uses: medyagh/setup-minikube@latest
+      id: minikube
+      with:
+        minikube-version: 1.35.0
+    - uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: ${{ matrix.swift }}
+    - name: Get swift version
+      run: swift --version
+    - name: Build
+      run: swift build
+    - name: Test
+      run: swift test
