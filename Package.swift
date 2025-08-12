@@ -3,10 +3,15 @@
 
 import PackageDescription
 
+let swiftSettings: [SwiftSetting] = [.enableExperimentalFeature("StrictConcurrency=complete")]
+
 let package = Package(
 	name: "SwiftkubeClient",
 	platforms: [
-		.macOS(.v12), .iOS(.v15), .tvOS(.v15), .watchOS(.v8),
+		.macOS(.v12),
+		.iOS(.v15),
+		.tvOS(.v15),
+		.watchOS(.v8),
 	],
 	products: [
 		.library(
@@ -33,13 +38,15 @@ let package = Package(
 				.product(name: "NIOFoundationCompat", package: "swift-nio"),
 				.product(name: "SwiftkubeModel", package: "model"),
 				.product(name: "Yams", package: "Yams"),
-			]
+			],
+			swiftSettings: swiftSettings
 		),
 		.testTarget(
 			name: "SwiftkubeClientTests",
 			dependencies: [
 				"SwiftkubeClient",
-			]
+			],
+			swiftSettings: swiftSettings
 		),
 	],
 	swiftLanguageVersions: [.v5, .version("6")]
