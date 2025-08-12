@@ -1,4 +1,4 @@
-name: "Test"
+name: "Tests"
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        swift: ["5.9", "5.10", "6.0"]
+        image: ["5.10", "6.0", "6.1"]
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -29,7 +29,7 @@ jobs:
       id: minikube
       with:
         minikube-version: 1.35.0
-    - uses: swift-actions/setup-swift@v2
+    - uses: SwiftyLab/setup-swift@latest
       with:
         swift-version: ${{ matrix.swift }}
     - name: Get swift version
