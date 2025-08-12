@@ -84,8 +84,7 @@ extension KubernetesClientConfig {
 	public static func from(
 		kubeConfig: KubeConfig,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
-			nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
@@ -117,8 +116,7 @@ extension KubernetesClientConfig {
 		kubeConfig: KubeConfig,
 		context: String,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
-			nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
@@ -153,8 +151,7 @@ extension KubernetesClientConfig {
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
 	public static func fromServiceAccount(
 		timeout: HTTPClient.Configuration.Timeout? = nil,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? =
-			nil,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
 		logger: Logger? = SwiftkubeClient.loggingDisabled
 	) throws -> KubernetesClientConfig? {
 		let timeout = timeout ?? .init()
@@ -205,9 +202,7 @@ extension KubernetesClientConfig {
 		namedContext.name == kubeConfig.currentContext
 	}
 
-	internal static func contextSelector(context: String) -> (NamedContext, KubeConfig)
-		-> Bool
-	{
+	internal static func contextSelector(context: String) -> (NamedContext, KubeConfig) -> Bool {
 		{ namedContext, _ in
 			namedContext.name == context
 		}
@@ -217,7 +212,7 @@ extension KubernetesClientConfig {
 		contextSelector: @escaping (NamedContext, KubeConfig) -> Bool,
 		logger: Logger?,
 		timeout: HTTPClient.Configuration.Timeout,
-		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration,
+		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
 	) -> (KubeConfig) -> KubernetesClientConfig? {
 		{ kubeConfig in
 			guard
@@ -279,9 +274,7 @@ extension KubernetesClientConfig {
 			}
 		}
 
-		func loadTrustRoots(caFile: URL, logger: Logger?)
-			-> NIOSSLTrustRoots?
-		{
+		func loadTrustRoots(caFile: URL, logger: Logger?) -> NIOSSLTrustRoots? {
 			guard
 				let caData = try? Data(contentsOf: caFile),
 				let certificates = try? NIOSSLCertificate.fromPEMBytes(
