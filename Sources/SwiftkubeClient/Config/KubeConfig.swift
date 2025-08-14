@@ -52,39 +52,11 @@ public struct KubeConfig: Codable, Sendable {
 	public var currentContext: String?
 }
 
-public extension KubeConfig {
-
-	static func from(config: String) throws -> KubeConfig {
-		let decoder = YAMLDecoder()
-
-		return try decoder.decode(KubeConfig.self, from: config)
-	}
-
-	static func from(url: URL) throws -> KubeConfig {
-		let contents = try String(contentsOf: url, encoding: .utf8)
-
-		return try from(config: contents)
-	}
-
-	static func fromLocalEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
-		let kubeConfigURL: URL? = ProcessInfo.processInfo.environment[envVar].map { URL(fileURLWithPath: $0) } ?? ProcessInfo.processInfo.environment["HOME"].map { URL(fileURLWithPath: $0 + "/.kube/config") }
-
-		guard let kubeConfigURL else {
-			logger?.warning(
-				"Skipping local kubeconfig loading, neither environment variable KUBECONFIG nor HOME are set."
-			)
-			return nil
-		}
-		logger?.info("Loading configuration from \(kubeConfigURL)")
-
-		return try from(url: kubeConfigURL)
-	}
-}
-
 // MARK: - Cluster
 
 /// Cluster contains information about how to communicate with a kubernetes cluster.
 public struct Cluster: Codable, Sendable, Hashable, Equatable {
+
 	public init(
 		server: String,
 		tlsServerName: String? = nil,
@@ -133,6 +105,7 @@ public struct Cluster: Codable, Sendable, Hashable, Equatable {
 
 /// AuthInfo contains information that describes identity information.  This is use to tell the kubernetes cluster who you are.
 public struct AuthInfo: Codable, Sendable, Hashable, Equatable {
+
 	public init(
 		clientCertificate: String? = nil,
 		clientCertificateData: Data? = nil,
