@@ -106,6 +106,54 @@ public actor KubernetesClient {
 
 	/// Create a new instance of the Kubernetes client.
 	///
+	/// The client tries to resolve a `kube config` automatically from different sources in the following order:
+	///
+	/// - A Kube config file at path of environment variable `KUBECONFIG` (if set)
+	/// - A Kube config file in the user's `$HOME/.kube/config` directory
+	/// - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
+	///
+	/// Returns `nil` if a configuration can't be found.
+	///
+	/// - Parameters:
+	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
+	///    - logger: The logger to use for this client.
+	public init?(
+		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+		logger: Logger? = nil
+	) {
+		guard
+			let config = try? KubernetesClientConfig.initialize(logger: logger)
+		else {
+			return nil
+		}
+
+		self.init(config: config, provider: provider, logger: logger)
+	}
+
+	/// Create a new instance of the Kubernetes client.
+	///
+	/// - Parameters:
+	///    - kubeConfig:The KubeConfig to use to initialize the client's configuration
+	///    - contextName: The name of the context to use from KubeConfig. If not specified, then `current-context` is assumed..
+	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
+	///    - logger: The logger to use for this client.
+	public init?(
+		kubeConfig: KubeConfig,
+		contextName: String?,
+		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+		logger: Logger? = nil
+	) {
+		guard
+			let config = try? KubernetesClientConfig.from(kubeConfig: kubeConfig, contextName: contextName, logger: logger)
+		else {
+			return nil
+		}
+
+		self.init(config: config, provider: provider, logger: logger)
+	}
+
+	/// Create a new instance of the Kubernetes client.
+	///
 	/// - Parameters:
 	///    - config: The configuration for this client instance.
 	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
@@ -164,25 +212,6 @@ public actor KubernetesClient {
 				decompression: config.gzip ? .enabled(limit: .none) : .disabled
 			)
 		)
-	}
-
-	public static func forContext(
-		context: String,
-		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
-		logger: Logger? = nil
-	) throws -> KubernetesClient? {
-		try KubeConfig.fromLocalEnvironment()
-			.flatMap { try KubernetesClientConfig.from(kubeConfig: $0, context: context, logger: logger) }
-			.map { KubernetesClient(config: $0) }
-	}
-
-	public static func forCurrentContext(
-		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
-		logger: Logger? = nil
-	) throws -> KubernetesClient? {
-		try KubeConfig.fromLocalEnvironment()
-			.flatMap { try KubernetesClientConfig.from(kubeConfig: $0, logger: logger) }
-			.map { KubernetesClient(config: $0) }
 	}
 
 	/// Shuts down the client gracefully.
