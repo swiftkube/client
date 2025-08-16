@@ -16,7 +16,7 @@
 		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
 	</a>
 	<a href="https://github.com/swiftkube/client/actions">
-		<img src="https://github.com/swiftkube/client/workflows/ci/badge.svg" alt="CI Status">
+		<img src="https://img.shields.io/github/actions/workflow/status/swiftkube/client/ci.yml?style=flat" alt="CI Status">
 	</a>
 </p>
 
