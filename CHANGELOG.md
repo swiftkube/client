@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.25.0
+
+- Refactor configuration builders and add support for overriding the current k8s context (#47 by nefilim)
+- Update model to v0.18.0 and Kubernetes to v1.33.3
+
+## 0.24.0
+
+- Add support for KUBECONFIG env variable (#44 by @sliemeobn)
+
 ## 0.23.0
 
 - Update to Kubernetes model v1.32.2

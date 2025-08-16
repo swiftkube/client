@@ -9,14 +9,14 @@
     <a href="https://swiftpackageindex.com/swiftkube/client">
       <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
     </a>
-	<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.32.2-blue.svg" alt="Kubernetes 1.32.2"/>
+	<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/">
+		<img src="https://img.shields.io/badge/Kubernetes-1.33.3-blue.svg" alt="Kubernetes 1.33.3"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
 	</a>
 	<a href="https://github.com/swiftkube/client/actions">
-		<img src="https://github.com/swiftkube/client/workflows/swiftkube-client-ci/badge.svg" alt="CI Status">
+		<img src="https://github.com/swiftkube/client/workflows/ci/badge.svg" alt="CI Status">
 	</a>
 </p>
 
@@ -42,7 +42,7 @@
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based 
 on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.32.0
+- [x] Covers all Kubernetes API Groups in v1.33.3
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -68,14 +68,14 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 
 ## Compatibility Matrix
 
-|                   | 1.24.10 | 1.26.4 | 1.28.0 | 1.28.3 | 1.29.6 | 1.32.0 | 1.32.2 |
-|-------------------|---------|--------|--------|--------|--------|--------|--------|
-| `0.14.x`          | ✓       | -      | -      | -      | -      | -      | -      |
-| `0.15.x`          | -       | ✓      | -      | -      | -      | -      | -      |
-| `0.16.x`          | -       | -      | ✓      | -      | -      | -      | -      |
-| `0.17.x`          | -       | -      | -      | ✓      | -      | -      | -      |
-| `0.18.x`          | -       | -      | -      | -      | ✓      | -      | -      |
-| `0.19.x`-`0.23.0` | -       | -      | -      | -      | -      | ✓      | ✓      |
+|                   | 1.28.0 | 1.28.3 | 1.29.6 | 1.32.0 | 1.32.2 | 1.33.3 |
+|-------------------|--------|--------|--------|--------|--------|--------|
+| `0.16.x`          | ✓      | -      | -      | -      | -      | -      |
+| `0.17.x`          | -      | ✓      | -      | -      | -      | -      |
+| `0.18.x`          | -      | -      | ✓      | -      | -      | -      |
+| `0.19.x`-`0.23.0` | -      | -      | -      | ✓      | -      | -      |
+| `0.24.0`          | -      | -      | -      | -      | ✓      | -      |
+| `0.25.0`          | -      | -      | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
@@ -120,12 +120,31 @@ client.shutdown(queue: queue) { (error: Error?) in
 
 The client tries to resolve a `kube config` automatically from different sources in the following order:
 
-- If set, kube config file at path of environment variable `KUBECONFIG`
+- Kube config file at path of environment variable `KUBECONFIG`, if defined
 - Kube config file in the user's `$HOME/.kube/config` directory 
-- `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, 
-- if it's running in Kubernetes.
+- `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
 
-Alternatively it can be configured manually, for example:
+However, `KubeConfig` can also be loaded manually:
+
+```swift
+let kubeConfig = try KubeConfig.from(config: "<config as a YAML string>")
+let kubeConfig = try KubeConfig.from(url: "<some URL>")
+let kubeConfig = try KubeConfig.fromEnvironment(envVar: "KUBECONFIG")
+let kubeConfig = try KubeConfig.fromDefaultLocalConfig()
+let kubeConfig = try KubeConfig.fromServiceAccount()
+```
+
+and then used to initialize the `KubernetesClientConfig` like this:
+
+```swift
+let kubeConfig = KubeConfig.fromDefaultLocalConfig()
+let config = KubernetesClientConfig.from(
+  kubeConfig: kubeConfig,
+  contextName: "some-context" // if not provided, then "current-context" is used
+)
+```
+
+Alternatively, the `KubernetesClientConfig` can be configured completely manually, for example:
 
 ```swift
 let caCert = try NIOSSLCertificate.fromPEMFile(caFile)
