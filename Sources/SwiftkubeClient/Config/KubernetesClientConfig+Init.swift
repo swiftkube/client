@@ -20,7 +20,7 @@ import Logging
 import NIOSSL
 import Yams
 
-extension KubernetesClientConfig {
+public extension KubernetesClientConfig {
 
 	/// Initializes a client configuration.
 	///
@@ -37,16 +37,24 @@ extension KubernetesClientConfig {
 	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default  to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func initialize(
+	static func initialize(
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
-		guard
-			let kubeConfig = try KubeConfig.fromEnvironment()
-				?? KubeConfig.fromDefaultLocalConfig()
-				?? KubeConfig.fromServiceAccount()
-		else {
+		let kubeConfig: KubeConfig? = {
+			if let config = try? KubeConfig.fromEnvironment() {
+				return config
+			}
+
+			if let config = try? KubeConfig.fromDefaultLocalConfig() {
+				return config
+			}
+
+			return try? KubeConfig.fromServiceAccount()
+		}()
+
+		guard let kubeConfig = kubeConfig else {
 			return nil
 		}
 
@@ -69,13 +77,13 @@ extension KubernetesClientConfig {
 	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default  to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func from(
+	static func from(
 		kubeConfig: KubeConfig,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
 		redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration? = nil,
 		logger: Logger?
 	) throws -> KubernetesClientConfig? {
-		return try from(
+		try from(
 			kubeConfig: kubeConfig,
 			contextName: nil,
 			timeout: timeout,
@@ -95,7 +103,7 @@ extension KubernetesClientConfig {
 	///   - redirectConfiguration: Specifies redirect processing settings. If not provided, then it will default  to a maximum of 5 follows w/o cycles.
 	///   - logger: The logger to use for the underlying configuration loaders.
 	/// - Returns: An instance of KubernetesClientConfig for the Swiftkube KubernetesClient
-	public static func from(
+	static func from(
 		kubeConfig: KubeConfig,
 		contextName: String?,
 		timeout: HTTPClient.Configuration.Timeout? = nil,
