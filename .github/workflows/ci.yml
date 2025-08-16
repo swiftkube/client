@@ -55,7 +55,7 @@ jobs:
       run: swift build
 
   ios:
-    runs-on: macOS-latest
+    runs-on: macOS-14
     strategy:
       matrix:
         destination: 
