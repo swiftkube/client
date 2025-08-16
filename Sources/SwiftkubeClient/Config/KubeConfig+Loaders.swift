@@ -125,7 +125,7 @@ public extension KubeConfig {
 internal extension String {
 
 	func stringByExpandingTildePath() -> String {
-		guard !self.isEmpty else {
+		guard !isEmpty else {
 			return ""
 		}
 
@@ -133,7 +133,7 @@ internal extension String {
 			return FileManager.default.homeDirectoryForCurrentUser.path
 		}
 
-		guard self.hasPrefix("~/") else {
+		guard hasPrefix("~/") else {
 			return self
 		}
 
