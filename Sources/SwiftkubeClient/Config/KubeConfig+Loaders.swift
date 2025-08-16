@@ -13,10 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 import Foundation
 import Logging
 import Yams
-
 
 public extension KubeConfig {
 
@@ -37,7 +37,8 @@ public extension KubeConfig {
 			return nil
 		}
 
-		let kubeConfigURL =  URL(fileURLWithPath: varContent)
+		let expanded = varContent.stringByExpandingTildePath()
+		let kubeConfigURL = URL(fileURLWithPath: expanded)
 		logger?.info("Loading configuration from \(kubeConfigURL)")
 
 		return try from(url: kubeConfigURL)
@@ -96,7 +97,7 @@ public extension KubeConfig {
 						insecureSkipTLSVerify: certificateAuthorityData == nil,
 						certificateAuthorityData: certificateAuthorityData
 					)
-				)
+				),
 			],
 			users: [
 				NamedAuthInfo(
@@ -104,7 +105,7 @@ public extension KubeConfig {
 					authInfo: AuthInfo(
 						token: token
 					)
-				)
+				),
 			],
 			contexts: [
 				NamedContext(
@@ -114,9 +115,31 @@ public extension KubeConfig {
 						user: "service-account-user",
 						namespace: namespace
 					)
-				)
+				),
 			],
 			currentContext: "service-account-context"
 		)
+	}
+}
+
+internal extension String {
+
+	func stringByExpandingTildePath() -> String {
+		guard !self.isEmpty else {
+			return ""
+		}
+
+		if self == "~" {
+			return FileManager.default.homeDirectoryForCurrentUser.path
+		}
+
+		guard self.hasPrefix("~/") else {
+			return self
+		}
+
+		var relativePath = self
+		relativePath.removeFirst(2)
+
+		return FileManager.default.homeDirectoryForCurrentUser.path + "/" + relativePath
 	}
 }
