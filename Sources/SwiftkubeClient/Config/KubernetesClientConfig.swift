@@ -19,6 +19,7 @@ import Foundation
 import Logging
 import NIOSSL
 import Yams
+import NIOCore
 
 // MARK: - KubernetesClientConfig
 
@@ -85,8 +86,8 @@ public final class CachedFileTokenSource: @unchecked Sendable {
 	private struct State {
 		var path: String
 		var cachedToken: String?
-		var expiry: Date = .distantPast
-		var cacheDuration: TimeInterval
+		var expiry: NIODeadline = .distantPast
+		var cacheDuration: TimeAmount
 	}
 
 	private let lock = NSLock()
@@ -96,14 +97,14 @@ public final class CachedFileTokenSource: @unchecked Sendable {
 	/// - Parameters:
 	///   - path: The filesystem path to the token file.
 	///   - cacheDuration: How long to cache a token before re-reading from disk. Defaults to 60 seconds.
-	public init(path: String, cacheDuration: TimeInterval = 60) {
+	public init(path: String, cacheDuration: TimeAmount = .seconds(60)) {
 		self.state = State(path: path, cacheDuration: cacheDuration)
 	}
 
 	/// Returns the current token, re-reading from disk if the cache has expired.
 	public func token() -> String? {
 		lock.withLock {
-			let now = Date()
+			let now = NIODeadline.now()
 			if let cachedToken = state.cachedToken, now < state.expiry {
 				return cachedToken
 			}
@@ -114,7 +115,7 @@ public final class CachedFileTokenSource: @unchecked Sendable {
 
 			let trimmed = newToken.trimmingCharacters(in: .whitespacesAndNewlines)
 			state.cachedToken = trimmed
-			state.expiry = now.addingTimeInterval(state.cacheDuration)
+			state.expiry = now + state.cacheDuration
 			return trimmed
 		}
 	}
