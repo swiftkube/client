@@ -17,9 +17,9 @@
 import AsyncHTTPClient
 import Foundation
 import Logging
+import NIOCore
 import NIOSSL
 import Yams
-import NIOCore
 
 // MARK: - KubernetesClientConfig
 
@@ -39,7 +39,8 @@ public struct KubernetesClientConfig: Sendable {
 	/// The default timeout configuration for the underlying `HTTPClient`.
 	public let timeout: HTTPClient.Configuration.Timeout
 	/// The default redirect configuration for the underlying `HTTPCLient`.
-	public let redirectConfiguration: HTTPClient.Configuration.RedirectConfiguration
+	public let redirectConfiguration:
+		HTTPClient.Configuration.RedirectConfiguration
 	/// URL to the proxy to be used for all requests made by this client.
 	public let proxyURL: URL?
 	/// Whether to request and decode gzipped responses from the API server.
@@ -136,11 +137,11 @@ public enum KubernetesClientAuthentication: Sendable {
 
 	internal func authorizationHeader() -> String? {
 		switch self {
-		case let .basicAuth(username, password):
+		case let .basicAuth(username: username, password: password):
 			return HTTPClient.Authorization.basic(username: username, password: password).headerValue
-		case let .bearer(token):
+		case let .bearer(token: token):
 			return HTTPClient.Authorization.bearer(tokens: token).headerValue
-		case let .tokenFile(source):
+		case let .tokenFile(source: source):
 			guard let token = source.token() else {
 				return nil
 			}
