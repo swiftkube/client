@@ -81,7 +81,9 @@ public final class CachedFileTokenSource: @unchecked Sendable {
 
 	/// The path to the token file on disk.
 	public var path: String {
-		lock.withLock { state.path }
+		lock.lock()
+		defer { lock.unlock() }
+		return state.path
 	}
 
 	private struct State {
@@ -104,21 +106,22 @@ public final class CachedFileTokenSource: @unchecked Sendable {
 
 	/// Returns the current token, re-reading from disk if the cache has expired.
 	public func token() -> String? {
-		lock.withLock {
-			let now = NIODeadline.now()
-			if let cachedToken = state.cachedToken, now < state.expiry {
-				return cachedToken
-			}
+		lock.lock()
+		defer { lock.unlock() }
 
-			guard let newToken = try? String(contentsOfFile: state.path, encoding: .utf8) else {
-				return nil
-			}
-
-			let trimmed = newToken.trimmingCharacters(in: .whitespacesAndNewlines)
-			state.cachedToken = trimmed
-			state.expiry = now + state.cacheDuration
-			return trimmed
+		let now = NIODeadline.now()
+		if let cachedToken = state.cachedToken, now < state.expiry {
+			return cachedToken
 		}
+
+		guard let newToken = try? String(contentsOfFile: state.path, encoding: .utf8) else {
+			return nil
+		}
+
+		let trimmed = newToken.trimmingCharacters(in: .whitespacesAndNewlines)
+		state.cachedToken = trimmed
+		state.expiry = now + state.cacheDuration
+		return trimmed
 	}
 }
 
