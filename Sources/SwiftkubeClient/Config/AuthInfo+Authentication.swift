@@ -114,9 +114,9 @@ public extension AuthInfo {
 
 // MARK: - ExecCredential
 
-// It seems that AWS doesn't implement properly the model for client.authentication.k8s.io/v1beta1
-// Acordingly with the doc https://kubernetes.io/docs/reference/config-api/client-authentication.v1beta1/
-// ExecCredential.Spec.interactive is required as long as the ones in the Status object.
+/// It seems that AWS doesn't implement properly the model for client.authentication.k8s.io/v1beta1
+/// Acordingly with the doc https://kubernetes.io/docs/reference/config-api/client-authentication.v1beta1/
+/// ExecCredential.Spec.interactive is required as long as the ones in the Status object.
 public struct ExecCredential: Codable {
 	let apiVersion: String
 	let kind: String

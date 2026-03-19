@@ -105,34 +105,34 @@ public actor KubernetesClient {
 	#endif
 
 	#if os(Linux) || os(macOS)
-	/// Create a new instance of the Kubernetes client.
-	///
-	/// The client tries to resolve a `kube config` automatically from different sources in the following order:
-	///
-	/// - A Kube config file at path of environment variable `KUBECONFIG` (if set)
-	/// - A Kube config file in the user's `$HOME/.kube/config` directory
-	/// - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
-	///
-	/// Returns `nil` if a configuration can't be found.
-	///
-	/// - Note: This initializer is only available on Linux and macOS. On iOS, tvOS, and watchOS, you must use
-	///         `init(config:provider:logger:)` with a manually configured `KubernetesClientConfig`.
-	///
-	/// - Parameters:
-	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
-	///    - logger: The logger to use for this client.
-	public init?(
-		provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
-		logger: Logger? = nil
-	) {
-		guard
-			let config = try? KubernetesClientConfig.initialize(logger: logger)
-		else {
-			return nil
-		}
+		/// Create a new instance of the Kubernetes client.
+		///
+		/// The client tries to resolve a `kube config` automatically from different sources in the following order:
+		///
+		/// - A Kube config file at path of environment variable `KUBECONFIG` (if set)
+		/// - A Kube config file in the user's `$HOME/.kube/config` directory
+		/// - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
+		///
+		/// Returns `nil` if a configuration can't be found.
+		///
+		/// - Note: This initializer is only available on Linux and macOS. On iOS, tvOS, and watchOS, you must use
+		///         `init(config:provider:logger:)` with a manually configured `KubernetesClientConfig`.
+		///
+		/// - Parameters:
+		///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
+		///    - logger: The logger to use for this client.
+		public init?(
+			provider: HTTPClient.EventLoopGroupProvider = .shared(MultiThreadedEventLoopGroup(numberOfThreads: 1)),
+			logger: Logger? = nil
+		) {
+			guard
+				let config = try? KubernetesClientConfig.initialize(logger: logger)
+			else {
+				return nil
+			}
 
-		self.init(config: config, provider: provider, logger: logger)
-	}
+			self.init(config: config, provider: provider, logger: logger)
+		}
 	#endif
 
 	/// Create a new instance of the Kubernetes client.

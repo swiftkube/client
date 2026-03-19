@@ -102,7 +102,7 @@ public struct KubernetesRequest: Sendable {
 
 // MARK: - RequestBody
 
-internal enum RequestBody: Sendable {
+internal enum RequestBody {
 	case resource(payload: any KubernetesAPIResource)
 	case subResource(type: ResourceType, payload: any KubernetesResource)
 

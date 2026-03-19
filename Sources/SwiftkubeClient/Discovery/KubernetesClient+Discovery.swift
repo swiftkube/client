@@ -126,11 +126,9 @@ internal class DiscoveryClient: DiscoveryAPI, RequestHandlerType {
 			allResourceLists.append(it)
 		}
 
-		let merged = allResourceLists.reduce(into: [meta.v1.APIResourceList]()) { (acc, other: meta.v1.APIResourceList) in
+		return allResourceLists.reduce(into: [meta.v1.APIResourceList]()) { (acc, other: meta.v1.APIResourceList) in
 			acc.append(other)
 		}
-
-		return merged
 	}
 
 	func serverResources(forGroupVersion groupVersion: String) async throws -> meta.v1.APIResourceList {

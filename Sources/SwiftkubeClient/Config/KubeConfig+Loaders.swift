@@ -32,122 +32,122 @@ public extension KubeConfig {
 	}
 
 	#if os(Linux) || os(macOS)
-	static func fromEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
-		guard let varContent = ProcessInfo.processInfo.environment[envVar] else {
-			logger?.info("Skipping kubeconfig because environment variable \(envVar) is not set")
-			return nil
+		static func fromEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
+			guard let varContent = ProcessInfo.processInfo.environment[envVar] else {
+				logger?.info("Skipping kubeconfig because environment variable \(envVar) is not set")
+				return nil
+			}
+
+			let expanded = varContent.stringByExpandingTildePath()
+			let kubeConfigURL = URL(fileURLWithPath: expanded)
+			logger?.info("Loading configuration from \(kubeConfigURL)")
+
+			return try from(url: kubeConfigURL)
 		}
-
-		let expanded = varContent.stringByExpandingTildePath()
-		let kubeConfigURL = URL(fileURLWithPath: expanded)
-		logger?.info("Loading configuration from \(kubeConfigURL)")
-
-		return try from(url: kubeConfigURL)
-	}
 	#endif
 
 	#if os(Linux) || os(macOS)
-	static func fromDefaultLocalConfig(logger: Logger? = nil) throws -> KubeConfig? {
-		guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
-			logger?.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
-			return nil
+		static func fromDefaultLocalConfig(logger: Logger? = nil) throws -> KubeConfig? {
+			guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
+				logger?.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
+				return nil
+			}
+
+			let kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
+			logger?.info("Loading configuration from \(kubeConfigURL)")
+
+			return try from(url: kubeConfigURL)
 		}
-
-		let kubeConfigURL = URL(fileURLWithPath: homePath + "/.kube/config")
-		logger?.info("Loading configuration from \(kubeConfigURL)")
-
-		return try from(url: kubeConfigURL)
-	}
 	#endif
 
 	#if os(Linux) || os(macOS)
-	static func fromServiceAccount(logger: Logger? = nil) throws -> KubeConfig? {
-		guard
-			let host = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_HOST"],
-			let port = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_PORT"]
-		else {
-			logger?.warning("Skipping service account kubeconfig because either KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT is not set")
-			return nil
+		static func fromServiceAccount(logger: Logger? = nil) throws -> KubeConfig? {
+			guard
+				let host = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_HOST"],
+				let port = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_PORT"]
+			else {
+				logger?.warning("Skipping service account kubeconfig because either KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT is not set")
+				return nil
+			}
+
+			let apiServerUrl = if host.contains(":") {
+				"https://[\(host)]:\(port)"
+			} else {
+				"https://\(host):\(port)"
+			}
+
+			let tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+			guard FileManager.default.fileExists(atPath: tokenPath) else {
+				logger?.warning("Did not find service account token at \(tokenPath)")
+				return nil
+			}
+
+			let namespaceFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+			let namespace = try? String(contentsOf: namespaceFile, encoding: .utf8)
+			if namespace == nil {
+				logger?.debug("Did not find service account namespace at /var/run/secrets/kubernetes.io/serviceaccount/namespace")
+			}
+
+			let certificateAuthorityFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+			let certificateAuthorityData = try? Data(contentsOf: certificateAuthorityFile)
+
+			return KubeConfig(
+				kind: "Config",
+				apiVersion: "v1",
+				clusters: [
+					NamedCluster(
+						name: "kubernetes-cluster-local",
+						cluster: Cluster(
+							server: apiServerUrl,
+							insecureSkipTLSVerify: certificateAuthorityData == nil,
+							certificateAuthorityData: certificateAuthorityData
+						)
+					),
+				],
+				users: [
+					NamedAuthInfo(
+						name: "service-account-user",
+						authInfo: AuthInfo(
+							tokenFile: tokenPath
+						)
+					),
+				],
+				contexts: [
+					NamedContext(
+						name: "service-account-context",
+						context: Context(
+							cluster: "kubernetes-cluster-local",
+							user: "service-account-user",
+							namespace: namespace
+						)
+					),
+				],
+				currentContext: "service-account-context"
+			)
 		}
-
-		let apiServerUrl = if host.contains(":") {
-			"https://[\(host)]:\(port)"
-		} else {
-			"https://\(host):\(port)"
-		}
-
-		let tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-		guard FileManager.default.fileExists(atPath: tokenPath) else {
-			logger?.warning("Did not find service account token at \(tokenPath)")
-			return nil
-		}
-
-		let namespaceFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-		let namespace = try? String(contentsOf: namespaceFile, encoding: .utf8)
-		if namespace == nil {
-			logger?.debug("Did not find service account namespace at /var/run/secrets/kubernetes.io/serviceaccount/namespace")
-		}
-
-		let certificateAuthorityFile = URL(fileURLWithPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-		let certificateAuthorityData = try? Data(contentsOf: certificateAuthorityFile)
-
-		return KubeConfig(
-			kind: "Config",
-			apiVersion: "v1",
-			clusters: [
-				NamedCluster(
-					name: "kubernetes-cluster-local",
-					cluster: Cluster(
-						server: apiServerUrl,
-						insecureSkipTLSVerify: certificateAuthorityData == nil,
-						certificateAuthorityData: certificateAuthorityData
-					)
-				),
-			],
-			users: [
-				NamedAuthInfo(
-					name: "service-account-user",
-					authInfo: AuthInfo(
-						tokenFile: tokenPath
-					)
-				),
-			],
-			contexts: [
-				NamedContext(
-					name: "service-account-context",
-					context: Context(
-						cluster: "kubernetes-cluster-local",
-						user: "service-account-user",
-						namespace: namespace
-					)
-				),
-			],
-			currentContext: "service-account-context"
-		)
-	}
 	#endif
 }
 
 #if os(Linux) || os(macOS)
-internal extension String {
+	internal extension String {
 
-	func stringByExpandingTildePath() -> String {
-		guard !isEmpty else {
-			return ""
+		func stringByExpandingTildePath() -> String {
+			guard !isEmpty else {
+				return ""
+			}
+
+			if self == "~" {
+				return FileManager.default.homeDirectoryForCurrentUser.path
+			}
+
+			guard hasPrefix("~/") else {
+				return self
+			}
+
+			var relativePath = self
+			relativePath.removeFirst(2)
+
+			return FileManager.default.homeDirectoryForCurrentUser.path + "/" + relativePath
 		}
-
-		if self == "~" {
-			return FileManager.default.homeDirectoryForCurrentUser.path
-		}
-
-		guard hasPrefix("~/") else {
-			return self
-		}
-
-		var relativePath = self
-		relativePath.removeFirst(2)
-
-		return FileManager.default.homeDirectoryForCurrentUser.path + "/" + relativePath
 	}
-}
 #endif
