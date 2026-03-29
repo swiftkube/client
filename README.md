@@ -10,7 +10,7 @@
       <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftkube%2Fclient%2Fbadge%3Ftype%3Dplatforms"/>
     </a>
 	<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/">
-		<img src="https://img.shields.io/badge/Kubernetes-1.33.3-blue.svg" alt="Kubernetes 1.33.3"/>
+		<img src="https://img.shields.io/badge/Kubernetes-1.34.6-blue.svg" alt="Kubernetes 1.34.6"/>
 	</a>
 	<a href="https://swift.org/package-manager">
 		<img src="https://img.shields.io/badge/SwiftPM-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -42,7 +42,7 @@
 Swift client for talking to a [Kubernetes](http://kubernetes.io/) cluster via a fluent DSL based 
 on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](https://github.com/swift-server/async-http-client).
 
-- [x] Covers all Kubernetes API Groups in v1.33.3
+- [x] Covers all Kubernetes API Groups in v1.34.6
 - [x] Automatic configuration discovery
 - [x] DSL style API
   - [x] For all API Groups/Versions
@@ -68,14 +68,15 @@ on [SwiftNIO](https://github.com/apple/swift-nio) and the [AysncHTTPClient](http
 
 ## Compatibility Matrix
 
-|                   | 1.28.0 | 1.28.3 | 1.29.6 | 1.32.0 | 1.32.2 | 1.33.3 |
-|-------------------|--------|--------|--------|--------|--------|--------|
-| `0.16.x`          | ✓      | -      | -      | -      | -      | -      |
-| `0.17.x`          | -      | ✓      | -      | -      | -      | -      |
-| `0.18.x`          | -      | -      | ✓      | -      | -      | -      |
-| `0.19.x`-`0.23.0` | -      | -      | -      | ✓      | -      | -      |
-| `0.24.0`          | -      | -      | -      | -      | ✓      | -      |
-| `0.25.0`          | -      | -      | -      | -      | -      | ✓      |
+|                   | 1.28.0 | 1.28.3 | 1.29.6 | 1.32.0 | 1.32.2 | 1.33.3 | 1.34.6 |
+|-------------------|--------|--------|--------|--------|--------|--------|--------|
+| `0.16.x`          | ✓      | -      | -      | -      | -      | -      | -      |
+| `0.17.x`          | -      | ✓      | -      | -      | -      | -      | -      |
+| `0.18.x`          | -      | -      | ✓      | -      | -      | -      | -      |
+| `0.19.x`-`0.23.0` | -      | -      | -      | ✓      | -      | -      | -      |
+| `0.24.0`          | -      | -      | -      | -      | ✓      | -      | -      |
+| `0.25.0`          | -      | -      | -      | -      | -      | ✓      | -      |
+| `0.26.0`          | -      | -      | -      | -      | -      | -      | ✓      |
 
 - `✓` Exact match of API objects in both client and the Kubernetes version.
 - `-` API objects mismatches either due to the removal of old API or the addition of new API. However, everything the 
