@@ -24,8 +24,8 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-metrics.git", .upToNextMajor(from: "2.5.1")),
 		.package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.80.0")),
 		.package(url: "https://github.com/jpsim/Yams.git", .upToNextMajor(from: "5.1.3")),
-		.package(url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.18.0")),
 		.package(url: "https://github.com/swift-server/async-http-client.git", .upToNextMajor(from: "1.24.2")),
+		.package(url: "https://github.com/swiftkube/model.git", .upToNextMinor(from: "0.19.0")),
 	],
 	targets: [
 		.target(

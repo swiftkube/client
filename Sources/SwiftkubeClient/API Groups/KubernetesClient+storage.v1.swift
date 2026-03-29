@@ -26,6 +26,7 @@ public protocol StorageV1API: Sendable {
 	var csiStorageCapacities: NamespacedGenericKubernetesClient<storage.v1.CSIStorageCapacity> { get }
 	var storageClasses: ClusterScopedGenericKubernetesClient<storage.v1.StorageClass> { get }
 	var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1.VolumeAttachment> { get }
+	var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1.VolumeAttributesClass> { get }
 }
 
 /// DSL for `storage.k8s.io.v1` API Group
@@ -56,6 +57,10 @@ public extension KubernetesClient {
 
 		public var volumeAttachments: ClusterScopedGenericKubernetesClient<storage.v1.VolumeAttachment> {
 			client.clusterScoped(for: storage.v1.VolumeAttachment.self)
+		}
+
+		public var volumeAttributesClasses: ClusterScopedGenericKubernetesClient<storage.v1.VolumeAttributesClass> {
+			client.clusterScoped(for: storage.v1.VolumeAttributesClass.self)
 		}
 	}
 

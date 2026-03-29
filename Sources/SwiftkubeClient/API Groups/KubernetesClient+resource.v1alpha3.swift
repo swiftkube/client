@@ -21,11 +21,7 @@ import SwiftkubeModel
 
 public protocol ResourceV1Alpha3API: Sendable {
 
-	var deviceClasses: ClusterScopedGenericKubernetesClient<resource.v1alpha3.DeviceClass> { get }
 	var deviceTaintRules: ClusterScopedGenericKubernetesClient<resource.v1alpha3.DeviceTaintRule> { get }
-	var resourceClaims: NamespacedGenericKubernetesClient<resource.v1alpha3.ResourceClaim> { get }
-	var resourceClaimTemplates: NamespacedGenericKubernetesClient<resource.v1alpha3.ResourceClaimTemplate> { get }
-	var resourceSlices: ClusterScopedGenericKubernetesClient<resource.v1alpha3.ResourceSlice> { get }
 }
 
 /// DSL for `resource.k8s.io.v1alpha3` API Group
@@ -38,24 +34,8 @@ public extension KubernetesClient {
 			self.client = client
 		}
 
-		public var deviceClasses: ClusterScopedGenericKubernetesClient<resource.v1alpha3.DeviceClass> {
-			client.clusterScoped(for: resource.v1alpha3.DeviceClass.self)
-		}
-
 		public var deviceTaintRules: ClusterScopedGenericKubernetesClient<resource.v1alpha3.DeviceTaintRule> {
 			client.clusterScoped(for: resource.v1alpha3.DeviceTaintRule.self)
-		}
-
-		public var resourceClaims: NamespacedGenericKubernetesClient<resource.v1alpha3.ResourceClaim> {
-			client.namespaceScoped(for: resource.v1alpha3.ResourceClaim.self)
-		}
-
-		public var resourceClaimTemplates: NamespacedGenericKubernetesClient<resource.v1alpha3.ResourceClaimTemplate> {
-			client.namespaceScoped(for: resource.v1alpha3.ResourceClaimTemplate.self)
-		}
-
-		public var resourceSlices: ClusterScopedGenericKubernetesClient<resource.v1alpha3.ResourceSlice> {
-			client.clusterScoped(for: resource.v1alpha3.ResourceSlice.self)
 		}
 	}
 
