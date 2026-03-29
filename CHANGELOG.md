@@ -1,7 +1,10 @@
 # Changelog
 
-## [Unreleased]
-- Add guards so that the client is usable on iOS
+## [0.26.0]
+
+- Update to Kubernetes model v1.34.6
+- Add guards so that the client is usable on iOS (#48 by donbachi)
+- Add token renewal for tokens loaded from file before expiration (#49 by t089)
 
 ## 0.25.0
 
