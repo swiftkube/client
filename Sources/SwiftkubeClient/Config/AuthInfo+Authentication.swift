@@ -44,16 +44,8 @@ public extension AuthInfo {
 			return .bearer(token: token)
 		}
 
-		do {
-			if let tokenFile = tokenFile {
-				let fileURL = URL(fileURLWithPath: tokenFile)
-				let token = try String(contentsOf: fileURL, encoding: .utf8)
-				return .bearer(token: token)
-			}
-		} catch {
-			logger?.warning(
-				"Error initializing authentication from token file \(String(describing: tokenFile)): \(error)"
-			)
+		if let tokenFile = tokenFile {
+			return .tokenFile(source: CachedFileTokenSource(path: tokenFile))
 		}
 
 		do {
@@ -122,9 +114,9 @@ public extension AuthInfo {
 
 // MARK: - ExecCredential
 
-// It seems that AWS doesn't implement properly the model for client.authentication.k8s.io/v1beta1
-// Acordingly with the doc https://kubernetes.io/docs/reference/config-api/client-authentication.v1beta1/
-// ExecCredential.Spec.interactive is required as long as the ones in the Status object.
+/// It seems that AWS doesn't implement properly the model for client.authentication.k8s.io/v1beta1
+/// Acordingly with the doc https://kubernetes.io/docs/reference/config-api/client-authentication.v1beta1/
+/// ExecCredential.Spec.interactive is required as long as the ones in the Status object.
 public struct ExecCredential: Codable {
 	let apiVersion: String
 	let kind: String
